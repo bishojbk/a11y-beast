@@ -2,6 +2,9 @@
 
 # dependencies
 /node_modules
+
+# auto-generated from postinstall
+/public/axe-core
 /.pnp
 .pnp.*
 .yarn/*
