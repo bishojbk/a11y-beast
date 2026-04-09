@@ -1,5 +1,5 @@
 import { runAxeInIframe, extractPageMeta } from "./axe-runner";
-import { calculateScore } from "./scoring";
+import { calculateScore, extractPassDistribution } from "./scoring";
 import type { ScanResult } from "@/lib/types/scan-result";
 
 let scanCounter = 0;
@@ -24,10 +24,12 @@ export async function analyzeIframe(
   // Run axe-core inside the iframe
   const axeResult = await runAxeInIframe(iframe);
 
+  const passDistribution = extractPassDistribution(axeResult.passedRuleTags);
   const score = calculateScore(
     axeResult.issues,
     axeResult.passedRules,
-    axeResult.incompleteRules
+    axeResult.incompleteRules,
+    passDistribution
   );
 
   return {

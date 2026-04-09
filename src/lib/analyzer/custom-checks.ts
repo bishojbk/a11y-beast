@@ -81,7 +81,7 @@ export function runCustomChecks(): CustomIssue[] {
   });
 
   // ── 4. Generic/suspicious link text ──
-  const genericTexts = new Set(["click here", "here", "read more", "learn more", "more", "link", "this", "click", "go", "details", "continue", "info", "more info", "see more", "view more"]);
+  const genericTexts = new Set(["click here", "here", "read more", "learn more", "more", "link", "this", "click", "go", "details", "continue", "info", "more info", "see more", "view more", "view", "open", "next", "previous", "back", "expand", "collapse", "start", "submit", "download", "press here", "click this", "tap here", "see details", "full story", "read on"]);
   document.querySelectorAll("a").forEach((a) => {
     const text = (a.textContent || "").trim().toLowerCase();
     if (genericTexts.has(text)) {
@@ -98,11 +98,13 @@ export function runCustomChecks(): CustomIssue[] {
 
   // ── 5. Missing skip navigation ──
   const firstFocusable = document.querySelectorAll("a[href], button, input, select, textarea, [tabindex]");
-  const first5 = Array.from(firstFocusable).slice(0, 5);
-  const hasSkip = first5.some((el) => {
+  const first8 = Array.from(firstFocusable).slice(0, 8);
+  const hasSkip = first8.some((el) => {
     const href = el.getAttribute("href") || "";
     const text = (el.textContent || "").toLowerCase();
-    return href.startsWith("#") && (text.includes("skip") || text.includes("main content") || text.includes("jump"));
+    const cls = (el.className && typeof el.className === "string") ? el.className.toLowerCase() : "";
+    return (href.startsWith("#") && (text.includes("skip") || text.includes("main content") || text.includes("jump") || text.includes("navigation")))
+      || cls.includes("skip") || cls.includes("sr-only");
   });
   if (!hasSkip && document.body.innerHTML.length > 1000) {
     issues.push({
@@ -235,7 +237,7 @@ export function runCustomChecks(): CustomIssue[] {
   });
 
   // ── 13. Deprecated HTML elements ──
-  const deprecated = document.querySelectorAll("font, center, big, strike, tt, applet, basefont");
+  const deprecated = document.querySelectorAll("font, center, big, strike, tt, applet, basefont, marquee, blink, frameset, frame");
   if (deprecated.length > 0) {
     issues.push({
       ruleId: "deprecated-html",

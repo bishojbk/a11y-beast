@@ -44,20 +44,20 @@ export function generateComplianceResults(
   passedRuleCount: number,
   pageMeta?: { hasAccessibilityStatement?: boolean; hasSkipLink?: boolean; lang?: string }
 ): ComplianceResult[] {
-  // Deduplicate issues into unique rules, tracking worst severity and element count
-  const ruleMap = new Map<string, RuleInfo>();
+  // Deduplicate issues into unique rules, tracking worst severity, element count,
+  // and the set of framework IDs from applicableFrameworks
+  const ruleMap = new Map<string, RuleInfo & { frameworkIds: Set<string> }>();
   for (const issue of issues) {
     const existing = ruleMap.get(issue.ruleId);
     if (!existing) {
       ruleMap.set(issue.ruleId, {
         ruleId: issue.ruleId,
         severity: issue.severity,
-        tags: issue.applicableFrameworks.length > 0
-          ? issue.wcagCriterion
-            ? [`wcag${issue.wcagCriterion.number.replace(/\./g, "")}`]
-            : ["best-practice"]
+        tags: issue.wcagCriterion
+          ? [`wcag${issue.wcagCriterion.number.replace(/\./g, "")}`]
           : ["best-practice"],
         elementCount: 1,
+        frameworkIds: new Set(issue.applicableFrameworks),
       });
     } else {
       existing.elementCount++;
@@ -65,14 +65,10 @@ export function generateComplianceResults(
       if ((SEV_WEIGHT[issue.severity] ?? 0) > (SEV_WEIGHT[existing.severity] ?? 0)) {
         existing.severity = issue.severity;
       }
-    }
-  }
-
-  // Also store the original issue tags for matching
-  const ruleTagsMap = new Map<string, string[]>();
-  for (const issue of issues) {
-    if (!ruleTagsMap.has(issue.ruleId)) {
-      ruleTagsMap.set(issue.ruleId, issue.applicableFrameworks);
+      // Merge framework IDs from all instances of this rule
+      for (const fwId of issue.applicableFrameworks) {
+        existing.frameworkIds.add(fwId);
+      }
     }
   }
 
@@ -80,9 +76,7 @@ export function generateComplianceResults(
     // Find which failing rules apply to THIS specific framework
     const applicableFailingRules: RuleInfo[] = [];
     for (const [, rule] of ruleMap) {
-      // Check: does this rule's original issue have this framework in its applicableFrameworks?
-      const fwIds = ruleTagsMap.get(rule.ruleId) ?? [];
-      if (fwIds.includes(fw.id)) {
+      if (rule.frameworkIds.has(fw.id)) {
         applicableFailingRules.push(rule);
       }
     }

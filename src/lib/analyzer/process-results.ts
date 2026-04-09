@@ -1,7 +1,8 @@
-import type { AccessibilityIssue, Severity, WcagPrinciple, WcagLevel } from "@/lib/types/issue";
+import type { AccessibilityIssue, Severity } from "@/lib/types/issue";
 import type { ScanResult, PageMeta } from "@/lib/types/scan-result";
 import { getApplicableFrameworks } from "@/lib/compliance/mapper";
-import { calculateScore } from "./scoring";
+import { calculateScore, extractPassDistribution } from "./scoring";
+import { extractWcagCriterion } from "./wcag-data";
 
 function mapSeverity(impact: string | null | undefined): Severity {
   switch (impact) {
@@ -11,24 +12,6 @@ function mapSeverity(impact: string | null | undefined): Severity {
     case "minor": return "best-practice";
     default: return "minor";
   }
-}
-
-function extractWcagCriterion(tags: string[]): AccessibilityIssue["wcagCriterion"] {
-  for (const tag of tags) {
-    const match = tag.match(/^wcag(\d)(\d)(\d+)$/);
-    if (match) {
-      const number = `${match[1]}.${match[2]}.${match[3]}`;
-      const principle: WcagPrinciple =
-        match[1] === "1" ? "perceivable" :
-        match[1] === "2" ? "operable" :
-        match[1] === "3" ? "understandable" : "robust";
-      let level: WcagLevel = "AA";
-      if (tags.includes("wcag2a") || tags.includes("wcag21a")) level = "A";
-      if (tags.includes("wcag2aaa") || tags.includes("wcag21aaa")) level = "AAA";
-      return { number, name: "", level, principle };
-    }
-  }
-  return null;
 }
 
 function getImpactGroups(ruleId: string, tags: string[]): AccessibilityIssue["impact"] {
@@ -140,7 +123,9 @@ export function processServerResults(
   const incompleteRules = axeResults.incomplete.length;
   const inapplicableRules = axeResults.inapplicable.length;
 
-  const score = calculateScore(issues, passedRules, incompleteRules);
+  const passedRuleTags = axeResults.passes.map((p) => p.tags);
+  const passDistribution = extractPassDistribution(passedRuleTags);
+  const score = calculateScore(issues, passedRules, incompleteRules, passDistribution);
 
   const pageMeta: PageMeta = { url: data.finalUrl ?? url, ...rawMeta };
 

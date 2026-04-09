@@ -84,6 +84,28 @@ const EFFORT_MAP: Record<string, EffortLevel> = {
   "blink": "refactor",
   "marquee": "refactor",
   "focus-order-semantics": "refactor",
+
+  // Custom checks from custom-checks.ts
+  "alt-suspicious-filename": "quick-fix",
+  "alt-too-long": "quick-fix",
+  "alt-redundant-prefix": "quick-fix",
+  "link-text-generic": "medium",
+  "skip-link-missing": "refactor",
+  "heading-skip-level": "medium",
+  "multiple-h1": "medium",
+  "no-headings": "refactor",
+  "text-too-small": "medium",
+  "line-height-too-tight": "medium",
+  "viewport-zoom-disabled": "quick-fix",
+  "autoplay-media": "quick-fix",
+  "deprecated-html": "medium",
+  "aria-reference-broken": "medium",
+  "tabindex-positive": "quick-fix",
+  "title-redundant": "quick-fix",
+  "text-justified": "quick-fix",
+  "link-document-no-warning": "quick-fix",
+  "landmark-main-missing": "medium",
+  "landmark-nav-missing": "medium",
 };
 
 const EFFORT_INFO: Record<EffortLevel, EffortInfo> = {

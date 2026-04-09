@@ -27,8 +27,21 @@ function ipToNumber(ip: string): number {
 }
 
 function isPrivateIp(ip: string): boolean {
-  // IPv6 loopback and mapped
-  if (ip === "::1" || ip === "::ffff:127.0.0.1" || ip.startsWith("fc00:") || ip.startsWith("fd")) {
+  // IPv6 loopback, mapped, link-local, and private ranges
+  const lower = ip.toLowerCase();
+  if (
+    lower === "::1" ||
+    lower === "::ffff:127.0.0.1" ||
+    lower.startsWith("fc00:") ||
+    lower.startsWith("fd") ||
+    lower.startsWith("fe80:") ||     // Link-local
+    lower.startsWith("ff") ||        // Multicast
+    lower.startsWith("::ffff:10.") ||
+    lower.startsWith("::ffff:172.") ||
+    lower.startsWith("::ffff:192.168.") ||
+    lower.startsWith("::ffff:127.") ||
+    lower === "::"                    // Unspecified
+  ) {
     return true;
   }
 

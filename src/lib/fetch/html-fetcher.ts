@@ -81,16 +81,23 @@ export async function fetchHtml(url: string): Promise<FetchResult> {
     const baseHref = `${baseUrl.protocol}//${baseUrl.host}/`;
     const baseTag = `<base href="${baseHref}">`;
 
+    // Remove any existing <base> tags to avoid conflicts (only the first <base> is honored)
+    html = html.replace(/<base\s[^>]*>/gi, "");
+
+    // Inject charset meta if missing to ensure proper encoding in srcdoc iframe
+    const hasCharset = /<meta[^>]+charset/i.test(html);
+    const charsetTag = hasCharset ? "" : '<meta charset="utf-8">';
+
     if (html.includes("<head>")) {
-      html = html.replace("<head>", `<head>${baseTag}`);
+      html = html.replace("<head>", `<head>${charsetTag}${baseTag}`);
     } else if (html.includes("<head ")) {
-      html = html.replace(/<head\s[^>]*>/, (match) => `${match}${baseTag}`);
+      html = html.replace(/<head\s[^>]*>/, (match) => `${match}${charsetTag}${baseTag}`);
     } else if (html.includes("<html")) {
       // No <head> tag — inject one
-      html = html.replace(/<html[^>]*>/, (match) => `${match}<head>${baseTag}</head>`);
+      html = html.replace(/<html[^>]*>/, (match) => `${match}<head>${charsetTag}${baseTag}</head>`);
     } else {
       // Bare HTML — prepend base tag
-      html = `${baseTag}${html}`;
+      html = `${charsetTag}${baseTag}${html}`;
     }
 
     return {

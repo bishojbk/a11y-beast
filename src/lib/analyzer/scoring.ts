@@ -20,10 +20,64 @@ const RULE_SEVERITY_WEIGHT: Record<Severity, number> = {
   "best-practice": 0.5,
 };
 
+/**
+ * Distribution of passed rules by WCAG level and principle.
+ * Extracted from actual axe-core pass results when available.
+ */
+export interface PassDistribution {
+  byLevel: { A: number; AA: number; AAA: number };
+  byPrinciple: { perceivable: number; operable: number; understandable: number; robust: number };
+}
+
+/**
+ * Extract pass distribution from axe-core passed rule tags.
+ * Each rule has a tags array — we determine level and principle from those tags.
+ */
+export function extractPassDistribution(
+  passedRuleTags: string[][]
+): PassDistribution {
+  const byLevel = { A: 0, AA: 0, AAA: 0 };
+  const byPrinciple = { perceivable: 0, operable: 0, understandable: 0, robust: 0 };
+
+  for (const tags of passedRuleTags) {
+    // Determine WCAG level from tags
+    if (tags.some((t) => t.includes("aaa"))) {
+      byLevel.AAA++;
+    } else if (tags.some((t) => t === "wcag2a" || t === "wcag21a")) {
+      byLevel.A++;
+    } else {
+      byLevel.AA++; // Default: AA (most rules) or best-practice
+    }
+
+    // Determine principle from criterion tags (e.g., wcag111 → principle 1 → perceivable)
+    let principleFound = false;
+    for (const tag of tags) {
+      const match = tag.match(/^wcag(\d)\d+$/);
+      if (match) {
+        switch (match[1]) {
+          case "1": byPrinciple.perceivable++; break;
+          case "2": byPrinciple.operable++; break;
+          case "3": byPrinciple.understandable++; break;
+          case "4": byPrinciple.robust++; break;
+        }
+        principleFound = true;
+        break;
+      }
+    }
+    // Rules without a specific criterion tag (e.g., best-practice) — distribute to robust
+    if (!principleFound) {
+      byPrinciple.robust++;
+    }
+  }
+
+  return { byLevel, byPrinciple };
+}
+
 export function calculateScore(
   issues: AccessibilityIssue[],
   passedRules: number,
-  incompleteRules: number
+  incompleteRules: number,
+  passDistribution?: PassDistribution
 ): ScoreBreakdown {
   // Group issues by rule to count unique failing rules and their worst severity
   const failingRules = new Map<string, { severity: Severity; elementCount: number }>();
@@ -56,30 +110,23 @@ export function calculateScore(
   const totalApplicableRules = failingRules.size + passedRules + incompleteRules;
 
   // ── Score Calculation ──
-  // Based on: what % of applicable rules pass, penalized by severity and element count.
-  //
-  // Step 1: Base pass rate (how many rules pass out of total applicable)
   const failingRuleCount = failingRules.size;
   const passRate = totalApplicableRules > 0
     ? (totalApplicableRules - failingRuleCount) / totalApplicableRules
     : 1;
 
-  // Step 2: Severity deduction — serious/critical failures cost more
-  // Normalized to 0-0.25 range (max 25 point deduction)
+  // Severity deduction — serious/critical failures cost more (max 25 point deduction)
   const maxSeverityPenalty = totalApplicableRules * RULE_SEVERITY_WEIGHT.critical * 2;
   const severityDeduction = maxSeverityPenalty > 0
     ? Math.min(failurePoints / maxSeverityPenalty, 1) * 0.25
     : 0;
 
-  // Step 3: Element count deduction — many failing elements is worse
-  // Normalized to 0-0.15 range (max 15 point deduction)
+  // Element count deduction — many failing elements is worse (max 15 point deduction)
   const totalFailingElements = issues.length;
   const elementDeduction = Math.min(totalFailingElements / 200, 1) * 0.15;
 
-  // Step 4: Combine — start from pass rate, subtract penalties
+  // Combine — start from pass rate, subtract penalties
   const rawScore = Math.max(0, passRate - severityDeduction - elementDeduction);
-
-  // Step 5: Scale to 0-100
   const overall = Math.max(0, Math.min(100, Math.round(rawScore * 100)));
 
   // Grade thresholds aligned with common accessibility grading
@@ -89,25 +136,35 @@ export function calculateScore(
     overall >= 60 ? "C" :
     overall >= 40 ? "D" : "F";
 
-  // By WCAG level
+  // ── By WCAG Level ──
   const byLevel: ScoreBreakdown["byLevel"] = {
     A: { passed: 0, failed: 0, total: 0 },
     AA: { passed: 0, failed: 0, total: 0 },
     AAA: { passed: 0, failed: 0, total: 0 },
   };
+  // Count failed issues by level
   for (const issue of issues) {
     const level = issue.wcagCriterion?.level ?? "AA";
     byLevel[level].failed++;
     byLevel[level].total++;
   }
-  byLevel.A.passed = Math.round(passedRules * 0.3);
-  byLevel.AA.passed = Math.round(passedRules * 0.6);
-  byLevel.AAA.passed = Math.round(passedRules * 0.1);
+  // Use actual pass distribution if available, otherwise estimate from axe-core's known distribution
+  if (passDistribution) {
+    byLevel.A.passed = passDistribution.byLevel.A;
+    byLevel.AA.passed = passDistribution.byLevel.AA;
+    byLevel.AAA.passed = passDistribution.byLevel.AAA;
+  } else {
+    // Fallback estimation based on axe-core's actual rule distribution:
+    // ~35% Level A rules, ~55% Level AA rules, ~10% Level AAA / best-practice
+    byLevel.A.passed = Math.round(passedRules * 0.35);
+    byLevel.AA.passed = Math.round(passedRules * 0.55);
+    byLevel.AAA.passed = passedRules - byLevel.A.passed - byLevel.AA.passed;
+  }
   byLevel.A.total += byLevel.A.passed;
   byLevel.AA.total += byLevel.AA.passed;
   byLevel.AAA.total += byLevel.AAA.passed;
 
-  // By principle
+  // ── By Principle ──
   const byPrinciple: ScoreBreakdown["byPrinciple"] = {
     perceivable: { passed: 0, failed: 0 },
     operable: { passed: 0, failed: 0 },
@@ -118,11 +175,22 @@ export function calculateScore(
     const p = issue.wcagCriterion?.principle ?? "robust";
     byPrinciple[p].failed++;
   }
-  const principles: WcagPrinciple[] = ["perceivable", "operable", "understandable", "robust"];
-  const weights = [0.35, 0.3, 0.2, 0.15];
-  principles.forEach((p, i) => {
-    byPrinciple[p].passed = Math.round(passedRules * weights[i]);
-  });
+  if (passDistribution) {
+    byPrinciple.perceivable.passed = passDistribution.byPrinciple.perceivable;
+    byPrinciple.operable.passed = passDistribution.byPrinciple.operable;
+    byPrinciple.understandable.passed = passDistribution.byPrinciple.understandable;
+    byPrinciple.robust.passed = passDistribution.byPrinciple.robust;
+  } else {
+    // Fallback estimation based on axe-core's known principle distribution
+    const pWeights = { perceivable: 0.33, operable: 0.28, understandable: 0.17, robust: 0.22 };
+    const principles: WcagPrinciple[] = ["perceivable", "operable", "understandable", "robust"];
+    let remaining = passedRules;
+    principles.forEach((p, i) => {
+      const count = i < principles.length - 1 ? Math.round(passedRules * pWeights[p]) : remaining;
+      byPrinciple[p].passed = count;
+      remaining -= count;
+    });
+  }
 
   // By severity
   const bySeverity: ScoreBreakdown["bySeverity"] = {

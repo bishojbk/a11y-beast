@@ -1,6 +1,7 @@
-import type { AccessibilityIssue, Severity, WcagPrinciple, WcagLevel } from "@/lib/types/issue";
+import type { AccessibilityIssue, Severity } from "@/lib/types/issue";
 import type { PageMeta } from "@/lib/types/scan-result";
 import { getApplicableFrameworks } from "@/lib/compliance/mapper";
+import { extractWcagCriterion } from "./wcag-data";
 
 function mapSeverity(impact: string | null | undefined): Severity {
   switch (impact) {
@@ -10,24 +11,6 @@ function mapSeverity(impact: string | null | undefined): Severity {
     case "minor": return "best-practice";
     default: return "minor";
   }
-}
-
-function extractWcagCriterion(tags: string[]): AccessibilityIssue["wcagCriterion"] {
-  for (const tag of tags) {
-    const match = tag.match(/^wcag(\d)(\d)(\d+)$/);
-    if (match) {
-      const number = `${match[1]}.${match[2]}.${match[3]}`;
-      const principle: WcagPrinciple =
-        match[1] === "1" ? "perceivable" :
-        match[1] === "2" ? "operable" :
-        match[1] === "3" ? "understandable" : "robust";
-      let level: WcagLevel = "AA";
-      if (tags.includes("wcag2a") || tags.includes("wcag21a")) level = "A";
-      if (tags.includes("wcag2aaa") || tags.includes("wcag21aaa")) level = "AAA";
-      return { number, name: "", level, principle };
-    }
-  }
-  return null;
 }
 
 function getImpactGroups(ruleId: string, tags: string[]): AccessibilityIssue["impact"] {
@@ -96,6 +79,7 @@ function axeResultToIssues(violations: RawAxeResult[]): AccessibilityIssue[] {
 export interface AxeRunResult {
   issues: AccessibilityIssue[];
   passedRules: number;
+  passedRuleTags: string[][];
   incompleteRules: number;
   inapplicableRules: number;
   totalRulesRun: number;
@@ -186,6 +170,7 @@ export async function runAxeInIframe(iframe: HTMLIFrameElement): Promise<AxeRunR
   return {
     issues,
     passedRules: results.passes.length,
+    passedRuleTags: results.passes.map((p) => p.tags),
     incompleteRules: results.incomplete.length,
     inapplicableRules: results.inapplicable.length,
     totalRulesRun: results.violations.length + results.passes.length + results.incomplete.length + results.inapplicable.length,
