@@ -13,7 +13,7 @@ export async function fetchHtml(url: string): Promise<FetchResult> {
   const start = Date.now();
 
   // Validate URL
-  const validation = validateUrl(url);
+  const validation = await validateUrl(url);
   if (!validation.safe || !validation.url) {
     return { ok: false, error: validation.reason ?? "Invalid URL", fetchDurationMs: Date.now() - start };
   }
