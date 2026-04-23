@@ -1,3 +1,5 @@
+import { lookup } from "node:dns/promises";
+
 const PRIVATE_RANGES = [
   // IPv4 private/reserved
   { start: "0.0.0.0", end: "0.255.255.255" },
@@ -63,7 +65,7 @@ export interface ValidationResult {
   reason?: string;
 }
 
-export function validateUrl(input: string): ValidationResult {
+export async function validateUrl(input: string): Promise<ValidationResult> {
   // 1. Parse URL
   let url: URL;
   try {
@@ -96,8 +98,9 @@ export function validateUrl(input: string): ValidationResult {
     }
   }
 
-  // 6. Check if hostname is an IP
-  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+  // 6. Check if hostname is a literal IPv4
+  const isLiteralIpv4 = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname);
+  if (isLiteralIpv4) {
     if (isPrivateIp(hostname)) {
       return { safe: false, url, reason: "Private/reserved IP addresses are blocked." };
     }
@@ -106,6 +109,25 @@ export function validateUrl(input: string): ValidationResult {
   // 7. Block IPv6 literals
   if (hostname.startsWith("[")) {
     return { safe: false, url, reason: "IPv6 literal addresses are not allowed." };
+  }
+
+  // 8. DNS resolution — catch DNS rebinding and public hostnames that resolve
+  // to private IPs. Literal IPs have already been checked above.
+  if (!isLiteralIpv4) {
+    try {
+      const addresses = await lookup(hostname, { all: true });
+      for (const { address } of addresses) {
+        if (isPrivateIp(address)) {
+          return {
+            safe: false,
+            url,
+            reason: `Hostname '${hostname}' resolves to a private/reserved IP (${address}).`,
+          };
+        }
+      }
+    } catch {
+      return { safe: false, url, reason: `Could not resolve hostname '${hostname}'.` };
+    }
   }
 
   return { safe: true, url };
