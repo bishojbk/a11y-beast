@@ -72,8 +72,8 @@ function EaaBody() {
         about its ceiling: automated tools can only evaluate roughly{" "}
         <strong>30&ndash;40% of WCAG success criteria</strong>. The rest (meaningful alt text, logical
         focus order, sensible error messages) needs human review. Any tool claiming a one-click
-        &ldquo;compliant&rdquo; verdict is overselling — in 2025 the US FTC fined an accessibility
-        overlay vendor <strong>$1M</strong> for exactly that kind of claim.
+        &ldquo;compliant&rdquo; verdict is overselling — in 2025 the US FTC charged an accessibility
+        overlay vendor over exactly that kind of claim, settling for <strong>$1M</strong>.
       </p>
       <p style={p}>
         That&rsquo;s the gap A11y Beast is built for:{" "}
@@ -358,8 +358,8 @@ function LawsuitTrendsBody() {
         </li>
         <li style={li}>
           <strong>Overlays aren&rsquo;t shields.</strong> 1,416 of the suits targeted sites already
-          running an accessibility widget (UsableNet) — and the FTC fined overlay vendor accessiBe
-          $1M in 2025 for overstating what its product could do (
+          running an accessibility widget (UsableNet) — and the FTC charged overlay vendor accessiBe
+          over what its product claimed, settling for $1M in 2025 (
           <Ext href="https://www.ftc.gov/news-events/news/press-releases/2025/01/ftc-order-requires-online-marketer-pay-1-million-deceptive-claims-its-ai-product-could-make-websites">FTC</Ext>).
         </li>
       </ul>
@@ -518,8 +518,8 @@ function AutomatedLimitsBody() {
         This is exactly why A11y Beast reports an <strong>automated indicator mapped to legal risk —
         not a compliance verdict.</strong> We catch what automation catches well, map it to the laws
         it implicates, and tell you plainly where manual review is still needed. Any tool that promises
-        a one-click &ldquo;compliant&rdquo; stamp is selling the thing the FTC just fined a vendor $1M
-        for. <a href="/" style={aStyle}>Scan a page</a> and see the honest version.
+        a one-click &ldquo;compliant&rdquo; stamp is making the kind of claim that just cost an overlay
+        vendor a $1M FTC settlement. <a href="/" style={aStyle}>Scan a page</a> and see the honest version.
       </p>
     </>
   );
@@ -637,8 +637,8 @@ function ShopifyBody() {
       <h2 className="font-display" style={h2}>The one trap to avoid</h2>
       <p style={p}>
         The Shopify App Store has an Accessibility category full of one-click &ldquo;compliance&rdquo;
-        overlay widgets. They don&rsquo;t fix your code, they don&rsquo;t stop lawsuits, and the US FTC
-        fined overlay vendor accessiBe <strong>$1M</strong> in 2025 for claiming otherwise (
+        overlay widgets. They don&rsquo;t fix your code, they don&rsquo;t stop lawsuits, and in 2025 the
+        US FTC charged overlay vendor accessiBe over claims like that, settling for <strong>$1M</strong> (
         <Ext href="https://www.ftc.gov/news-events/news/press-releases/2025/01/ftc-order-requires-online-marketer-pay-1-million-deceptive-claims-its-ai-product-could-make-websites">FTC</Ext>).
         Remediate the source instead.
       </p>
