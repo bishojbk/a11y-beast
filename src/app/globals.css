@@ -2074,3 +2074,11 @@ h1, h2, h3, h4 {
   transition: color .15s ease, background .15s ease;
 }
 .modal-close:hover { color: var(--text-primary); background: var(--bg-overlay); }
+
+/* Pricing FAQ disclosure */
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary:hover { background: var(--bg-raised); }
+details > summary:focus-visible { outline: 2px solid var(--border-focus); outline-offset: -2px; }
+.faq-icon { transition: transform .2s ease; }
+details[open] > summary .faq-icon { transform: rotate(45deg); }
