@@ -23,6 +23,15 @@ const h2: React.CSSProperties = { fontSize: "clamp(22px, 3vw, 28px)", lineHeight
 const li: React.CSSProperties = { ...p, marginBottom: 8 };
 const aStyle: React.CSSProperties = { color: "var(--accent-text)" };
 
+// External source link — opens in a new tab, accent-coloured.
+function Ext({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" style={aStyle}>
+      {children}
+    </a>
+  );
+}
+
 function EaaBody() {
   return (
     <>
@@ -127,6 +136,360 @@ function AdaBody() {
   );
 }
 
+function OverlaysBody() {
+  return (
+    <>
+      <p style={p}>
+        Accessibility overlay widgets promise something irresistible: paste one line of JavaScript,
+        and your site becomes accessible — and lawsuit-proof — overnight. It doesn&rsquo;t work that
+        way. The evidence against overlays is now strong enough that a US federal regulator, the
+        disability community, and the litigation data all point the same direction.
+      </p>
+
+      <h2 className="font-display" style={h2}>What an overlay actually is</h2>
+      <p style={p}>
+        An overlay is a third-party script that loads <em>after</em> your page and tries to patch
+        accessibility problems from the outside — adjusting contrast, injecting ARIA, adding a
+        settings menu. It never changes your underlying source code. That&rsquo;s the root of the
+        problem: a screen reader builds its model of the page from the raw HTML as it loads, so
+        bolt-on fixes often arrive too late, and overlays can actively <strong>conflict</strong> with
+        the assistive technology a user already relies on. Deque, a major accessibility vendor, walks
+        through the technical reasons in detail (
+        <Ext href="https://www.deque.com/blog/not-all-accessibility-overlays-are-created-equal/">deque.com</Ext>).
+      </p>
+
+      <h2 className="font-display" style={h2}>They don&rsquo;t stop lawsuits</h2>
+      <p style={p}>
+        In its 2025 year-end report, UsableNet found <strong>1,416 lawsuits filed against companies
+        that already had an accessibility widget installed</strong> — under a section bluntly titled
+        &ldquo;Accessibility Widgets Do Not Reduce Legal Risk&rdquo; (
+        <Ext href="https://info.usablenet.com/2025-year-end-report-on-web-accessibility-lawsuits">UsableNet 2025 report</Ext>).
+        Installing an overlay did not slow litigation.
+      </p>
+
+      <h2 className="font-display" style={h2}>And a regulator has weighed in</h2>
+      <p style={p}>
+        In January 2025 the US Federal Trade Commission charged overlay vendor accessiBe with
+        deceptive advertising, alleging its &ldquo;accessWidget&rdquo; product could not actually make
+        websites WCAG-compliant as claimed; the FTC&rsquo;s <strong>$1 million</strong> order was
+        finalized in April 2025 and bars the company from claiming its automated product makes any
+        site compliant without evidence (
+        <Ext href="https://www.ftc.gov/news-events/news/press-releases/2025/01/ftc-order-requires-online-marketer-pay-1-million-deceptive-claims-its-ai-product-could-make-websites">FTC press release</Ext>).
+      </p>
+
+      <h2 className="font-display" style={h2}>The experts agree</h2>
+      <p style={p}>
+        The community-authored <Ext href="https://overlayfactsheet.com/en/">Overlay Fact Sheet</Ext>,
+        signed by over 1,000 accessibility professionals and disabled users, states plainly that full
+        compliance cannot be achieved with an overlay. In WebAIM&rsquo;s practitioner survey,{" "}
+        <strong>67% of respondents</strong> — and 72% of respondents with disabilities — rated
+        overlays &ldquo;not very&rdquo; or &ldquo;not at all&rdquo; effective (
+        <Ext href="https://webaim.org/projects/practitionersurvey3/">WebAIM</Ext>).
+      </p>
+      <p style={p}>
+        The honest path is the unglamorous one: find the real issues in your source and fix them.
+        That&rsquo;s what A11y Beast is for — <a href="/" style={aStyle}>scan your page</a> in a real
+        browser, see which laws each finding implicates, and get the code to fix it. No widget, no
+        compliance guarantee.
+      </p>
+    </>
+  );
+}
+
+function Section508Body() {
+  return (
+    <>
+      <p style={p}>
+        Section 508 is the US law that requires federal technology to be accessible. If you run a
+        federal agency&rsquo;s website — or sell software, hardware, or digital content to the federal
+        government — it sets the bar you&rsquo;re measured against. Here&rsquo;s what it actually
+        requires.
+      </p>
+
+      <h2 className="font-display" style={h2}>What it is, and who it covers</h2>
+      <p style={p}>
+        Section 508 of the Rehabilitation Act (codified at 29 U.S.C. § 794d) requires federal agencies
+        to ensure their <strong>information and communication technology (ICT)</strong> is accessible
+        to people with disabilities — comparable to the access everyone else gets (
+        <Ext href="https://www.section508.gov/manage/laws-and-policies/section-508-law/">Section508.gov</Ext>).
+        The legal duty falls on <strong>agencies</strong>. Private vendors aren&rsquo;t directly
+        regulated by the statute — but because agencies can&rsquo;t buy non-conforming ICT, vendors
+        are effectively required to make accessible products (and document it) to sell to the
+        government.
+      </p>
+
+      <h2 className="font-display" style={h2}>The standard: WCAG 2.0 Level AA</h2>
+      <p style={p}>
+        The Revised 508 Standards <strong>incorporate WCAG 2.0 Level A and AA by reference</strong> and
+        have been in force since <strong>January 18, 2018</strong> (
+        <Ext href="https://www.access-board.gov/ict/">US Access Board</Ext>). Note the version:
+        Section 508 still points to WCAG <strong>2.0</strong> AA — not 2.1 or 2.2. (By contrast, the
+        DOJ&rsquo;s 2024 ADA Title II rule for state and local government adopted WCAG 2.1 AA. The
+        required version is set by each law&rsquo;s citation, not by the latest WCAG release.)
+      </p>
+
+      <h2 className="font-display" style={h2}>VPATs and ACRs</h2>
+      <p style={p}>
+        Vendors document conformance using a <strong>VPAT</strong> (Voluntary Product Accessibility
+        Template) — a form listing each applicable criterion and whether the product
+        &ldquo;supports,&rdquo; &ldquo;partially supports,&rdquo; or &ldquo;does not support&rdquo; it.
+        Once filled in with real test results, it becomes an <strong>Accessibility Conformance Report
+        (ACR)</strong>, which agencies request before buying (
+        <Ext href="https://www.section508.gov/sell/acr-vpat-faq/">Section508.gov ACR/VPAT FAQ</Ext>).
+      </p>
+
+      <h2 className="font-display" style={h2}>508 vs. 504</h2>
+      <p style={p}>
+        Both come from the Rehabilitation Act. <strong>Section 504</strong> is a broad
+        non-discrimination rule for programs receiving federal funds; <strong>Section 508</strong> is
+        the narrower, technology-specific requirement for federal ICT. They&rsquo;re related —
+        508 even borrows 504&rsquo;s complaint procedures for enforcement (
+        <Ext href="https://www.section508.gov/manage/relationship-between-sections-508-504-and-501/">Section508.gov</Ext>).
+      </p>
+      <p style={p}>
+        A11y Beast maps every finding to Section 508&rsquo;s WCAG 2.0 AA scope alongside 15 other
+        frameworks — so you can see federal exposure specifically. <a href="/" style={aStyle}>Scan a
+        page</a> to start.
+      </p>
+    </>
+  );
+}
+
+function WcagVersionBody() {
+  return (
+    <>
+      <p style={p}>
+        &ldquo;Which WCAG version do we need to meet?&rdquo; has a frustrating answer: it depends on
+        which law applies to you. There are three current versions, and different laws point to
+        different ones — on purpose.
+      </p>
+
+      <h2 className="font-display" style={h2}>The three versions</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}><strong>WCAG 2.0</strong> — December 2008</li>
+        <li style={li}><strong>WCAG 2.1</strong> — June 2018 (added mobile, low-vision, and cognitive criteria)</li>
+        <li style={li}><strong>WCAG 2.2</strong> — October 2023 (the current version)</li>
+      </ul>
+      <p style={p}>
+        Crucially, the W3C says these <strong>coexist</strong>: 2.2 does not deprecate 2.1, and 2.1
+        does not deprecate 2.0 (
+        <Ext href="https://www.w3.org/WAI/standards-guidelines/wcag/">W3C WAI</Ext>). So the version
+        you&rsquo;re legally held to is whatever your applicable law <em>cites</em> — not automatically
+        the newest one.
+      </p>
+
+      <h2 className="font-display" style={h2}>What each law points to</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}>
+          <strong>US Section 508</strong> (federal ICT) → <strong>WCAG 2.0 AA</strong> (
+          <Ext href="https://www.section508.gov/develop/applicability-conformance/">Section508.gov</Ext>).
+        </li>
+        <li style={li}>
+          <strong>US ADA Title II</strong> (state &amp; local government) → <strong>WCAG 2.1 AA</strong>,
+          under the DOJ&rsquo;s April 2024 rule (
+          <Ext href="https://www.ada.gov/resources/2024-03-08-web-rule/">ADA.gov</Ext>). Note: an
+          interim final rule in April 2026 <strong>extended the compliance deadlines by one year</strong> —
+          now April 26, 2027 for larger entities (population ≥ 50,000) and April 26, 2028 for smaller
+          ones (
+          <Ext href="https://www.federalregister.gov/documents/2026/04/20/2026-07663/extension-of-compliance-dates-for-nondiscrimination-on-the-basis-of-disability-accessibility-of-web">Federal Register</Ext>).
+        </li>
+        <li style={li}>
+          <strong>EU European Accessibility Act</strong> → via harmonized standard{" "}
+          <strong>EN 301 549 v3.2.1</strong>, which references <strong>WCAG 2.1 AA</strong>. A draft
+          EN 301 549 v4.x (November 2025) moves toward WCAG 2.2, but the 2.1-based version remains in
+          legal effect for now (
+          <Ext href="https://www.etsi.org/deliver/etsi_en/301500_301599/301549/03.02.01_60/en_301549v030201p.pdf">ETSI</Ext>).
+        </li>
+        <li style={li}>
+          <strong>US ADA Title III</strong> (private businesses) → <strong>no codified version.</strong>{" "}
+          DOJ has no regulation setting a technical web standard; it treats WCAG and Section 508 as
+          &ldquo;helpful guidance&rdquo; (
+          <Ext href="https://www.ada.gov/resources/web-guidance/">ADA.gov</Ext>). In practice, most
+          businesses target WCAG 2.1 AA.
+        </li>
+      </ul>
+
+      <h2 className="font-display" style={h2}>The practical takeaway</h2>
+      <p style={p}>
+        Building to <strong>WCAG 2.1 AA</strong> satisfies most of the laws above today (Section 508 is
+        the exception, sitting at 2.0 AA, which 2.1 is a superset of). A11y Beast pins each of its 16
+        frameworks to the exact WCAG version that framework&rsquo;s law cites — so a
+        &ldquo;coverage&rdquo; number means something specific, not a generic score.{" "}
+        <a href="/" style={aStyle}>Scan your site</a> to see it per framework.
+      </p>
+    </>
+  );
+}
+
+function LawsuitTrendsBody() {
+  return (
+    <>
+      <p style={p}>
+        Digital accessibility litigation didn&rsquo;t slow down in 2025 — it climbed. If you sell
+        online, the odds of a demand letter are no longer hypothetical. Here&rsquo;s what the data
+        shows, and why.
+      </p>
+
+      <h2 className="font-display" style={h2}>The 2025 numbers</h2>
+      <p style={p}>
+        UsableNet reviewed <strong>5,114 ADA-related digital accessibility lawsuits</strong> filed in
+        US federal and state courts in 2025 — 3,195 federal (62%) and 1,919 in state court (
+        <Ext href="https://info.usablenet.com/2025-year-end-report-on-web-accessibility-lawsuits">UsableNet 2025 report</Ext>).
+        Tracking federal website cases specifically, Seyfarth Shaw counted{" "}
+        <strong>3,117 — up 27% over 2024</strong> (
+        <Ext href="https://www.adatitleiii.com/2026/03/federal-court-website-accessibility-lawsuit-filings-bounce-back-in-2025/">Seyfarth ADA Title III</Ext>).
+        (The two counts differ slightly because each firm tracks a different scope — cite them
+        separately, not as one number.)
+      </p>
+
+      <h2 className="font-display" style={h2}>What&rsquo;s driving the surge</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}>
+          <strong>Repeat targeting.</strong> 45% of 2025 federal cases were filed against companies
+          that had already been sued — a repeatable strategy, per UsableNet.
+        </li>
+        <li style={li}>
+          <strong>E-commerce concentration.</strong> About 70% of suits hit e-commerce sites, and 36%
+          of the top 500 online retailers were sued at least once (UsableNet).
+        </li>
+        <li style={li}>
+          <strong>State courts.</strong> New York and California (the latter via the Unruh Act&rsquo;s
+          statutory damages) drove the 1,919 state-court filings.
+        </li>
+        <li style={li}>
+          <strong>Overlays aren&rsquo;t shields.</strong> 1,416 of the suits targeted sites already
+          running an accessibility widget (UsableNet) — and the FTC fined overlay vendor accessiBe
+          $1M in 2025 for overstating what its product could do (
+          <Ext href="https://www.ftc.gov/news-events/news/press-releases/2025/01/ftc-order-requires-online-marketer-pay-1-million-deceptive-claims-its-ai-product-could-make-websites">FTC</Ext>).
+        </li>
+      </ul>
+
+      <h2 className="font-display" style={h2}>What it means for you</h2>
+      <p style={p}>
+        The cheapest case to defend is the one you prevent. Find and fix real issues in your source,
+        keep checking as you ship, and don&rsquo;t rely on a widget to make the risk disappear. A11y
+        Beast gives you the legal-risk view in one pass — <a href="/" style={aStyle}>scan your page</a>{" "}
+        and see exactly which of 16 frameworks each finding implicates.
+      </p>
+    </>
+  );
+}
+
+function UnruhBody() {
+  return (
+    <>
+      <p style={p}>
+        California sees more web accessibility lawsuits than almost anywhere else, and one state law is
+        the reason: the Unruh Civil Rights Act. It turns a federal accessibility violation into a
+        claim worth real money — which is exactly why plaintiffs file in California.
+      </p>
+
+      <h2 className="font-display" style={h2}>What the Unruh Act says</h2>
+      <p style={p}>
+        The Unruh Act (California Civil Code § 51) guarantees equal access to &ldquo;all business
+        establishments of every kind whatsoever&rdquo; (
+        <Ext href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=51.">Civil Code § 51</Ext>).
+        The key link for websites is § 51(f): <strong>a violation of the ADA is automatically a
+        violation of the Unruh Act.</strong> So an inaccessible site that fails the ADA fails Unruh
+        too — and an ADA-based Unruh claim doesn&rsquo;t require proving intent.
+      </p>
+
+      <h2 className="font-display" style={h2}>The $4,000 difference</h2>
+      <p style={p}>
+        Under the federal ADA, a private plaintiff can only win an injunction (a court order to fix the
+        site) plus attorney&rsquo;s fees — no damages. Unruh changes the math: Civil Code § 52(a) sets
+        <strong> statutory damages of no less than $4,000 per offense</strong>, and you don&rsquo;t have
+        to prove any actual loss to recover it (
+        <Ext href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=52.">Civil Code § 52</Ext>).
+        That per-offense minimum is what makes each California case independently worth filing.
+      </p>
+
+      <h2 className="font-display" style={h2}>Why Robles v. Domino&rsquo;s matters</h2>
+      <p style={p}>
+        In <em>Robles v. Domino&rsquo;s Pizza</em> (2019), the Ninth Circuit held that the ADA covers a
+        business&rsquo;s website and app when they connect to a physical place of public accommodation;
+        the Supreme Court declined to review it in October 2019, leaving the ruling in force across the
+        Ninth Circuit, including California (
+        <Ext href="https://adasoutheast.org/legal/court/robles-v-dominos-pizza-llc/">case summary</Ext>).
+        That precedent is the foundation California Unruh plaintiffs build on.
+      </p>
+
+      <h2 className="font-display" style={h2}>One common misconception</h2>
+      <p style={p}>
+        California has heightened pleading rules and extra fees aimed at high-frequency litigants — but
+        those apply to <strong>construction-related (physical premises) claims</strong>, not website
+        cases. They generally don&rsquo;t slow digital accessibility suits, which is part of why those
+        remain so common.
+      </p>
+      <p style={p}>
+        If you serve California customers, the Unruh exposure is worth taking seriously. A11y Beast
+        flags which findings implicate California&rsquo;s Unruh Act specifically —{" "}
+        <a href="/" style={aStyle}>scan your page</a> to see where you stand.
+      </p>
+    </>
+  );
+}
+
+function AutomatedLimitsBody() {
+  return (
+    <>
+      <p style={p}>
+        Automated accessibility scanners are fast, cheap, and genuinely useful — and they will never,
+        on their own, tell you a site is &ldquo;compliant.&rdquo; Understanding exactly where the line
+        is will save you from both false confidence and wasted effort.
+      </p>
+
+      <h2 className="font-display" style={h2}>How much can automation actually catch?</h2>
+      <p style={p}>
+        When the UK Government Digital Service seeded a test page with 142 known accessibility barriers
+        and ran 13 automated tools at it, the <strong>best tool caught about 40%</strong>; the worst,
+        13% (
+        <Ext href="https://alphagov.github.io/accessibility-tool-audit/">GDS tool audit</Ext>).
+        Measured differently — by volume of issues rather than by success criteria — Deque reports its
+        axe engine surfaces about <strong>57% of issues automatically</strong>, while noting the
+        traditional &ldquo;success-criteria&rdquo; figure is often cited at 20–30% (
+        <Ext href="https://www.deque.com/blog/automated-testing-study-identifies-57-percent-of-digital-accessibility-issues/">Deque</Ext>).
+        Those measure different things — but both land on the same conclusion: a large share of
+        accessibility can only be assessed by a human.
+      </p>
+
+      <h2 className="font-display" style={h2}>What automation catches well</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}>Missing alternative text on images</li>
+        <li style={li}>Insufficient color contrast</li>
+        <li style={li}>Form fields without labels</li>
+        <li style={li}>Missing page language or broken heading structure</li>
+        <li style={li}>Invalid or misused ARIA</li>
+      </ul>
+
+      <h2 className="font-display" style={h2}>What it can&rsquo;t judge</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}>Whether alt text is actually <em>meaningful</em> (not just present)</li>
+        <li style={li}>Whether reading and focus order make sense</li>
+        <li style={li}>Whether link text is clear out of context</li>
+        <li style={li}>Whether captions and complex-image descriptions are accurate</li>
+      </ul>
+      <p style={p}>
+        The W3C is explicit: evaluation tools &ldquo;can not determine accessibility, they can only
+        assist&rdquo; — human judgement is required (
+        <Ext href="https://www.w3.org/WAI/test-evaluate/tools/selecting/">W3C WAI</Ext>). And WCAG
+        conformance is binary, pass-or-fail per success criterion, assessed across representative pages —
+        not something a single scan can settle for a whole site (
+        <Ext href="https://www.w3.org/WAI/WCAG22/Understanding/conformance">Understanding Conformance</Ext>).
+      </p>
+
+      <h2 className="font-display" style={h2}>Why we say this out loud</h2>
+      <p style={p}>
+        This is exactly why A11y Beast reports an <strong>automated indicator mapped to legal risk —
+        not a compliance verdict.</strong> We catch what automation catches well, map it to the laws
+        it implicates, and tell you plainly where manual review is still needed. Any tool that promises
+        a one-click &ldquo;compliant&rdquo; stamp is selling the thing the FTC just fined a vendor $1M
+        for. <a href="/" style={aStyle}>Scan a page</a> and see the honest version.
+      </p>
+    </>
+  );
+}
+
 export const POSTS: BlogPost[] = [
   {
     slug: "european-accessibility-act-deadline",
@@ -149,6 +512,72 @@ export const POSTS: BlogPost[] = [
     tags: ["ADA", "Title III", "WCAG 2.1", "accessibility lawsuits", "compliance"],
     readingMinutes: 5,
     Body: AdaBody,
+  },
+  {
+    slug: "do-accessibility-overlays-work",
+    title: "Do accessibility overlay widgets actually work?",
+    description:
+      "Overlays promise instant accessibility and lawsuit protection. The litigation data, the FTC's $1M action against accessiBe, and the disability community all say otherwise. Here's why — and what to do instead.",
+    dek: "The litigation data, a $1M FTC action, and the disability community all point the same way: overlays don't deliver compliance.",
+    datePublished: "2026-06-16",
+    tags: ["accessibility overlays", "overlay widgets", "accessiBe", "FTC", "WCAG"],
+    readingMinutes: 5,
+    Body: OverlaysBody,
+  },
+  {
+    slug: "section-508-compliance-explained",
+    title: "Section 508 compliance, explained",
+    description:
+      "What Section 508 requires, who it covers (federal agencies — and vendors, indirectly), the WCAG 2.0 AA standard it references, and how VPATs and ACRs fit in.",
+    dek: "What the law requires, who's on the hook, the WCAG 2.0 AA standard it points to, and how VPATs/ACRs work.",
+    datePublished: "2026-06-16",
+    tags: ["Section 508", "WCAG 2.0", "VPAT", "ACR", "federal", "ICT"],
+    readingMinutes: 5,
+    Body: Section508Body,
+  },
+  {
+    slug: "which-wcag-version-does-the-law-require",
+    title: "Which WCAG version does the law require — 2.0, 2.1, or 2.2?",
+    description:
+      "Section 508 cites WCAG 2.0 AA, the ADA Title II rule cites 2.1 AA, the EU's EN 301 549 cites 2.1 AA, and ADA Title III cites nothing. The required version is set by each law — not by the latest release.",
+    dek: "Section 508 → 2.0 AA. ADA Title II → 2.1 AA. The EAA → 2.1 AA. The version is set by the law that applies, not the newest release.",
+    datePublished: "2026-06-16",
+    tags: ["WCAG 2.0", "WCAG 2.1", "WCAG 2.2", "ADA Title II", "EN 301 549", "Section 508"],
+    readingMinutes: 5,
+    Body: WcagVersionBody,
+  },
+  {
+    slug: "why-web-accessibility-lawsuits-are-surging",
+    title: "Why web accessibility lawsuits are surging",
+    description:
+      "More than 5,000 digital accessibility lawsuits were filed in 2025 (UsableNet: 5,114); federal website suits rose 27% (Seyfarth: 3,117). Here's what's driving the surge and what it means for your site.",
+    dek: "5,114 digital accessibility suits in 2025; federal website filings up 27%. The drivers — repeat targeting, e-commerce, state courts, and overlays that don't help.",
+    datePublished: "2026-06-16",
+    tags: ["accessibility lawsuits", "ADA", "UsableNet", "Seyfarth", "litigation trends"],
+    readingMinutes: 4,
+    Body: LawsuitTrendsBody,
+  },
+  {
+    slug: "california-unruh-act-and-your-website",
+    title: "The California Unruh Act and your website",
+    description:
+      "California's Unruh Civil Rights Act turns an ADA web violation into statutory damages of at least $4,000 per offense — which is why the state is a web accessibility litigation hotspot. Here's how it works.",
+    dek: "Why an ADA web violation in California is worth at least $4,000 per offense — and what Robles v. Domino's established.",
+    datePublished: "2026-06-16",
+    tags: ["Unruh Act", "California", "ADA", "statutory damages", "Robles v Domino's"],
+    readingMinutes: 4,
+    Body: UnruhBody,
+  },
+  {
+    slug: "what-automated-accessibility-scans-can-and-cant-catch",
+    title: "What automated accessibility scans can — and can't — catch",
+    description:
+      "Automated tools catch roughly a third to a half of accessibility issues — never all of them. Here's what scanning does well, what needs human review, and why no scan can declare a site 'compliant'.",
+    dek: "Scanners catch a third to half of issues, never all. What automation does well, what needs a human, and why no scan equals 'compliant'.",
+    datePublished: "2026-06-16",
+    tags: ["automated testing", "WCAG", "axe-core", "WCAG-EM", "conformance"],
+    readingMinutes: 5,
+    Body: AutomatedLimitsBody,
   },
 ];
 
