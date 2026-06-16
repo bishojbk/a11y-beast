@@ -73,15 +73,26 @@ export function extractPassDistribution(
   return { byLevel, byPrinciple };
 }
 
+/** Letter grade for a 0–100 score. Shared by single-page and site scoring. */
+export function gradeForScore(overall: number): ScoreBreakdown["grade"] {
+  return overall >= 90 ? "A" : overall >= 75 ? "B" : overall >= 60 ? "C" : overall >= 40 ? "D" : "F";
+}
+
 export function calculateScore(
   issues: AccessibilityIssue[],
   passedRules: number,
   incompleteRules: number,
   passDistribution?: PassDistribution
 ): ScoreBreakdown {
+  // Only CONFIRMED failures drive the score. "Needs review" items (axe
+  // incomplete) are unconfirmed by definition — they're accounted for once,
+  // at half weight, via the incompleteRules term below, and never counted as
+  // hard failures (that was previously a double-count).
+  const confirmedIssues = issues.filter((i) => !i.needsManualReview);
+
   // Group issues by rule to count unique failing rules and their worst severity
   const failingRules = new Map<string, { severity: Severity; elementCount: number }>();
-  for (const issue of issues) {
+  for (const issue of confirmedIssues) {
     const existing = failingRules.get(issue.ruleId);
     if (!existing || RULE_SEVERITY_WEIGHT[issue.severity] > RULE_SEVERITY_WEIGHT[existing.severity]) {
       failingRules.set(issue.ruleId, {
@@ -103,16 +114,18 @@ export function calculateScore(
     failurePoints += baseWeight * elementScale;
   }
 
-  // Incomplete rules count as half-failures (moderate severity)
+  // Incomplete ("needs review") rules count as half-failures in the penalty,
+  // but must NOT count as passes: they're unverified, so they're excluded from
+  // the pass-rate denominator (otherwise an incomplete-heavy page scores high).
   failurePoints += incompleteRules * RULE_SEVERITY_WEIGHT.minor * 0.5;
 
-  // Total applicable rules (failed + passed + incomplete)
-  const totalApplicableRules = failingRules.size + passedRules + incompleteRules;
+  // Confirmed applicable rules (failed + passed) — incomplete is not a pass.
+  const totalApplicableRules = failingRules.size + passedRules;
 
   // ── Score Calculation ──
   const failingRuleCount = failingRules.size;
   const passRate = totalApplicableRules > 0
-    ? (totalApplicableRules - failingRuleCount) / totalApplicableRules
+    ? passedRules / totalApplicableRules
     : 1;
 
   // Severity deduction — serious/critical failures cost more (max 25 point deduction)
@@ -122,7 +135,7 @@ export function calculateScore(
     : 0;
 
   // Element count deduction — many failing elements is worse (max 15 point deduction)
-  const totalFailingElements = issues.length;
+  const totalFailingElements = confirmedIssues.length;
   const elementDeduction = Math.min(totalFailingElements / 200, 1) * 0.15;
 
   // Combine — start from pass rate, subtract penalties
@@ -130,11 +143,7 @@ export function calculateScore(
   const overall = Math.max(0, Math.min(100, Math.round(rawScore * 100)));
 
   // Grade thresholds aligned with common accessibility grading
-  const grade: ScoreBreakdown["grade"] =
-    overall >= 90 ? "A" :
-    overall >= 75 ? "B" :
-    overall >= 60 ? "C" :
-    overall >= 40 ? "D" : "F";
+  const grade = gradeForScore(overall);
 
   // ── By WCAG Level ──
   const byLevel: ScoreBreakdown["byLevel"] = {
@@ -143,7 +152,7 @@ export function calculateScore(
     AAA: { passed: 0, failed: 0, total: 0 },
   };
   // Count failed issues by level
-  for (const issue of issues) {
+  for (const issue of confirmedIssues) {
     const level = issue.wcagCriterion?.level ?? "AA";
     byLevel[level].failed++;
     byLevel[level].total++;
@@ -171,7 +180,7 @@ export function calculateScore(
     understandable: { passed: 0, failed: 0 },
     robust: { passed: 0, failed: 0 },
   };
-  for (const issue of issues) {
+  for (const issue of confirmedIssues) {
     const p = issue.wcagCriterion?.principle ?? "robust";
     byPrinciple[p].failed++;
   }
@@ -199,7 +208,7 @@ export function calculateScore(
     minor: 0,
     "best-practice": 0,
   };
-  for (const issue of issues) {
+  for (const issue of confirmedIssues) {
     bySeverity[issue.severity]++;
   }
 

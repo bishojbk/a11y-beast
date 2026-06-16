@@ -177,6 +177,29 @@ async function scanPage(page: Page): Promise<{
   return { pageMeta, axeResults, customIssues };
 }
 
+/**
+ * Re-validate every top-level navigation (including redirect hops) against the
+ * SSRF guard. validateUrl() only checks the initial hostname; without this, a
+ * public URL could 30x-redirect to a private/metadata host and the browser
+ * would happily load it. Subresources pass through so the page still renders.
+ */
+async function applySsrfGuard(page: Page): Promise<void> {
+  await page.setRequestInterception(true);
+  page.on("request", async (req) => {
+    try {
+      if (!req.isNavigationRequest() || req.frame() !== page.mainFrame()) {
+        await req.continue();
+        return;
+      }
+      const v = await validateUrl(req.url());
+      if (v.safe) await req.continue();
+      else await req.abort("blockedbyclient");
+    } catch {
+      /* request may already be resolved/aborted — ignore */
+    }
+  });
+}
+
 /** Scan a URL using Puppeteer (full browser rendering). */
 export async function puppeteerScan(url: string): Promise<PuppeteerScanResult> {
   const start = Date.now();
@@ -192,6 +215,7 @@ export async function puppeteerScan(url: string): Promise<PuppeteerScanResult> {
   try {
     await page.setViewport({ width: 1280, height: 720 });
     await page.setBypassCSP(true);
+    await applySsrfGuard(page);
     await page.goto(validation.url.toString(), { waitUntil: "networkidle2", timeout: 25000 });
 
     const { pageMeta, axeResults, customIssues } = await scanPage(page);
@@ -209,6 +233,61 @@ export async function puppeteerScan(url: string): Promise<PuppeteerScanResult> {
       ok: false,
       error: err instanceof Error ? err.message : "Scan failed",
       fetchDurationMs: Date.now() - start,
+    };
+  } finally {
+    await page.close();
+  }
+}
+
+/**
+ * Scan a URL and, in the same page load, extract same-origin anchor hrefs for
+ * crawling. The browser is shared with puppeteerScan. `navTimeoutMs` is lower
+ * than the single-page default so a slow page can't eat the whole crawl budget.
+ */
+export async function puppeteerScanWithLinks(
+  url: string,
+  navTimeoutMs = 15000
+): Promise<PuppeteerScanResult & { links: string[] }> {
+  const start = Date.now();
+
+  const validation = await validateUrl(url);
+  if (!validation.safe || !validation.url) {
+    return { ok: false, error: validation.reason ?? "Invalid URL", fetchDurationMs: Date.now() - start, links: [] };
+  }
+
+  const b = await getBrowser();
+  const page = await b.newPage();
+
+  try {
+    await page.setViewport({ width: 1280, height: 720 });
+    await page.setBypassCSP(true);
+    await applySsrfGuard(page);
+    await page.goto(validation.url.toString(), { waitUntil: "networkidle2", timeout: navTimeoutMs });
+
+    const { pageMeta, axeResults, customIssues } = await scanPage(page);
+
+    // Collect in-document anchor hrefs, resolved to absolute URLs by the browser.
+    const rawLinks: string[] = await page.evaluate(() =>
+      Array.from(document.querySelectorAll("a[href]"))
+        .map((a) => (a as HTMLAnchorElement).href)
+        .filter(Boolean)
+    );
+
+    return {
+      ok: true,
+      finalUrl: page.url(),
+      fetchDurationMs: Date.now() - start,
+      axeResults,
+      pageMeta,
+      customIssues,
+      links: rawLinks,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Scan failed",
+      fetchDurationMs: Date.now() - start,
+      links: [],
     };
   } finally {
     await page.close();

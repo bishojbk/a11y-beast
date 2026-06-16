@@ -75,7 +75,8 @@ export async function scanCommand(target: string, opts: ScanOptions) {
         hasAccessibilityStatement: scanResult.pageMeta.hasAccessibilityStatement,
         hasSkipLink: scanResult.pageMeta.hasSkipLink,
         lang: scanResult.pageMeta.lang,
-      }
+      },
+      scanResult.passedRuleTags
     );
 
     // Filter frameworks if specified

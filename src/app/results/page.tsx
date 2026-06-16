@@ -1,217 +1,647 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import Link from "next/link";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import {
-  ArrowLeft, AlertTriangle, CheckCircle2, XCircle, AlertCircle, Info, Clock,
-  Shield, Scale, Globe, Eye, Users, Code, Wrench, FileWarning, ExternalLink,
-  ChevronRight, BarChart3, PieChart, Gauge, ListChecks, ShieldAlert, Gavel,
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  ChevronRight,
+  Code2,
+  Copy,
+  Download,
+  ExternalLink,
+  RefreshCw,
+  Search,
   Sparkles,
-  type LucideIcon,
+  X,
 } from "lucide-react";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
+import Gauge from "@/components/results/Gauge";
+import Flag, { flagForRegion } from "@/components/results/Flag";
+import { GithubActionDialog, DownloadReportDialog, LegalReportDialog } from "@/components/results/ExportDialogs";
+import { FRAMEWORKS, type FrameworkWithTags } from "@/lib/compliance/frameworks";
+import { computeConformance, type CriterionStatus } from "@/lib/compliance/wcag-criteria";
 import type { ScanResult } from "@/lib/types/scan-result";
-import type { AccessibilityIssue, Severity } from "@/lib/types/issue";
+import type { AccessibilityIssue, ImpactGroup, Severity } from "@/lib/types/issue";
 import type { ComplianceResult } from "@/lib/types/compliance";
+import type { SiteScanResult } from "@/lib/types/site-scan";
+import { SAMPLE_RESULT } from "@/lib/sample-result";
 
-/* ── Variants ── */
-const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as const } } };
-const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
-const vpOnce = { once: true, amount: 0.01 };
+type FilterKey = Severity | "all" | "needs-review";
 
-/* ── Severity Config ── */
-const SEV: Record<Severity, { Icon: LucideIcon; color: string; bg: string; label: string }> = {
-  critical: { Icon: XCircle, color: "var(--severity-critical)", bg: "var(--severity-critical-bg)", label: "Critical" },
-  major: { Icon: AlertTriangle, color: "var(--severity-major)", bg: "var(--severity-major-bg)", label: "Major" },
-  minor: { Icon: AlertCircle, color: "var(--severity-minor)", bg: "var(--severity-minor-bg)", label: "Minor" },
-  "best-practice": { Icon: Info, color: "var(--severity-info)", bg: "var(--severity-info-bg)", label: "Best Practice" },
+const EASE = [0.22, 1, 0.36, 1] as const;
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
+};
+const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.05 } } };
+
+/* Severity → design token */
+const SEV_TOKEN: Record<Severity, { dotClass: string; label: string }> = {
+  critical: { dotClass: "critical", label: "Critical" },
+  major: { dotClass: "major", label: "Major" },
+  minor: { dotClass: "minor", label: "Minor" },
+  "best-practice": { dotClass: "info", label: "Best practice" },
 };
 
-/* ── Small Components ── */
-function AnimatedNum({ value }: { value: number }) {
-  const [display, setDisplay] = useState(0);
-  const prev = useRef(0);
-  useEffect(() => {
-    const from = prev.current; const diff = value - from; const start = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min((now - start) / 1400, 1);
-      setDisplay(Math.round(from + diff * (1 - Math.pow(1 - t, 3))));
-      if (t < 1) requestAnimationFrame(tick); else prev.current = value;
-    };
-    requestAnimationFrame(tick);
-  }, [value]);
-  return <>{display}</>;
+/* ──────────────────────────────────────────────────────────────
+   Filter chip — severity with count
+   ────────────────────────────────────────────────────────────── */
+function FilterChip({
+  active,
+  label,
+  count,
+  onClick,
+  sev,
+}: {
+  active: boolean;
+  label: string;
+  count: number;
+  onClick: () => void;
+  sev?: Severity;
+}) {
+  return (
+    <button
+      type="button"
+      className={`filter-chip ${active ? "on" : ""}`}
+      onClick={onClick}
+      aria-pressed={active}
+    >
+      {sev && (
+        <span
+          className={`sev-dot ${SEV_TOKEN[sev].dotClass}`}
+          style={{ margin: 0, width: 6, height: 6 }}
+          aria-hidden="true"
+        />
+      )}
+      {label} <span className="count">{count}</span>
+    </button>
+  );
 }
 
-function ScoreGauge({ score, grade }: { score: number; grade: string }) {
-  const circ = 2 * Math.PI * 45;
-  const offset = circ - (score / 100) * circ;
-  const color = score >= 90 ? "var(--pass)" : score >= 70 ? "var(--severity-minor)" : score >= 50 ? "var(--severity-major)" : "var(--severity-critical)";
+/* ──────────────────────────────────────────────────────────────
+   Effort
+   ────────────────────────────────────────────────────────────── */
+type EffortChip = { chipClass: "quick" | "medium" | "refactor"; label: string; estimate: string };
+
+/* ──────────────────────────────────────────────────────────────
+   Issue code diff block
+   Very light syntax tinting — just tag/attr highlights
+   ────────────────────────────────────────────────────────────── */
+function tokenizeHtml(line: string): ReactElement[] {
+  // Split while keeping delimiters: tag, attr="val", plain
+  const parts: ReactElement[] = [];
+  const regex = /(<\/?[\w-]+)|([\w-]+="[^"]*")|(<!--[^]*?-->)/g;
+  let last = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = regex.exec(line)) !== null) {
+    if (match.index > last) {
+      parts.push(<span key={key++}>{line.slice(last, match.index)}</span>);
+    }
+    if (match[1]) {
+      parts.push(<span key={key++} className="tag">{match[1]}</span>);
+    } else if (match[2]) {
+      parts.push(<span key={key++} className="attr">{match[2]}</span>);
+    } else if (match[3]) {
+      parts.push(<span key={key++} className="cmt">{match[3]}</span>);
+    }
+    last = regex.lastIndex;
+  }
+  if (last < line.length) parts.push(<span key={key++}>{line.slice(last)}</span>);
+  return parts;
+}
+
+function IssueCode({
+  issue,
+  fixHtml,
+}: {
+  issue: AccessibilityIssue;
+  fixHtml: string | null;
+}) {
+  const [copied, setCopied] = useState(false);
+  const copyTarget = fixHtml ?? issue.element.html;
+
+  const copy = useCallback(() => {
+    navigator.clipboard.writeText(copyTarget);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1600);
+  }, [copyTarget]);
+
+  const failLines = issue.element.html.split("\n").filter(Boolean);
+  const fixLines = fixHtml ? fixHtml.split("\n").filter(Boolean) : [];
+
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative w-44 h-44 animate-score-glow" style={{ "--glow-color": color } as React.CSSProperties}>
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100" role="meter" aria-valuenow={score} aria-valuemin={0} aria-valuemax={100} aria-label={`Score: ${score}`}>
-          {/* Background track */}
-          <circle cx="50" cy="50" r="45" stroke="var(--border-default)" strokeWidth="4" fill="none" />
-          {/* Score arc */}
-          <circle cx="50" cy="50" r="45" stroke={color} strokeWidth="5" fill="none" strokeLinecap="round"
-            strokeDasharray={circ} strokeDashoffset={offset} className="animate-score-ring"
-            style={{ filter: `drop-shadow(0 0 12px ${color})` }} />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-5xl font-extrabold" style={{ color, fontFamily: "var(--font-display)" }}><AnimatedNum value={score} /></span>
-          <span className="text-[11px] font-medium mt-0.5" style={{ color: "var(--text-tertiary)" }}>/ 100</span>
-        </div>
+    <div className="issue-code">
+      <div className="code-head">
+        <span className="sel mono">{issue.element.selector || "—"}</span>
+        <button type="button" className="code-copy" onClick={copy}>
+          {copied ? <Check size={11} /> : <Copy size={11} />}
+          {copied ? "copied" : fixHtml ? "copy fix" : "copy snippet"}
+        </button>
       </div>
-      <div className="flex items-center gap-2.5">
-        <Gauge size={16} style={{ color }} aria-hidden="true" />
-        <span className="text-xl font-bold" style={{ color, fontFamily: "var(--font-display)" }}>Grade: {grade}</span>
+      <div className="code-body mono">
+        {failLines.map((ln, i) => (
+          <span key={`f${i}`} className="fail">{tokenizeHtml(ln)}</span>
+        ))}
+        {fixLines.length > 0 && <div style={{ height: 6 }} />}
+        {fixLines.map((ln, i) => (
+          <span key={`x${i}`} className="fix">{tokenizeHtml(ln)}</span>
+        ))}
       </div>
     </div>
   );
 }
 
-function StatCard({ value, label, Icon, color }: { value: number | string; Icon: LucideIcon; label: string; color: string }) {
+/* ──────────────────────────────────────────────────────────────
+   IssueRow
+   ────────────────────────────────────────────────────────────── */
+function IssueRow({
+  issue,
+  effort,
+  count,
+  fixHtml,
+  showCode,
+  expanded,
+  onToggle,
+  loadingFix,
+}: {
+  issue: AccessibilityIssue;
+  effort: EffortChip;
+  count: number;
+  fixHtml: string | null;
+  showCode: boolean;
+  expanded: boolean;
+  onToggle: () => void;
+  loadingFix: boolean;
+}) {
+  const allGroups: ImpactGroup[] = ["visual", "motor", "cognitive", "auditory"];
+  const groupLabels: Record<ImpactGroup, string> = {
+    visual: "Visual",
+    motor: "Motor",
+    cognitive: "Cognitive",
+    auditory: "Auditory",
+  };
+  const sev = SEV_TOKEN[issue.severity];
+
   return (
-    <motion.div variants={fadeUp}
-      className="rounded-2xl p-4 flex items-center gap-3 gradient-border-card transition-all duration-300 hover:-translate-y-0.5"
-      style={{ background: "var(--bg-raised)" }}>
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: `color-mix(in srgb, ${color} 10%, transparent)`, color }}>
-        <Icon size={17} aria-hidden="true" />
-      </div>
+    <motion.div className="issue" variants={fadeUp}>
+      <span className={`sev-dot ${sev.dotClass}`} role="img" aria-label={`${sev.label} severity`} />
       <div>
-        <div className="text-xl font-bold" style={{ color, fontFamily: "var(--font-display)" }}>{typeof value === "number" ? <AnimatedNum value={value} /> : value}</div>
-        <div className="text-[10px] font-medium" style={{ color: "var(--text-tertiary)" }}>{label}</div>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          style={{
+            display: "flex", alignItems: "center", gap: 8, background: "none", border: "none",
+            padding: 0, margin: 0, cursor: "pointer", textAlign: "left", color: "inherit", width: "100%",
+          }}
+        >
+          <ChevronRight
+            size={14}
+            aria-hidden="true"
+            style={{ flexShrink: 0, color: "var(--text-tertiary)", transform: expanded ? "rotate(90deg)" : "none", transition: "transform 0.18s ease" }}
+          />
+          <span className="issue-title">{issue.fixSuggestion || issue.description}</span>
+        </button>
+        <div className="issue-desc" style={{ marginLeft: 22 }}>{issue.description}</div>
+        <div className="issue-meta" style={{ marginLeft: 22 }}>
+          {issue.wcagCriterion && (
+            <>
+              <span>
+                WCAG {issue.wcagCriterion.number} {issue.wcagCriterion.level}
+              </span>
+              <span className="issue-sep" aria-hidden="true" />
+            </>
+          )}
+          <span>
+            rule: <span style={{ color: "var(--accent-text)" }}>{issue.ruleId}</span>
+          </span>
+          <span className="issue-sep" aria-hidden="true" />
+          <span>
+            {count} {count === 1 ? "occurrence" : "occurrences"}
+          </span>
+          {issue.needsManualReview && (
+            <>
+              <span className="issue-sep" aria-hidden="true" />
+              <span style={{ color: "var(--sev-review)" }}>needs manual review</span>
+            </>
+          )}
+          {loadingFix && (
+            <>
+              <span className="issue-sep" aria-hidden="true" />
+              <span style={{ color: "var(--accent-text)" }}>generating fix…</span>
+            </>
+          )}
+        </div>
+        {showCode && expanded && (
+          <div style={{ marginLeft: 22 }}>
+            <IssueCode issue={issue} fixHtml={fixHtml} />
+          </div>
+        )}
       </div>
-    </motion.div>
-  );
-}
-
-function IssueCard({ issue, index, effort }: { issue: AccessibilityIssue; index: number; effort: { label: string; color: string; bg: string; estimate: string } }) {
-  const [open, setOpen] = useState(false);
-  const s = SEV[issue.severity];
-
-  return (
-    <motion.div variants={fadeUp}
-      className="rounded-2xl overflow-hidden gradient-border-card transition-all duration-300"
-      style={{ background: "var(--bg-raised)" }}>
-      <div className="p-5">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: s.bg, color: s.color }}>
-            <s.Icon size={16} aria-hidden="true" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="text-sm font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>{issue.fixSuggestion || issue.description}</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase" style={{ color: s.color, background: s.bg }}>
-                <s.Icon size={9} aria-hidden="true" /> {s.label}
-              </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ color: effort.color, background: effort.bg }}>
-                <Wrench size={9} aria-hidden="true" /> {effort.label} ~{effort.estimate}
-              </span>
-              {issue.wcagCriterion && (
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md" style={{ background: "var(--bg-code)", color: "var(--text-tertiary)", border: "1px solid var(--border-default)" }}>
-                  WCAG {issue.wcagCriterion.number}
-                </span>
-              )}
-            </div>
-            <p className="text-xs mb-2.5 leading-relaxed" style={{ color: "var(--text-secondary)" }}>{issue.description}</p>
-            <div className="flex flex-wrap gap-3 text-xs" style={{ color: "var(--text-tertiary)" }}>
-              <span className="flex items-center gap-1"><Code size={11} aria-hidden="true" /> <code className="font-mono text-[10px]" style={{ color: "var(--text-secondary)" }}>{issue.element.selector.slice(0, 50)}</code></span>
-              {issue.impact.length > 0 && <span className="flex items-center gap-1"><Users size={11} aria-hidden="true" /> {issue.impact.join(", ")}</span>}
-              {issue.needsManualReview && <span className="flex items-center gap-1"><Eye size={11} aria-hidden="true" /> Needs manual review</span>}
-            </div>
-            <button onClick={() => setOpen(!open)} aria-expanded={open}
-              className="mt-3 text-xs cursor-pointer flex items-center gap-1 transition-all duration-200 hover:gap-1.5" style={{ color: "var(--text-link)" }}>
-              <ChevronRight size={12} style={{ transform: open ? "rotate(90deg)" : "", transition: "transform 0.2s" }} aria-hidden="true" />
-              {open ? "Hide" : "Show"} code & legal details
-            </button>
-          </div>
+      <div className="issue-groups">
+        <div className="groups-label">Affects</div>
+        <div className="groups-pills">
+          {allGroups.map((g) => (
+            <span
+              key={g}
+              className={`group-pill ${issue.impact.includes(g) ? "" : "dim"}`}
+            >
+              {groupLabels[g]}
+            </span>
+          ))}
         </div>
       </div>
-      <AnimatePresence>
-        {open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="overflow-hidden px-5 pb-5" style={{ borderTop: "1px solid var(--border-default)" }}>
-            <div className="pt-4 space-y-3">
-              <pre className="text-[11px] rounded-xl p-4 overflow-x-auto whitespace-pre-wrap break-all"
-                style={{ background: "var(--bg-code)", color: "var(--text-secondary)", fontFamily: "var(--font-mono)", border: "1px solid var(--border-default)" }}>
-                {issue.element.html}
-              </pre>
-              {issue.applicableFrameworks.length > 0 && (
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.15em] mb-2 font-bold flex items-center gap-1" style={{ color: "var(--text-tertiary)" }}>
-                    <Gavel size={11} aria-hidden="true" /> Applicable Laws
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {issue.applicableFrameworks.slice(0, 10).map((f) => (
-                      <span key={f} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
-                        style={{ background: "var(--severity-critical-bg)", color: "var(--severity-critical)", border: "1px solid rgba(244,63,94,0.15)" }}>
-                        <ShieldAlert size={9} aria-hidden="true" /> {f}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {issue.whyItMatters && (
-                <p className="text-[11px] flex items-start gap-2 leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
-                  <FileWarning size={12} className="flex-shrink-0 mt-0.5" aria-hidden="true" /> {issue.whyItMatters.slice(0, 200)}
-                </p>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <span className={`effort-chip ${effort.chipClass}`}>
+        {effort.label}
+        <span className="effort-time">· {effort.estimate}</span>
+      </span>
     </motion.div>
   );
 }
 
-/* ── Main Page ── */
+/* ──────────────────────────────────────────────────────────────
+   Compliance card
+   ────────────────────────────────────────────────────────────── */
+function ComplianceCard({
+  fw,
+  cr,
+  idx,
+  onOpen,
+}: {
+  fw: FrameworkWithTags;
+  cr: ComplianceResult;
+  idx: number;
+  onOpen: () => void;
+}) {
+  const [barW, setBarW] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setBarW(cr.percentage), 180 + idx * 25);
+    return () => clearTimeout(t);
+  }, [cr.percentage, idx]);
+
+  const pct = cr.percentage;
+  const fillColor =
+    pct < 60 ? "var(--severity-critical)" :
+    pct < 75 ? "var(--severity-major)" :
+    pct < 90 ? "var(--severity-minor)" : "var(--pass)";
+
+  const riskLevel: "high" | "med" | "low" | "pass" =
+    pct < 60 ? "high" :
+    pct < 75 ? "med" :
+    pct < 90 ? "low" : "pass";
+  const riskLabel = riskLevel === "pass" ? "Pass" : riskLevel === "low" ? "Low" : riskLevel === "med" ? "Med" : "High";
+
+  const scoreColor =
+    pct < 60 ? "var(--severity-critical)" :
+    pct < 75 ? "var(--severity-major)" :
+    pct < 90 ? "var(--severity-minor)" :
+    "var(--pass)";
+
+  return (
+    <motion.article
+      className="compl-card"
+      role="button"
+      tabIndex={0}
+      aria-label={`${fw.name}, ${pct} percent compliance, ${riskLabel} risk. Open details.`}
+      variants={fadeUp}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      style={{ cursor: "pointer" }}
+    >
+      <div className="compl-top">
+        <div>
+          <div className="compl-id mono">{String(idx + 1).padStart(2, "0")}/16</div>
+          <div className="compl-name">{fw.shortName}</div>
+        </div>
+        <Flag code={flagForRegion(fw.region)} />
+      </div>
+      <div className="compl-wcag">{fw.wcagBasis}</div>
+      <div className="compl-score-row">
+        <span className="compl-score" style={{ color: scoreColor }}>{pct}</span>
+        <div className="compl-bar">
+          <div className="f" style={{ width: `${barW}%`, background: fillColor }} />
+        </div>
+      </div>
+      <div className="compl-region">{fw.region}</div>
+      <span className={`compl-risk ${riskLevel}`}>{riskLabel}</span>
+    </motion.article>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Helpers
+   ────────────────────────────────────────────────────────────── */
+function splitUrl(raw: string): { host: string; ext: string } {
+  try {
+    const u = new URL(raw);
+    const path = u.pathname === "/" ? "" : u.pathname;
+    return { host: `${u.protocol}//${u.host}`, ext: path + (u.search || "") };
+  } catch {
+    return { host: raw, ext: "" };
+  }
+}
+
+function formatScanTimestamp(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const mi = String(d.getUTCMinutes()).padStart(2, "0");
+  return `SCAN · ${yyyy}.${mm}.${dd} · ${hh}:${mi} UTC`;
+}
+
+function daysBetween(fromISO: string, toISO?: string): number {
+  if (!toISO) return NaN;
+  const a = Date.now();
+  const b = new Date(toISO).getTime();
+  return Math.round((b - a) / (1000 * 60 * 60 * 24));
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Results page
+   ────────────────────────────────────────────────────────────── */
 export default function ResultsPage() {
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [site, setSite] = useState<SiteScanResult | null>(null);
   const [compliance, setCompliance] = useState<ComplianceResult[]>([]);
-  const [effortMap, setEffortMap] = useState<Record<string, { label: string; color: string; bg: string; estimate: string }>>({});
-  const [activeTab, setActiveTab] = useState<"issues" | "compliance" | "passed">("issues");
-  const defaultEffort = { label: "Medium", color: "var(--severity-minor)", bg: "var(--severity-minor-bg)", estimate: "15-60 min" };
+  const [effortMap, setEffortMap] = useState<Record<string, EffortChip>>({});
+  const [filter, setFilter] = useState<FilterKey>("all");
+  const [search, setSearch] = useState("");
+  const [frameworkFilter, setFrameworkFilter] = useState<string>("all");
+  const [pageFilter, setPageFilter] = useState<number | null>(null);
+  const [openRules, setOpenRules] = useState<Set<string>>(new Set());
+  const [bulkFixing, setBulkFixing] = useState(false);
+  const [detailFw, setDetailFw] = useState<FrameworkWithTags | null>(null);
+  const [showAllFw, setShowAllFw] = useState(false);
+  const [aiAvailable, setAiAvailable] = useState(false);
+  const [fixCache, setFixCache] = useState<Record<string, string>>({});
+  const [fixLoading, setFixLoading] = useState<Record<string, boolean>>({});
+  const [modal, setModal] = useState<"action" | "report" | "legal" | null>(null);
+  const rowsInited = useRef(false);
 
   useEffect(() => {
+    // Use a real scan from session storage, or fall back to the baked sample
+    // report when the visitor arrives via ?sample (the "See a sample" CTA).
+    let parsed: ScanResult | null = null;
     const stored = sessionStorage.getItem("a11y-beast-result");
-    if (!stored) return;
-    try {
-      const parsed: ScanResult = JSON.parse(stored);
+    if (stored) {
+      try { parsed = JSON.parse(stored) as ScanResult; } catch { /* invalid cache */ }
+    }
+    if (!parsed && new URLSearchParams(window.location.search).has("sample")) {
+      parsed = SAMPLE_RESULT;
+    }
+    if (!parsed) return;
+    {
       setResult(parsed);
+      const storedSite = sessionStorage.getItem("a11y-beast-site");
+      if (storedSite) {
+        try { setSite(JSON.parse(storedSite) as SiteScanResult); } catch { /* ignore */ }
+      }
       import("@/lib/compliance/mapper").then(({ generateComplianceResults }) => {
-        setCompliance(generateComplianceResults(parsed.issues, parsed.passedRules, {
-          hasAccessibilityStatement: parsed.pageMeta.hasAccessibilityStatement,
-          hasSkipLink: parsed.pageMeta.hasSkipLink,
-          lang: parsed.pageMeta.lang,
-        }));
+        setCompliance(
+          generateComplianceResults(parsed.issues, parsed.passedRules, {
+            hasAccessibilityStatement: parsed.pageMeta.hasAccessibilityStatement,
+            hasSkipLink: parsed.pageMeta.hasSkipLink,
+            lang: parsed.pageMeta.lang,
+          }, parsed.passedRuleTags)
+        );
       });
       import("@/lib/analyzer/effort").then(({ getEffort }) => {
-        const map: Record<string, typeof defaultEffort> = {};
-        for (const issue of parsed.issues) { if (!map[issue.ruleId]) map[issue.ruleId] = getEffort(issue.ruleId); }
+        const map: Record<string, EffortChip> = {};
+        for (const issue of parsed.issues) {
+          if (!map[issue.ruleId]) {
+            const raw = getEffort(issue.ruleId);
+            const chipClass: EffortChip["chipClass"] =
+              raw.level === "quick-fix" ? "quick" : raw.level === "refactor" ? "refactor" : "medium";
+            const label =
+              raw.level === "quick-fix" ? "Quick fix" : raw.level === "refactor" ? "Refactor" : "Medium";
+            map[issue.ruleId] = { chipClass, label, estimate: raw.estimate };
+          }
+        }
         setEffortMap(map);
       });
-    } catch { /* invalid data */ }
+    }
   }, []);
+
+  useEffect(() => {
+    fetch("/api/v1/fix", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then((r) => setAiAvailable(r.status !== 501))
+      .catch(() => setAiAvailable(false));
+  }, []);
+
+  const generateFixForIssue = useCallback(
+    async (issueId: string) => {
+      if (!result || fixCache[issueId] || fixLoading[issueId]) return;
+      const issue = result.issues.find((i) => i.id === issueId);
+      if (!issue) return;
+      setFixLoading((p) => ({ ...p, [issueId]: true }));
+      try {
+        const res = await fetch("/api/v1/fix", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ issue, pageMeta: result.pageMeta }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message ?? "Failed");
+        setFixCache((p) => ({ ...p, [issueId]: data.fix?.fixedHtml ?? "" }));
+      } catch {
+        /* swallow — code block still shows failing HTML */
+      } finally {
+        setFixLoading((p) => ({ ...p, [issueId]: false }));
+      }
+    },
+    [result, fixCache, fixLoading]
+  );
+
+  /* Auto-request AI fixes for the first few critical issues — in an effect, not
+     during render. Runs once per scan when AI is available. */
+  useEffect(() => {
+    if (!aiAvailable || !result) return;
+    result.issues
+      .filter((i) => i.severity === "critical" && !i.needsManualReview)
+      .slice(0, 3)
+      .forEach((i) => generateFixForIssue(i.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiAvailable, result]);
+
+  /* Raw issues filtered by page (crawl drill-down), framework, and search —
+     applied before grouping so occurrence counts reflect the active filters. */
+  const filteredRaw = useMemo(() => {
+    if (!result) return [] as AccessibilityIssue[];
+    const q = search.trim().toLowerCase();
+    return result.issues.filter((i) => {
+      if (pageFilter !== null && !i.id.startsWith(`p${pageFilter}-`)) return false;
+      if (frameworkFilter !== "all" && !i.applicableFrameworks.includes(frameworkFilter)) return false;
+      if (q) {
+        const hay = `${i.ruleId} ${i.fixSuggestion} ${i.description} ${i.element.selector}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [result, pageFilter, frameworkFilter, search]);
+
+  /* Counts over the filtered set so chip counts track active filters.
+     Severity counts are CONFIRMED failures only; needs-review is separate. */
+  const counts = useMemo(() => {
+    const c: Record<Severity, number> & { total: number; needsReview: number } = {
+      critical: 0, major: 0, minor: 0, "best-practice": 0, total: 0, needsReview: 0,
+    };
+    for (const i of filteredRaw) {
+      if (i.needsManualReview) { c.needsReview += 1; continue; }
+      c[i.severity] += 1;
+      c.total += 1;
+    }
+    return c;
+  }, [filteredRaw]);
+
+  const grouped = useMemo(() => {
+    const byRule = new Map<string, { issue: AccessibilityIssue; count: number }>();
+    for (const i of filteredRaw) {
+      const existing = byRule.get(i.ruleId);
+      if (!existing) byRule.set(i.ruleId, { issue: i, count: 1 });
+      else existing.count += 1;
+    }
+    const arr = Array.from(byRule.values());
+    arr.sort((a, b) => {
+      const sevOrder: Record<Severity, number> = { critical: 0, major: 1, minor: 2, "best-practice": 3 };
+      if (sevOrder[a.issue.severity] !== sevOrder[b.issue.severity])
+        return sevOrder[a.issue.severity] - sevOrder[b.issue.severity];
+      return b.count - a.count;
+    });
+    return arr;
+  }, [filteredRaw]);
+
+  const visibleIssues = useMemo(() => {
+    if (filter === "needs-review") return grouped.filter((g) => g.issue.needsManualReview);
+    const confirmed = grouped.filter((g) => !g.issue.needsManualReview);
+    return filter === "all" ? confirmed : confirmed.filter((g) => g.issue.severity === filter);
+  }, [grouped, filter]);
+
+  /* Auto-expand rule rows on first load only when the list is small. */
+  useEffect(() => {
+    if (rowsInited.current || grouped.length === 0) return;
+    rowsInited.current = true;
+    if (grouped.length <= 10) setOpenRules(new Set(grouped.map((g) => g.issue.ruleId)));
+  }, [grouped]);
+
+  const allVisibleOpen = visibleIssues.length > 0 && visibleIssues.every((g) => openRules.has(g.issue.ruleId));
+  const toggleRule = useCallback((ruleId: string) => {
+    setOpenRules((prev) => {
+      const next = new Set(prev);
+      if (next.has(ruleId)) next.delete(ruleId);
+      else next.add(ruleId);
+      return next;
+    });
+  }, []);
+  const toggleAll = useCallback(() => {
+    setOpenRules((prev) => {
+      const allOpen = visibleIssues.length > 0 && visibleIssues.every((g) => prev.has(g.issue.ruleId));
+      if (allOpen) {
+        const next = new Set(prev);
+        for (const g of visibleIssues) next.delete(g.issue.ruleId);
+        return next;
+      }
+      const next = new Set(prev);
+      for (const g of visibleIssues) next.add(g.issue.ruleId);
+      return next;
+    });
+  }, [visibleIssues]);
+
+  /* Copy the currently-visible issues as a markdown checklist. */
+  const [copiedAll, setCopiedAll] = useState(false);
+  const copyVisible = useCallback(() => {
+    const lines = visibleIssues.map(({ issue, count }) => {
+      const wcag = issue.wcagCriterion ? ` (WCAG ${issue.wcagCriterion.number} ${issue.wcagCriterion.level})` : "";
+      return `- [ ] **${issue.severity}** ${issue.fixSuggestion || issue.ruleId}${wcag} — \`${issue.ruleId}\`, ${count}×`;
+    });
+    navigator.clipboard.writeText(lines.join("\n"));
+    setCopiedAll(true);
+    setTimeout(() => setCopiedAll(false), 1600);
+  }, [visibleIssues]);
+
+  /* Generate AI fixes for every visible issue that has a code snippet. */
+  const generateAllFixes = useCallback(async () => {
+    if (!result || bulkFixing) return;
+    setBulkFixing(true);
+    try {
+      const targets = visibleIssues
+        .map((g) => g.issue)
+        .filter((i) => i.element.html.length > 0 && !fixCache[i.id]);
+      // Sequential to stay within the fix endpoint's rate limit.
+      for (const issue of targets.slice(0, 20)) {
+        await generateFixForIssue(issue.id);
+      }
+    } finally {
+      setBulkFixing(false);
+    }
+  }, [result, bulkFixing, visibleIssues, fixCache, generateFixForIssue]);
+
+  const activePage = pageFilter !== null && site ? site.pages.find((p) => p.pageIndex === pageFilter) : null;
+
+  /* Risk callout — derive from compliance scores */
+  const { breakingLaws, worstFrameworks } = useMemo(() => {
+    if (!compliance.length) return { breakingLaws: 0, worstFrameworks: [] as ComplianceResult[] };
+    const breaking = compliance.filter((c) => c.percentage < 75);
+    const sorted = [...breaking].sort((a, b) => a.percentage - b.percentage);
+    return { breakingLaws: breaking.length, worstFrameworks: sorted.slice(0, 6) };
+  }, [compliance]);
+
+  /* Upcoming deadline alert (if any framework has deadline + low compliance) */
+  const deadlineAlert = useMemo(() => {
+    for (const cr of compliance) {
+      const fw = cr.framework as FrameworkWithTags;
+      if (fw.enforcementDate) {
+        const days = daysBetween(new Date().toISOString(), fw.enforcementDate);
+        if (Number.isFinite(days) && days > -30 && cr.percentage < 90) {
+          return { fw, days, pct: cr.percentage };
+        }
+      }
+    }
+    return null;
+  }, [compliance]);
 
   if (!result) {
     return (
       <>
+        <a href="#main-content" className="skip-link">Skip to content</a>
         <Header />
-        <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 text-center">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
-            style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-default)" }}>
-            <ListChecks size={36} style={{ color: "var(--text-tertiary)" }} aria-hidden="true" />
+        <main
+          id="main-content"
+          role="main"
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "80px 24px",
+            flexDirection: "column",
+            textAlign: "center",
+          }}
+        >
+          <div className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
+            NO SCAN · SESSION EMPTY
           </div>
-          <h1 className="text-2xl font-bold mt-2 mb-3" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>No scan results</h1>
-          <p className="text-sm mb-8" style={{ color: "var(--text-secondary)" }}>Run a scan from the homepage to see results here.</p>
-          <Link href="/" className="scan-btn h-12 px-7 rounded-xl text-sm font-bold inline-flex items-center gap-2"
-            style={{ color: "var(--text-inverse)" }}>
-            <span className="flex items-center gap-2"><ArrowLeft size={14} /> Back to Scanner</span>
+          <h1 className="font-display" style={{ fontSize: 36, marginBottom: 10 }}>
+            Nothing to report yet.
+          </h1>
+          <p style={{ color: "var(--text-secondary)", marginBottom: 24, maxWidth: "48ch" }}>
+            Run a scan from the homepage. Results stay in your browser session — we never save them server-side.
+          </p>
+          <Link href="/" className="btn primary">
+            <ArrowLeft size={14} /> Back to scanner
           </Link>
         </main>
         <Footer />
@@ -219,222 +649,1007 @@ export default function ResultsPage() {
     );
   }
 
-  const { score, issues, pageMeta } = result;
+  const { score, issues, pageMeta, scanDurationMs, totalRulesRun, timestamp } = result;
+  const { host, ext } = splitUrl(pageMeta.url);
 
   return (
-    <>
+    <MotionConfig reducedMotion="user">
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <Header />
-      <main id="main-content" className="flex-1 px-6 py-10" role="main">
-        <div className="max-w-6xl mx-auto">
-
-          {/* ── Back + URL ── */}
-          <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
-            <Link href="/" className="flex items-center gap-1.5 text-xs font-semibold transition-all duration-200 hover:gap-2.5" style={{ color: "var(--text-link)" }}>
-              <ArrowLeft size={14} /> New Scan
-            </Link>
-            <div className="flex items-center gap-2.5 text-xs glass px-4 py-2 rounded-xl" style={{ color: "var(--text-tertiary)" }}>
-              <Globe size={13} aria-hidden="true" />
-              <span className="font-mono text-[11px]" style={{ color: "var(--text-secondary)" }}>{result.url}</span>
-              <span style={{ opacity: 0.3 }}>&middot;</span>
-              <Clock size={12} aria-hidden="true" />
-              <span>{result.scanDurationMs}ms</span>
-              <span style={{ opacity: 0.3 }}>&middot;</span>
-              <span>{result.totalRulesRun} rules</span>
-            </div>
-          </div>
-
-          {/* ── Score + Stats ── */}
-          <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-10">
-            {/* Score Gauge */}
-            <motion.div variants={fadeUp}
-              className="rounded-[var(--radius-2xl)] p-8 flex flex-col items-center justify-center glow-score gradient-border-card"
-              style={{ background: "var(--bg-raised)" }}>
-              <ScoreGauge score={score.overall} grade={score.grade} />
-              <p className="text-xs text-center mt-4 max-w-[220px] leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
-                {score.overall >= 90 ? "Excellent! Few issues found." : score.overall >= 70 ? "Good, but issues need attention." : score.overall >= 50 ? "Multiple issues found." : "Significant issues. Action needed."}
-              </p>
-            </motion.div>
-
-            <div className="lg:col-span-3 space-y-5">
-              {/* Stat Cards */}
-              <motion.div variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                <StatCard value={issues.length} label="Total Issues" Icon={AlertTriangle} color="var(--severity-critical)" />
-                <StatCard value={score.bySeverity.critical} label="Critical" Icon={XCircle} color="var(--severity-critical)" />
-                <StatCard value={score.bySeverity.major} label="Major" Icon={AlertTriangle} color="var(--severity-major)" />
-                <StatCard value={score.bySeverity.minor} label="Minor" Icon={AlertCircle} color="var(--severity-minor)" />
-                <StatCard value={result.passedRules} label="Passed" Icon={CheckCircle2} color="var(--pass)" />
-                <StatCard value={result.incompleteRules} label="Review" Icon={Eye} color="var(--incomplete)" />
-              </motion.div>
-
-              {/* Page Meta */}
-              <motion.div variants={fadeUp}
-                className="rounded-2xl p-5 gradient-border-card"
-                style={{ background: "var(--bg-raised)" }}>
-                <h3 className="text-xs font-bold mb-4 flex items-center gap-2" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-                  <FileWarning size={14} aria-hidden="true" /> Page Analysis
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4 text-center text-xs">
-                  {[
-                    { v: pageMeta.imageCount, l: "Images", c: "var(--text-primary)" },
-                    { v: pageMeta.imagesWithoutAlt, l: "Missing Alt", c: pageMeta.imagesWithoutAlt > 0 ? "var(--severity-critical)" : "var(--pass)" },
-                    { v: pageMeta.linkCount, l: "Links", c: "var(--text-primary)" },
-                    { v: pageMeta.headingCount, l: "Headings", c: "var(--text-primary)" },
-                  ].map((s) => (
-                    <div key={s.l} className="rounded-xl p-2.5" style={{ background: "var(--bg-overlay)" }}>
-                      <div className="text-lg font-bold" style={{ color: s.c, fontFamily: "var(--font-display)" }}>{s.v}</div>
-                      <div className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{s.l}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
-                  {[
-                    { l: "Title", ok: pageMeta.title !== "(no title)", Icon: FileWarning },
-                    { l: "Language", ok: pageMeta.lang !== "(not set)", Icon: Globe },
-                    { l: "Has <h1>", ok: pageMeta.hasH1, Icon: ListChecks },
-                    { l: "Skip link", ok: pageMeta.hasSkipLink, Icon: ArrowLeft },
-                    { l: "A11y statement", ok: pageMeta.hasAccessibilityStatement, Icon: Shield },
-                  ].map((c) => (
-                    <div key={c.l} className="flex items-center gap-2">
-                      {c.ok ? <CheckCircle2 size={13} style={{ color: "var(--pass)" }} aria-hidden="true" /> : <XCircle size={13} style={{ color: "var(--severity-critical)" }} aria-hidden="true" />}
-                      <span style={{ color: "var(--text-secondary)" }}>{c.l}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* ── POUR ── */}
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={vpOnce}
-            className="rounded-2xl p-6 mb-10 gradient-border-card"
-            style={{ background: "var(--bg-raised)" }}>
-            <h3 className="text-sm font-bold mb-5 flex items-center gap-2" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-              <PieChart size={15} aria-hidden="true" /> POUR Principles
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {(["perceivable", "operable", "understandable", "robust"] as const).map((p) => {
-                const data = score.byPrinciple[p];
-                const total = data.passed + data.failed;
-                const pct = total > 0 ? Math.round((data.passed / total) * 100) : 100;
-                const color = pct >= 90 ? "var(--pass)" : pct >= 70 ? "var(--severity-minor)" : "var(--severity-critical)";
-                return (
-                  <div key={p} className="text-center rounded-xl p-4 transition-all duration-300 hover:-translate-y-0.5"
-                    style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-default)" }}>
-                    <div className="text-3xl font-extrabold" style={{ color, fontFamily: "var(--font-display)" }}>{pct}%</div>
-                    <div className="text-xs capitalize font-semibold mt-1" style={{ color: "var(--text-secondary)" }}>{p}</div>
-                    <div className="text-[10px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>{data.failed} issue{data.failed !== 1 ? "s" : ""}</div>
-                    {/* Mini progress bar */}
-                    <div className="h-1 rounded-full mt-3 overflow-hidden" style={{ background: "var(--border-default)" }}>
-                      <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, background: color }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          {/* ── Tabs ── */}
-          <div role="tablist" aria-label="Results view" className="flex gap-1 p-1 rounded-xl mb-8 w-fit"
-            style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-default)" }}>
-            {([
-              { key: "issues" as const, label: `Issues (${issues.length})`, Icon: AlertTriangle },
-              { key: "compliance" as const, label: `Compliance (${compliance.length})`, Icon: Scale },
-              { key: "passed" as const, label: `Passed (${result.passedRules})`, Icon: CheckCircle2 },
-            ]).map((t) => (
-              <button key={t.key} role="tab" aria-selected={activeTab === t.key} onClick={() => setActiveTab(t.key)}
-                className="px-5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-300 flex items-center gap-1.5"
-                style={{
-                  background: activeTab === t.key ? "var(--bg-raised)" : "transparent",
-                  color: activeTab === t.key ? "var(--text-primary)" : "var(--text-tertiary)",
-                  boxShadow: activeTab === t.key ? "var(--shadow-sm)" : "none",
-                  fontFamily: "var(--font-display)",
-                }}>
-                <t.Icon size={13} aria-hidden="true" /> {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* ── Issues ── */}
-          {activeTab === "issues" && (
-            <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-3">
-              {issues.length > 0 ? issues.map((issue, i) => (
-                <IssueCard key={issue.id} issue={issue} index={i} effort={effortMap[issue.ruleId] ?? defaultEffort} />
-              )) : (
-                <div className="rounded-2xl p-12 text-center" style={{ background: "var(--bg-raised)", border: "1px solid var(--border-default)" }}>
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                    style={{ background: "var(--pass-bg)", border: "1px solid rgba(34,197,94,0.15)" }}>
-                    <CheckCircle2 size={32} style={{ color: "var(--pass)" }} aria-hidden="true" />
-                  </div>
-                  <p className="font-bold text-lg" style={{ color: "var(--pass)", fontFamily: "var(--font-display)" }}>No issues found</p>
-                  <p className="text-xs mt-2" style={{ color: "var(--text-tertiary)" }}>Automated tools detect ~30-40% of issues. Manual testing recommended.</p>
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* ── Compliance ── */}
-          {activeTab === "compliance" && (
-            <motion.div variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {compliance.map((cr) => {
-                const pct = cr.percentage;
-                const color = pct >= 90 ? "var(--pass)" : pct >= 70 ? "var(--severity-minor)" : pct >= 50 ? "var(--severity-major)" : "var(--severity-critical)";
-                return (
-                  <motion.div key={cr.framework.id} variants={fadeUp}
-                    className="rounded-2xl p-5 gradient-border-card transition-all duration-300 hover:-translate-y-0.5"
-                    style={{ background: "var(--bg-raised)" }}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `color-mix(in srgb, ${color} 10%, transparent)`, color }}>
-                          <Scale size={14} aria-hidden="true" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>{cr.framework.shortName}</h4>
-                          <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{cr.framework.region}</p>
-                        </div>
-                      </div>
-                      <span className="text-xl font-extrabold" style={{ color, fontFamily: "var(--font-display)" }}>{pct}%</span>
-                    </div>
-                    <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: "var(--border-default)" }}>
-                      <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, background: color }} />
-                    </div>
-                    <div className="text-[10px] flex justify-between" style={{ color: "var(--text-tertiary)" }}>
-                      <span className="flex items-center gap-1"><ShieldAlert size={9} aria-hidden="true" /> {cr.failedCount} failing</span>
-                      <span>{cr.framework.penalties.slice(0, 35)}</span>
-                    </div>
-                    {cr.framework.deadlineAlert && (
-                      <div className="mt-3 text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"
-                        style={{ background: "var(--severity-critical-bg)", color: "var(--severity-critical)", border: "1px solid rgba(244,63,94,0.15)" }}>
-                        <Clock size={10} aria-hidden="true" /> {cr.framework.deadlineAlert}
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          )}
-
-          {/* ── Passed ── */}
-          {activeTab === "passed" && (
-            <div className="rounded-2xl p-8 gradient-border-card" style={{ background: "var(--bg-raised)" }}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "var(--pass-bg)", color: "var(--pass)" }}>
-                  <CheckCircle2 size={20} aria-hidden="true" />
-                </div>
-                <span className="text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>{result.passedRules} rules passed</span>
+      <main id="main-content" role="main" className="dash" style={{ flex: 1 }}>
+        {/* ─── Top header strip ─── */}
+        <div className="dash-top">
+          <div className="dash-head">
+            <div>
+              <div className="dash-target">{formatScanTimestamp(timestamp)}</div>
+              <div className="dash-url mono">
+                {host}
+                <span className="ext">{ext}</span>
               </div>
-              <p className="text-xs leading-relaxed" style={{ color: "var(--text-tertiary)" }}>{result.inapplicableRules} rules were not applicable to this page.</p>
+              <div className="dash-meta">
+                <span>Scan time <b>{(scanDurationMs / 1000).toFixed(2)}s</b></span>
+                <span>Rules run <b>{totalRulesRun}</b></span>
+                <span>Passed <b>{result.passedRules}</b></span>
+                <span>
+                  Issues found{" "}
+                  <b style={{ color: issues.length > 0 ? "var(--severity-critical)" : "var(--pass)" }}>
+                    {issues.length}
+                  </b>
+                </span>
+              </div>
             </div>
-          )}
-
-          {/* ── Disclaimer ── */}
-          <div className="mt-12 rounded-xl p-5 text-[11px] leading-relaxed flex items-start gap-3 glass"
-            style={{ color: "var(--text-tertiary)" }}>
-            <Info size={15} className="flex-shrink-0 mt-0.5" aria-hidden="true" />
-            <p><b style={{ color: "var(--text-secondary)" }}>Disclaimer:</b> Automated testing detects approximately 30-40% of accessibility issues. This scan does not constitute a legal compliance assessment. For full conformance, manual testing by qualified experts is strongly recommended.</p>
+            <div className="dash-actions">
+              <Link href="/" className="btn">
+                <RefreshCw size={13} /> Re-scan
+              </Link>
+              <button type="button" className="btn" onClick={() => window.print()}>
+                <Download size={13} /> Export PDF
+              </button>
+              <button type="button" className="btn" onClick={() => setModal("report")}>
+                <Download size={13} /> Download report
+              </button>
+              <button type="button" className="btn" onClick={() => setModal("action")}>
+                <Code2 size={13} /> CI / CLI
+              </button>
+              {aiAvailable && (
+                <button type="button" className="btn primary" onClick={generateAllFixes} disabled={bulkFixing}>
+                  <Sparkles size={13} /> {bulkFixing ? "Generating fixes…" : "Generate AI fixes"}
+                </button>
+              )}
+            </div>
           </div>
+
+          <motion.p
+            className="dash-verdict"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE, delay: 0.1 }}
+          >
+            {breakingLaws > 0 ? (
+              <>
+                Likely exposed under <span className="hot">{breakingLaws} of 16 laws</span>
+                {counts.critical > 0 && <> · {counts.critical} critical issue{counts.critical === 1 ? "" : "s"}</>}
+                {" "}· automated coverage score {score.overall}/100.
+              </>
+            ) : (
+              <>
+                <span className="ok">Low legal exposure</span> — no framework scored below 75%. Coverage score {score.overall}/100.
+              </>
+            )}
+          </motion.p>
+
+          <motion.div
+            className="score-strip"
+            variants={stagger}
+            initial="hidden"
+            animate="visible"
+            transition={{ delayChildren: 0.15, staggerChildren: 0.12 }}
+          >
+            <motion.div variants={fadeUp}>
+              <Gauge value={score.overall} grade={score.grade} />
+            </motion.div>
+            <motion.div variants={fadeUp}>
+              <Pour score={score} />
+            </motion.div>
+            <motion.div variants={fadeUp}>
+              <Risk breakingLaws={breakingLaws} worst={worstFrameworks} pct={score.overall} />
+            </motion.div>
+          </motion.div>
+        </div>
+
+        {/* ─── Site crawl banner ─── */}
+        {site && <SiteBanner site={site} />}
+
+        {/* ─── Deadline alert ─── */}
+        {deadlineAlert && (
+          <motion.div
+            className="deadline-bar"
+            role="alert"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: EASE, delay: 0.35 }}
+          >
+            <span className="pill">
+              <AlertTriangle size={12} /> Deadline
+            </span>
+            <span className="msg">
+              <b>
+                {deadlineAlert.fw.name} — {new Date(deadlineAlert.fw.enforcementDate!).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}{" "}
+                · {deadlineAlert.days > 0 ? `${deadlineAlert.days} days away` : `${Math.abs(deadlineAlert.days)} days past`}.
+              </b>{" "}
+              Your current compliance: {deadlineAlert.pct}%.
+            </span>
+            <span style={{ marginLeft: "auto" }}>
+              <a href="#issues" style={{ color: "var(--accent-text)", fontFamily: "var(--font-outfit), system-ui, sans-serif", fontSize: 11 }}>
+                Remediation plan →
+              </a>
+            </span>
+          </motion.div>
+        )}
+
+        {/* ─── Compliance grid (worst-first; collapsed to 8 by default) ─── */}
+        <section className="dash-section" aria-label="Compliance by framework">
+          <div className="dash-section-head">
+            <h3 className="font-display">Coverage by framework</h3>
+            <span className="hint">{showAllFw ? "16 jurisdictions" : "worst-exposed first"} · automated-coverage indicator vs each law&rsquo;s WCAG version — not a conformance verdict</span>
+          </div>
+          <motion.div
+            key={showAllFw ? "all" : "top"}
+            className="compliance-grid"
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.03 } } }}
+            initial="hidden"
+            animate={compliance.length > 0 ? "visible" : "hidden"}
+          >
+            {FRAMEWORKS
+              .map((fw) => ({ fw, cr: compliance.find((c) => c.framework.id === fw.id) }))
+              .filter((x) => x.cr)
+              .sort((a, b) => a.cr!.percentage - b.cr!.percentage)
+              .slice(0, showAllFw ? 16 : 8)
+              .map(({ fw, cr }, displayIdx) => (
+                // idx is the display rank (worst-first), so the "NN/16" label and
+                // stagger delay stay sequential after sorting.
+                <ComplianceCard key={fw.id} fw={fw} cr={cr!} idx={displayIdx} onOpen={() => setDetailFw(fw)} />
+              ))}
+          </motion.div>
+          {compliance.length > 8 && (
+            <button type="button" className="btn" style={{ marginTop: 14 }} onClick={() => setShowAllFw((s) => !s)}>
+              {showAllFw ? "Show fewer" : `Show all 16 frameworks (${compliance.length - 8} more)`}
+            </button>
+          )}
+        </section>
+
+        {/* ─── Conformance by success criterion (audit-grade) ─── */}
+        <ConformanceByCriterion
+          issues={result.issues}
+          passedRuleTags={result.passedRuleTags}
+          defaultFrameworkId={worstFrameworks[0]?.framework.id ?? "ada-title-iii"}
+          scopeLabel={site ? `${site.stats.scanned} page${site.stats.scanned === 1 ? "" : "s"} of ${site.origin} (sampled)` : "this page"}
+        />
+
+        {/* ─── Pages crawled (site scan only) ─── */}
+        {site && (
+          <CrawledPages
+            site={site}
+            activeIndex={pageFilter}
+            onSelectPage={(idx) => {
+              setPageFilter(idx);
+              setFilter("all");
+              document.getElementById("issues")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          />
+        )}
+
+        {/* ─── Jurisdiction spotlight — EAA + Unruh ─── */}
+        <JurisdictionSpotlight result={result} compliance={compliance} onLegalReport={() => setModal("legal")} />
+
+        {/* ─── Issues ─── */}
+        <section className="dash-section" id="issues" aria-label="Issue list">
+          <div className="dash-section-head">
+            <h3 className="font-display">Issues</h3>
+            <span className="hint">
+              {filteredRaw.length} shown · {grouped.length} unique rules · grouped &amp; sorted by severity
+            </span>
+          </div>
+          <div className="issues-table">
+            {/* Search + framework + page filters */}
+            <div
+              style={{
+                display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap",
+                padding: "12px 14px", borderBottom: "1px solid var(--border-default)",
+              }}
+            >
+              <div style={{ position: "relative", flex: "1 1 220px", minWidth: 180 }}>
+                <Search size={13} aria-hidden="true" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)" }} />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search rule, description, selector…"
+                  aria-label="Search issues"
+                  style={{
+                    width: "100%", background: "var(--bg-input)", border: "1px solid var(--border-strong)",
+                    borderRadius: 6, padding: "6px 10px 6px 30px", color: "var(--text-primary)", fontSize: 13,
+                  }}
+                />
+              </div>
+              <label htmlFor="fw-filter" className="sr-only">Filter by framework</label>
+              <select
+                id="fw-filter"
+                value={frameworkFilter}
+                onChange={(e) => setFrameworkFilter(e.target.value)}
+                className="mono"
+                style={{ background: "var(--bg-input)", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "6px 8px", color: "var(--text-primary)", fontSize: 12 }}
+              >
+                <option value="all">All frameworks</option>
+                {FRAMEWORKS.map((fw) => (
+                  <option key={fw.id} value={fw.id}>{fw.shortName}</option>
+                ))}
+              </select>
+              <button type="button" className="btn" onClick={toggleAll} disabled={visibleIssues.length === 0}>
+                {allVisibleOpen ? "Collapse all" : "Expand all"}
+              </button>
+              <button type="button" className="btn" onClick={copyVisible} disabled={visibleIssues.length === 0}>
+                {copiedAll ? <Check size={13} /> : <Copy size={13} />} {copiedAll ? "Copied" : "Copy all"}
+              </button>
+              {aiAvailable && (
+                <button type="button" className="btn" onClick={generateAllFixes} disabled={bulkFixing || visibleIssues.length === 0}>
+                  <Sparkles size={13} /> {bulkFixing ? "Generating…" : "AI-fix visible"}
+                </button>
+              )}
+            </div>
+
+            {/* Active page drill-down chip */}
+            {activePage && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderBottom: "1px solid var(--border-default)", fontSize: 12, color: "var(--text-secondary)" }}>
+                <span>Showing issues for page:</span>
+                <span className="mono" style={{ color: "var(--text-primary)" }}>{pathOf(activePage.url)}</span>
+                <button type="button" className="btn-ghost" onClick={() => setPageFilter(null)} style={{ padding: "3px 8px" }}>
+                  <X size={11} /> Clear
+                </button>
+              </div>
+            )}
+
+            <div className="issues-filter" role="toolbar" aria-label="Filter issues by severity">
+              <span className="label">Filter</span>
+              <FilterChip active={filter === "all"} label="All" count={counts.total} onClick={() => setFilter("all")} />
+              <FilterChip
+                active={filter === "critical"}
+                label="Critical"
+                count={counts.critical}
+                onClick={() => setFilter("critical")}
+                sev="critical"
+              />
+              <FilterChip
+                active={filter === "major"}
+                label="Major"
+                count={counts.major}
+                onClick={() => setFilter("major")}
+                sev="major"
+              />
+              <FilterChip
+                active={filter === "minor"}
+                label="Minor"
+                count={counts.minor}
+                onClick={() => setFilter("minor")}
+                sev="minor"
+              />
+              <FilterChip
+                active={filter === "best-practice"}
+                label="Best practice"
+                count={counts["best-practice"]}
+                onClick={() => setFilter("best-practice")}
+                sev="best-practice"
+              />
+              {counts.needsReview > 0 && (
+                <FilterChip
+                  active={filter === "needs-review"}
+                  label="Needs review"
+                  count={counts.needsReview}
+                  onClick={() => setFilter("needs-review")}
+                />
+              )}
+              <span
+                style={{
+                  marginLeft: "auto",
+                  fontFamily: "var(--font-outfit), system-ui, sans-serif",
+                  fontSize: 11,
+                  color: "var(--text-tertiary)",
+                  letterSpacing: "0.06em",
+                }}
+              >
+                Sorted by · legal exposure
+              </span>
+            </div>
+
+            {visibleIssues.length === 0 ? (
+              <div style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)" }}>
+                {search || frameworkFilter !== "all" || pageFilter !== null
+                  ? "No issues match these filters. Try clearing search or the framework filter."
+                  : "No issues at this severity. Manual testing still recommended — automated scans catch ~30–40%."}
+              </div>
+            ) : (
+              <motion.div
+                key={`${filter}-${frameworkFilter}-${pageFilter}-${search}`}
+                variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.03 } } }}
+                initial="hidden"
+                animate="visible"
+              >
+                {visibleIssues.map(({ issue, count }) => {
+                  const effort = effortMap[issue.ruleId] ?? {
+                    chipClass: "medium" as const,
+                    label: "Medium",
+                    estimate: "15–60 min",
+                  };
+                  const fixHtml = fixCache[issue.id] ?? null;
+                  return (
+                    <IssueRow
+                      key={issue.id}
+                      issue={issue}
+                      effort={effort}
+                      count={count}
+                      fixHtml={fixHtml}
+                      showCode={issue.element.html.length > 0}
+                      expanded={openRules.has(issue.ruleId)}
+                      onToggle={() => toggleRule(issue.ruleId)}
+                      loadingFix={!!fixLoading[issue.id]}
+                    />
+                  );
+                })}
+              </motion.div>
+            )}
+          </div>
+        </section>
+
+        {/* ─── Ship banner ─── */}
+        <section className="dash-section" style={{ paddingBottom: 80 }}>
+          <div
+            style={{
+              border: "1px solid var(--border-default)",
+              background: "var(--bg-raised)",
+              borderRadius: 6,
+              padding: 24,
+              display: "grid",
+              gridTemplateColumns: "1fr auto",
+              gap: 24,
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <h3 className="font-display" style={{ fontSize: 20, marginBottom: 6 }}>
+                Ship this report to your team
+              </h3>
+              <p style={{ color: "var(--text-secondary)", fontSize: 14, maxWidth: "64ch", lineHeight: 1.55 }}>
+                Drop the GitHub Action into <span className="mono" style={{ color: "var(--text-primary)" }}>.github/workflows/</span> so regressions fail CI, or
+                download a PR-ready markdown report to paste into an issue or ticket. Your scan data stays in your
+                browser session.
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button type="button" className="btn" onClick={() => setModal("action")}>
+                <ExternalLink size={13} /> GitHub Action
+              </button>
+              <button type="button" className="btn" onClick={() => setModal("legal")}>
+                <Download size={13} /> Legal report
+              </button>
+              <button type="button" className="btn primary" onClick={() => setModal("report")}>
+                <Download size={13} /> Download report
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <div
+          style={{
+            width: "100%",
+            borderTop: "1px solid var(--border-default)",
+            padding: "16px 32px 40px",
+            color: "var(--text-tertiary)",
+            fontSize: 12,
+          }}
+        >
+          <p style={{ lineHeight: 1.6, marginBottom: 8 }}>
+            <b className="mono" style={{ color: "var(--text-secondary)", letterSpacing: "0.08em", textTransform: "uppercase", fontSize: 10 }}>
+              Disclaimer —
+            </b>{" "}
+            Automated testing detects ~30–40% of WCAG issues. This is not a legal compliance assessment, and a
+            passing score is not a determination that your site complies with any law. For a full audit, pair us
+            with a manual expert review.
+          </p>
+          <p style={{ lineHeight: 1.6, marginBottom: 8 }}>
+            WCAG conformance is determined pass/fail per success criterion, and W3C does not define a single-number
+            conformance metric. The per-framework percentages here are <b>automated-coverage indicators</b> against
+            each law&rsquo;s cited WCAG version (e.g. Section&nbsp;508 = WCAG&nbsp;2.0&nbsp;AA, EAA/EN&nbsp;301&nbsp;549 =
+            WCAG&nbsp;2.1&nbsp;AA) — not conformance verdicts. A single automated scan cannot establish conformance for
+            a page, let alone a whole site.
+          </p>
+          <p style={{ lineHeight: 1.6 }}>
+            Actual legal exposure depends on jurisdiction, entity type and size, applicable exemptions, timing, and
+            the facts of each case. Damage figures shown are historical settlements or statutory reference points, not
+            predictions — EAA penalties in particular are set by each EU member state. Nothing here is legal advice;
+            consult counsel before making decisions based on these results.
+          </p>
         </div>
       </main>
       <Footer />
-    </>
+
+      <GithubActionDialog
+        open={modal === "action"}
+        onClose={() => setModal(null)}
+        targetUrl={result.url}
+        currentScore={score.overall}
+      />
+      <DownloadReportDialog
+        open={modal === "report"}
+        onClose={() => setModal(null)}
+        result={result}
+        compliance={compliance}
+        aiFixes={fixCache}
+      />
+      <LegalReportDialog
+        open={modal === "legal"}
+        onClose={() => setModal(null)}
+        result={result}
+        compliance={compliance}
+      />
+      <ComplianceDetailModal
+        fw={detailFw}
+        cr={detailFw ? compliance.find((c) => c.framework.id === detailFw.id) ?? null : null}
+        onClose={() => setDetailFw(null)}
+        onFilterIssues={() => {
+          if (!detailFw) return;
+          setFrameworkFilter(detailFw.id);
+          setFilter("all");
+          setDetailFw(null);
+          document.getElementById("issues")?.scrollIntoView({ behavior: "smooth" });
+        }}
+      />
+    </MotionConfig>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Compliance detail modal — full framework context on card click
+   ────────────────────────────────────────────────────────────── */
+function ComplianceDetailModal({
+  fw,
+  cr,
+  onClose,
+  onFilterIssues,
+}: {
+  fw: FrameworkWithTags | null;
+  cr: ComplianceResult | null;
+  onClose: () => void;
+  onFilterIssues: () => void;
+}) {
+  useEffect(() => {
+    if (!fw) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [fw, onClose]);
+
+  return (
+    <AnimatePresence>
+      {fw && (
+        <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${fw.name} details`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: EASE }}
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+          style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.62)", backdropFilter: "blur(6px)", display: "grid", placeItems: "center", padding: 24 }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 14, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ duration: 0.3, ease: EASE }}
+            style={{ width: "min(560px, 100%)", maxHeight: "calc(100vh - 48px)", overflow: "auto", background: "var(--bg-raised)", border: "1px solid var(--border-strong)", borderRadius: 8, boxShadow: "0 40px 120px rgba(0,0,0,0.55)" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid var(--border-default)", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Flag code={flagForRegion(fw.region)} />
+                <div>
+                  <div className="font-display" style={{ fontSize: 17 }}>{fw.name}</div>
+                  <div className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{fw.region} · {fw.wcagBasis}</div>
+                </div>
+              </div>
+              <button type="button" className="modal-close" onClick={onClose} aria-label="Close dialog">
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+
+            <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 16 }}>
+              {cr && (
+                <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                  <span className="mono" style={{ fontSize: 34, fontWeight: 700, color: cr.percentage < 60 ? "var(--severity-critical)" : cr.percentage < 90 ? "var(--severity-minor)" : "var(--pass)" }}>
+                    {cr.percentage}%
+                  </span>
+                  <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                    automated coverage ({fw.wcagBasis}) · {cr.passedCount}/{cr.totalApplicable} applicable automated rules pass · {cr.failedCount} failing
+                  </span>
+                </div>
+              )}
+
+              <Field label="Who it applies to" value={fw.appliesTo === "both" ? "Public & private sector" : `${fw.appliesTo[0].toUpperCase()}${fw.appliesTo.slice(1)} sector`} />
+              <Field label="Penalties / enforcement" value={fw.penalties} />
+              {fw.enforcementDate && (
+                <Field
+                  label="Enforcement date"
+                  value={`${new Date(fw.enforcementDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}${fw.deadlineAlert ? ` — ${fw.deadlineAlert}` : ""}`}
+                />
+              )}
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", paddingTop: 4 }}>
+                <button type="button" className="btn primary" onClick={onFilterIssues}>
+                  Show issues affecting this law →
+                </button>
+                <a href={fw.url} target="_blank" rel="noopener noreferrer" className="btn">
+                  <ExternalLink size={13} /> Read the law
+                </a>
+              </div>
+
+              <p style={{ fontSize: 11, color: "var(--text-tertiary)", lineHeight: 1.5, margin: 0 }}>
+                WCAG conformance is pass/fail per success criterion — this percentage is an automated-coverage
+                indicator for {fw.wcagBasis} (the version {fw.shortName} legally cites), not a conformance
+                determination. Automated testing covers only ~30–40% of criteria; full conformance requires manual
+                review. Penalty figures are historical or statutory reference points. Not legal advice.
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="mono" style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-tertiary)", marginBottom: 4 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>{value}</div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Pour + Risk sub-components
+   ────────────────────────────────────────────────────────────── */
+function Pour({ score }: { score: ScanResult["score"] }) {
+  const rows: Array<{ key: "P" | "O" | "U" | "R"; name: string; principle: "perceivable" | "operable" | "understandable" | "robust" }> = [
+    { key: "P", name: "Perceivable", principle: "perceivable" },
+    { key: "O", name: "Operable", principle: "operable" },
+    { key: "U", name: "Understandable", principle: "understandable" },
+    { key: "R", name: "Robust", principle: "robust" },
+  ];
+
+  return (
+    <div className="pour-grid" aria-label="POUR breakdown">
+      {rows.map((r) => {
+        const data = score.byPrinciple[r.principle];
+        const total = data.passed + data.failed;
+        const pct = total > 0 ? Math.round((data.passed / total) * 100) : 100;
+        const tone = pct >= 90 ? "ok" : pct >= 70 ? "warn" : "bad";
+        return (
+          <div key={r.key} className="pour-row">
+            <div className="pour-name">
+              <span>
+                {r.key} · <b>{r.name}</b>
+              </span>
+              <span className="mono">{pct}</span>
+            </div>
+            <div
+              className="pour-bar"
+              role="progressbar"
+              aria-valuenow={pct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${r.name} score ${pct} of 100`}
+            >
+              <div className={`pour-fill ${tone}`} style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Risk({
+  breakingLaws,
+  worst,
+  pct,
+}: {
+  breakingLaws: number;
+  worst: ComplianceResult[];
+  pct: number;
+}) {
+  if (breakingLaws === 0) {
+    return (
+      <div className="risk-col">
+        <div className="risk-lead">
+          You&rsquo;re at <span className="hot" style={{ color: "var(--pass)" }}>low risk</span>. No framework scored below 75% compliance.
+        </div>
+        <p className="risk-sub">
+          Continue to monitor — regressions happen in deploys, not audits. Wire A11y Beast into CI to catch them
+          before they ship.
+        </p>
+      </div>
+    );
+  }
+
+  // Rough exposure range — heuristic only
+  const lo = breakingLaws * 5_000;
+  const hi = breakingLaws * Math.max(Math.round((100 - pct) * 1_500), 15_000);
+  const fmt = (n: number) =>
+    n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `$${Math.round(n / 1_000)}K` : `$${n}`;
+
+  const extra = Math.max(0, worst.length - 6);
+
+  return (
+    <div className="risk-col">
+      <div className="risk-lead">
+        You&rsquo;re likely breaking <span className="hot">{breakingLaws} law{breakingLaws === 1 ? "" : "s"}</span>
+        {" "}and exposed to <span className="hot">{fmt(lo)}–{fmt(hi)}</span> in potential damages.
+      </div>
+      <p className="risk-sub">
+        Based on your violations, jurisdictional exposure, and per-framework severity multipliers. Figures are
+        directional, not legal advice — use them to prioritise fixes, not to set reserves.
+      </p>
+      <div className="risk-tags">
+        {worst.slice(0, 6).map((c) => (
+          <span key={c.framework.id} className="risk-tag">
+            {c.framework.shortName}
+          </span>
+        ))}
+        {extra > 0 && <span className="risk-tag">+{extra} more</span>}
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Site crawl banner — summary + transparency about coverage
+   ────────────────────────────────────────────────────────────── */
+function SiteBanner({ site }: { site: SiteScanResult }) {
+  const { stats } = site;
+  const notes: string[] = [];
+  if (stats.cappedByPageLimit) notes.push(`stopped at the ${stats.maxPages}-page limit — more pages exist`);
+  if (stats.cappedByTimeBudget) notes.push("stopped at the time budget — more pages exist");
+  if (stats.robotsSkipped > 0) notes.push(`${stats.robotsSkipped} skipped per robots.txt`);
+  if (stats.failed.length > 0) notes.push(`${stats.failed.length} failed to load`);
+
+  return (
+    <motion.div
+      className="deadline-bar"
+      role="status"
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: EASE, delay: 0.3 }}
+      style={{ background: "var(--bg-raised)" }}
+    >
+      <span className="pill">Site scan</span>
+      <span className="msg">
+        <b>{stats.scanned} page{stats.scanned === 1 ? "" : "s"} scanned</b> across {site.origin} ·
+        scores below are a site-wide rollup.
+        {notes.length > 0 && <span style={{ color: "var(--text-tertiary)" }}> {notes.join(" · ")}.</span>}
+      </span>
+    </motion.div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Pages crawled — per-page scores, worst first
+   ────────────────────────────────────────────────────────────── */
+function pathOf(url: string): string {
+  try {
+    const u = new URL(url);
+    return (u.pathname === "/" ? "/" : u.pathname) + (u.search || "");
+  } catch {
+    return url;
+  }
+}
+
+function CrawledPages({
+  site,
+  activeIndex,
+  onSelectPage,
+}: {
+  site: SiteScanResult;
+  activeIndex: number | null;
+  onSelectPage: (pageIndex: number) => void;
+}) {
+  const scoreTone = (n: number) => (n >= 90 ? "var(--pass)" : n >= 60 ? "var(--severity-minor)" : "var(--severity-critical)");
+  return (
+    <section className="dash-section" aria-label="Pages crawled">
+      <div className="dash-section-head">
+        <h3 className="font-display">Pages crawled</h3>
+        <span className="hint">{site.pages.length} pages · worst score first · click to filter issues</span>
+      </div>
+      <div style={{ border: "1px solid var(--border-default)", borderRadius: 6, overflow: "hidden" }}>
+        {site.pages.map((p, i) => {
+          const active = activeIndex === p.pageIndex;
+          return (
+            <button
+              key={p.url + i}
+              type="button"
+              onClick={() => onSelectPage(p.pageIndex)}
+              aria-pressed={active}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                display: "grid",
+                gridTemplateColumns: "auto 1fr auto auto auto",
+                gap: 16,
+                alignItems: "center",
+                padding: "12px 16px",
+                borderTop: i === 0 ? "none" : "1px solid var(--border-default)",
+                background: active ? "var(--bg-overlay)" : "transparent",
+                border: "none",
+                borderLeft: active ? "3px solid var(--accent)" : "3px solid transparent",
+                cursor: "pointer",
+                color: "inherit",
+              }}
+            >
+              <span className="mono" style={{ fontSize: 18, fontWeight: 700, color: scoreTone(p.score), minWidth: 36 }}>
+                {p.score}
+              </span>
+              <span className="mono" style={{ fontSize: 13, color: "var(--text-primary)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                {pathOf(p.url)}
+              </span>
+              <span className="mono" style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+                grade {p.grade}
+              </span>
+              <span className="mono" style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                {p.criticalCount > 0 && (
+                  <span style={{ color: "var(--severity-critical)" }}>{p.criticalCount} critical · </span>
+                )}
+                {p.issueCount} issue{p.issueCount === 1 ? "" : "s"}
+              </span>
+              <a
+                href={p.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Open ${p.url} in a new tab`}
+                style={{ color: "var(--text-tertiary)", display: "inline-flex" }}
+              >
+                <ExternalLink size={13} />
+              </a>
+            </button>
+          );
+        })}
+      </div>
+      {site.stats.failed.length > 0 && (
+        <p style={{ marginTop: 10, fontSize: 12, color: "var(--text-tertiary)" }}>
+          Failed to scan: {site.stats.failed.map((f) => pathOf(f.url)).join(", ")}
+        </p>
+      )}
+    </section>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Conformance by success criterion — the audit-grade view.
+   WCAG conformance is pass/fail per criterion; criteria automation
+   can't evaluate are shown "not tested", never silently passed.
+   ────────────────────────────────────────────────────────────── */
+const CRIT_STATUS_META: Record<CriterionStatus, { label: string; color: string; order: number }> = {
+  fail: { label: "Failed", color: "var(--severity-critical)", order: 0 },
+  "needs-review": { label: "Needs review", color: "var(--sev-review)", order: 1 },
+  "not-tested": { label: "Not tested", color: "var(--text-tertiary)", order: 2 },
+  pass: { label: "Passed", color: "var(--pass)", order: 3 },
+};
+
+function ConformanceByCriterion({
+  issues,
+  passedRuleTags,
+  defaultFrameworkId,
+  scopeLabel,
+}: {
+  issues: AccessibilityIssue[];
+  passedRuleTags?: string[][];
+  defaultFrameworkId: string;
+  scopeLabel: string;
+}) {
+  const [fwId, setFwId] = useState<string>(defaultFrameworkId);
+  const [showAll, setShowAll] = useState(false);
+  const fw = FRAMEWORKS.find((f) => f.id === fwId) ?? FRAMEWORKS[0];
+  const conf = useMemo(
+    () => computeConformance(fw, issues, passedRuleTags),
+    [fw, issues, passedRuleTags]
+  );
+
+  const sorted = useMemo(
+    () =>
+      [...conf.criteria].sort((a, b) => {
+        const o = CRIT_STATUS_META[a.status].order - CRIT_STATUS_META[b.status].order;
+        return o !== 0 ? o : a.number.localeCompare(b.number, undefined, { numeric: true });
+      }),
+    [conf]
+  );
+  // Always surface actionable items; hide pass/not-tested behind a toggle.
+  const visible = showAll ? sorted : sorted.filter((c) => c.status === "fail" || c.status === "needs-review");
+  const hiddenCount = sorted.length - sorted.filter((c) => c.status === "fail" || c.status === "needs-review").length;
+
+  const Stat = ({ n, label, color }: { n: number; label: string; color: string }) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <span className="mono" style={{ fontSize: 22, fontWeight: 700, color }}>{n}</span>
+      <span className="mono" style={{ fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>{label}</span>
+    </div>
+  );
+
+  return (
+    <section className="dash-section" aria-label="Conformance by success criterion">
+      <div className="dash-section-head">
+        <h3 className="font-display">Conformance by success criterion</h3>
+        <span className="hint">pass / fail per WCAG criterion — the audit-grade view</span>
+      </div>
+
+      <div style={{ border: "1px solid var(--border-default)", borderRadius: 6, padding: 18, background: "var(--bg-raised)" }}>
+        {/* Declared target + scope (WCAG-EM) */}
+        <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
+          <label htmlFor="conf-fw" className="mono" style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
+            Framework
+          </label>
+          <select
+            id="conf-fw"
+            value={fwId}
+            onChange={(e) => setFwId(e.target.value)}
+            className="mono"
+            style={{ background: "var(--bg-input)", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "5px 8px", color: "var(--text-primary)", fontSize: 12 }}
+          >
+            {FRAMEWORKS.map((f) => (
+              <option key={f.id} value={f.id}>{f.shortName} · {f.region}</option>
+            ))}
+          </select>
+          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            Target: <b style={{ color: "var(--text-primary)" }}>{conf.target}</b> · Evaluated: {scopeLabel}
+          </span>
+        </div>
+
+        {/* Summary tally */}
+        <div style={{ display: "flex", gap: 28, flexWrap: "wrap", padding: "14px 0", borderTop: "1px solid var(--border-default)", borderBottom: "1px solid var(--border-default)", marginBottom: 14 }}>
+          <Stat n={conf.fail} label="Failed" color="var(--severity-critical)" />
+          <Stat n={conf.needsReview} label="Needs review" color="var(--sev-review)" />
+          <Stat n={conf.notTested} label="Not tested" color="var(--text-tertiary)" />
+          <Stat n={conf.pass} label="Passed (auto)" color="var(--pass)" />
+          <Stat n={conf.total} label={`Applicable SC (${conf.target.includes("2.1") ? "2.1" : "2.0"} AA)`} color="var(--text-secondary)" />
+        </div>
+
+        {/* Criterion list */}
+        <div role="list">
+          {visible.map((c) => {
+            const meta = CRIT_STATUS_META[c.status];
+            return (
+              <div
+                key={c.number}
+                role="listitem"
+                style={{ display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: 12, alignItems: "center", padding: "9px 0", borderTop: "1px solid var(--border-default)" }}
+              >
+                <span className="mono" style={{ fontSize: 12, color: "var(--text-tertiary)", minWidth: 48 }}>{c.number}</span>
+                <span style={{ fontSize: 13, color: "var(--text-primary)" }}>
+                  {c.name}
+                  {c.failCount > 0 && <span className="mono" style={{ marginLeft: 8, fontSize: 11, color: "var(--text-tertiary)" }}>· {c.failCount} occurrence{c.failCount === 1 ? "" : "s"}</span>}
+                </span>
+                <span className="mono" style={{ fontSize: 10, color: "var(--text-tertiary)" }}>Lvl {c.level}</span>
+                <span className="mono" style={{ fontSize: 11, fontWeight: 600, color: meta.color, minWidth: 92, textAlign: "right" }}>{meta.label}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {hiddenCount > 0 && (
+          <button type="button" className="btn" style={{ marginTop: 14 }} onClick={() => setShowAll((s) => !s)}>
+            {showAll ? "Hide passed & not-tested" : `Show all criteria (${hiddenCount} passed / not-tested)`}
+          </button>
+        )}
+
+        <p style={{ fontSize: 11, color: "var(--text-tertiary)", lineHeight: 1.5, marginTop: 14, marginBottom: 0 }}>
+          &ldquo;Not tested&rdquo; means automation can&rsquo;t evaluate that criterion — it requires manual review, not that it passes.
+          Automated testing covers only ~30–40% of WCAG criteria. This is an automated evaluation against {conf.target}, not a
+          full conformance audit, and conformance can&rsquo;t be claimed for an entire site from sampled pages (W3C WCAG-EM).
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Jurisdiction spotlight — EAA statement check + Unruh per-visit
+   exposure. The two regimes driving current enforcement volume.
+   ────────────────────────────────────────────────────────────── */
+function JurisdictionSpotlight({
+  result,
+  compliance,
+  onLegalReport,
+}: {
+  result: ScanResult;
+  compliance: ComplianceResult[];
+  onLegalReport: () => void;
+}) {
+  const unruh = compliance.find((c) => c.framework.id === "california-unruh");
+  const eaa = compliance.find((c) => c.framework.id === "eaa");
+  const unruhOccurrences = useMemo(
+    () => result.issues.filter((i) => i.applicableFrameworks.includes("california-unruh")).length,
+    [result]
+  );
+
+  if (!unruh && !eaa) return null;
+
+  const hasStatement = result.pageMeta.hasAccessibilityStatement;
+  const perVisit = unruhOccurrences * 4_000;
+  const fmt = (n: number) =>
+    n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : `$${n.toLocaleString("en-US")}`;
+
+  const cardStyle: React.CSSProperties = {
+    border: "1px solid var(--border-default)",
+    background: "var(--bg-raised)",
+    borderRadius: 6,
+    padding: 20,
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  };
+  const headStyle: React.CSSProperties = {
+    fontSize: 11,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    color: "var(--text-tertiary)",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  };
+  const bodyStyle: React.CSSProperties = { color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.55 };
+
+  return (
+    <section className="dash-section" aria-label="Jurisdiction spotlight">
+      <div className="dash-section-head">
+        <h3 className="font-display">Jurisdiction spotlight</h3>
+        <span className="hint">The two regimes driving enforcement right now</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14 }}>
+        {eaa && (
+          <div style={cardStyle}>
+            <div className="mono" style={headStyle}>
+              <Flag code={flagForRegion(eaa.framework.region)} /> European Accessibility Act · {eaa.percentage}%
+            </div>
+            <div style={{ fontSize: 15, color: "var(--text-primary)", fontWeight: 600 }}>
+              {hasStatement
+                ? "Accessibility statement detected"
+                : "No accessibility statement detected — the EAA requires one"}
+            </div>
+            <p style={bodyStyle}>
+              Enforceable across 27 member states since June 28, 2025. Penalties are member-state dependent — up to
+              4% of revenue in some states.{" "}
+              {!hasStatement && "The missing statement alone deducts 8% from your EAA score; publishing one is usually the fastest single fix."}
+            </p>
+          </div>
+        )}
+        {unruh && (
+          <div style={cardStyle}>
+            <div className="mono" style={headStyle}>
+              <Flag code={flagForRegion(unruh.framework.region)} /> California Unruh Act · {unruh.percentage}%
+            </div>
+            <div style={{ fontSize: 15, color: "var(--text-primary)", fontWeight: 600 }}>
+              {unruhOccurrences > 0
+                ? `${fmt(perVisit)} statutory minimum exposure per affected visit`
+                : "No violations currently map to Unruh"}
+            </div>
+            <p style={bodyStyle}>
+              {unruhOccurrences > 0 && (
+                <>
+                  {unruhOccurrences} violation {unruhOccurrences === 1 ? "occurrence" : "occurrences"} × $4,000
+                  statutory minimum, if each barrier is counted separately — and each visit by an affected user can
+                  be a separate claim.{" "}
+                </>
+              )}
+              Plaintiffs are increasingly filing in California state court, so federal lawsuit counts understate
+              this exposure. Courts vary in how violations are counted — treat figures as reference points, not
+              predictions.
+            </p>
+          </div>
+        )}
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <button type="button" className="btn" onClick={onLegalReport}>
+          <Download size={13} /> Generate per-jurisdiction legal report
+        </button>
+      </div>
+    </section>
   );
 }

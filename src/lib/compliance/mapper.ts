@@ -42,12 +42,29 @@ interface RuleInfo {
 export function generateComplianceResults(
   issues: AccessibilityIssue[],
   passedRuleCount: number,
-  pageMeta?: { hasAccessibilityStatement?: boolean; hasSkipLink?: boolean; lang?: string }
+  pageMeta?: { hasAccessibilityStatement?: boolean; hasSkipLink?: boolean; lang?: string },
+  passedRuleTags?: string[][]
 ): ComplianceResult[] {
+  // Legal conformance counts CONFIRMED failures only. "Needs review" items
+  // (axe incomplete) are unconfirmed — we don't fail a law on something the
+  // engine couldn't determine. They surface separately in the UI.
+  const confirmed = issues.filter((i) => !i.needsManualReview);
+
+  // Precompute, per framework, how many PASSED rules actually apply (by tag),
+  // so the denominator is real rather than an arbitrary proxy.
+  const passedApplicable: Record<string, number> = {};
+  if (passedRuleTags) {
+    for (const tags of passedRuleTags) {
+      for (const fwId of getApplicableFrameworks(tags)) {
+        passedApplicable[fwId] = (passedApplicable[fwId] ?? 0) + 1;
+      }
+    }
+  }
+
   // Deduplicate issues into unique rules, tracking worst severity, element count,
   // and the set of framework IDs from applicableFrameworks
   const ruleMap = new Map<string, RuleInfo & { frameworkIds: Set<string> }>();
-  for (const issue of issues) {
+  for (const issue of confirmed) {
     const existing = ruleMap.get(issue.ruleId);
     if (!existing) {
       ruleMap.set(issue.ruleId, {
@@ -84,13 +101,16 @@ export function generateComplianceResults(
     const failedCount = applicableFailingRules.length;
     const failingRuleIds = applicableFailingRules.map((r) => r.ruleId);
 
-    // Total applicable = failed + passed (approximate: scale passed by tag coverage ratio)
-    // WCAG 2.0 frameworks cover fewer rules than 2.1/2.2
-    const tagCoverage = fw.acceptedTags.length;
-    const maxTags = 12; // approximate max tag count
-    const coverageRatio = Math.min(tagCoverage / maxTags, 1);
-    const estimatedPassedForFw = Math.round(passedRuleCount * coverageRatio);
-    const totalApplicable = failedCount + estimatedPassedForFw;
+    // Passed rules that apply to THIS framework. Prefer the real per-tag count;
+    // fall back to a tag-coverage proxy only when passed-rule tags weren't supplied.
+    let passedForFw: number;
+    if (passedRuleTags) {
+      passedForFw = passedApplicable[fw.id] ?? 0;
+    } else {
+      const coverageRatio = Math.min(fw.acceptedTags.length / 12, 1);
+      passedForFw = Math.round(passedRuleCount * coverageRatio);
+    }
+    const totalApplicable = failedCount + passedForFw;
 
     if (totalApplicable === 0) {
       return {

@@ -32,6 +32,11 @@ export interface ScanResult {
   score: ScoreBreakdown;
   issues: AccessibilityIssue[];
   passedRules: number;
+  /**
+   * Tags of each passing axe rule. Lets compliance scoring count how many
+   * passed rules actually apply to a given framework, instead of estimating.
+   */
+  passedRuleTags?: string[][];
   incompleteRules: number;
   inapplicableRules: number;
   totalRulesRun: number;

@@ -60,6 +60,8 @@ const WCAG_CRITERION_NAMES: Record<string, string> = {
   "3.1.2": "Language of Parts",
   "3.2.1": "On Focus",
   "3.2.2": "On Input",
+  "3.2.3": "Consistent Navigation",
+  "3.2.4": "Consistent Identification",
   "3.2.6": "Consistent Help",
   "3.3.1": "Error Identification",
   "3.3.2": "Labels or Instructions",

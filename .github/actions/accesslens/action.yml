@@ -1,0 +1,97 @@
+name: 'AccessLens Accessibility Scan'
+description: 'Scan a URL for accessibility issues using 125+ WCAG rules and 16 legal frameworks'
+branding:
+  icon: 'eye'
+  color: 'orange'
+
+inputs:
+  url:
+    description: 'URL to scan'
+    required: true
+  threshold:
+    description: 'Minimum score (0-100). Action fails if score is below this.'
+    required: false
+    default: '0'
+  frameworks:
+    description: 'Comma-separated framework IDs to check (e.g. ada-title-iii,eaa)'
+    required: false
+    default: ''
+  format:
+    description: 'Report format: table, json, html'
+    required: false
+    default: 'table'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '20'
+
+outputs:
+  score:
+    description: 'Overall accessibility score (0-100)'
+    value: ${{ steps.parse.outputs.score }}
+  grade:
+    description: 'Letter grade (A-F)'
+    value: ${{ steps.parse.outputs.grade }}
+  issues-count:
+    description: 'Total number of issues found'
+    value: ${{ steps.parse.outputs.issues }}
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Run AccessLens scan
+      id: scan
+      shell: bash
+      run: |
+        ARGS="scan \"${{ inputs.url }}\" --format json --output /tmp/accesslens-result.json"
+        if [ "${{ inputs.threshold }}" != "0" ]; then
+          ARGS="$ARGS --threshold ${{ inputs.threshold }}"
+        fi
+        if [ -n "${{ inputs.frameworks }}" ]; then
+          ARGS="$ARGS --frameworks ${{ inputs.frameworks }}"
+        fi
+        npx accesslens@latest $ARGS || true
+
+    - name: Parse results
+      id: parse
+      shell: bash
+      run: |
+        if [ -f /tmp/accesslens-result.json ]; then
+          SCORE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/accesslens-result.json','utf8')).scan.score.overall)")
+          GRADE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/accesslens-result.json','utf8')).scan.score.grade)")
+          ISSUES=$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/accesslens-result.json','utf8')).scan.issues.length)")
+          echo "score=$SCORE" >> $GITHUB_OUTPUT
+          echo "grade=$GRADE" >> $GITHUB_OUTPUT
+          echo "issues=$ISSUES" >> $GITHUB_OUTPUT
+        else
+          echo "score=0" >> $GITHUB_OUTPUT
+          echo "grade=F" >> $GITHUB_OUTPUT
+          echo "issues=-1" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Generate HTML report
+      if: inputs.format == 'html'
+      shell: bash
+      run: |
+        npx accesslens@latest scan "${{ inputs.url }}" --format html --output accesslens-report.html
+
+    - name: Display table report
+      if: inputs.format == 'table'
+      shell: bash
+      run: |
+        npx accesslens@latest scan "${{ inputs.url }}"
+
+    - name: Check threshold
+      if: inputs.threshold != '0'
+      shell: bash
+      run: |
+        SCORE=${{ steps.parse.outputs.score }}
+        THRESHOLD=${{ inputs.threshold }}
+        if [ "$SCORE" -lt "$THRESHOLD" ]; then
+          echo "::error::AccessLens score $SCORE is below threshold $THRESHOLD"
+          exit 1
+        fi
