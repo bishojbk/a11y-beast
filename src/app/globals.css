@@ -938,9 +938,11 @@ h1, h2, h3, h4 {
   justify-content: space-between;
   min-height: 200px;
   transition: background .3s;
-  cursor: default;
+  cursor: pointer;
 }
 .fw-cell:hover { background: var(--bg-raised); }
+.fw-cell:hover .fw-name { color: var(--accent-text); }
+.fw-cell:focus-visible { outline: 2px solid var(--border-focus); outline-offset: -2px; }
 .fw-cell:hover .fw-num { color: var(--accent-text); }
 .fw-num {
   font-family: var(--font-archivo), system-ui, sans-serif;

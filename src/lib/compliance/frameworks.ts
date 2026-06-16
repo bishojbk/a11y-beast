@@ -229,6 +229,33 @@ export const FRAMEWORKS: FrameworkWithTags[] = [
   },
 ];
 
+/**
+ * Plain-English summary of each framework — what the law is and who it covers.
+ * Kept factual and conservative (these are surfaced in the UI verbatim).
+ */
+export const FRAMEWORK_DESCRIPTIONS: Record<string, string> = {
+  "ada-title-ii": "Requires US state and local government bodies to make their services — including websites and mobile apps — accessible to people with disabilities.",
+  "ada-title-iii": "Bars disability discrimination by 'places of public accommodation' (businesses open to the public). US courts have widely applied it to business websites and apps, making it the most-litigated web-accessibility law.",
+  "section-508": "Requires US federal agencies — and the vendors that sell to them — to make their electronic and information technology accessible. Conformance is benchmarked to WCAG 2.0 Level AA.",
+  "california-unruh": "California civil-rights law banning discrimination by businesses. Frequently paired with ADA claims because it allows statutory damages with a per-violation minimum, which fuels high-volume litigation.",
+  "eaa": "EU directive requiring many products and digital services (e-commerce, banking, transport, e-books) to be accessible. In force since 28 June 2025; enforcement and fines are set individually by each member state.",
+  "en-301-549": "The EU's harmonised accessibility standard for ICT. It's the technical yardstick referenced by the EAA and the Web Accessibility Directive, and it incorporates WCAG.",
+  "eu-wad": "Requires public-sector bodies across the EU to make their websites and mobile apps accessible and to publish an accessibility statement.",
+  "equality-act-2010": "UK law requiring service providers to make 'reasonable adjustments' so disabled people can access goods and services, including online. Enforced via the EHRC and individual claims.",
+  "aoda": "Ontario law setting staged accessibility requirements for organisations, including accessible websites, backed by monetary penalties for non-compliance.",
+  "aca": "Canadian federal law working toward a barrier-free Canada by 2040, requiring federally-regulated organisations to identify, remove, and prevent accessibility barriers.",
+  "dda-1992": "Australian law making it unlawful to discriminate against people with disabilities, applied to online services; complaints are handled by the Australian Human Rights Commission.",
+  "jis-x-8341": "Japan's accessibility standard for web content, aligned with WCAG and used as the benchmark for public-sector and, increasingly, private-sector sites.",
+  "rpd-act-2016": "India's disability-rights law mandating accessibility, including government websites following national accessibility guidelines.",
+  "korean-ada": "South Korea's anti-discrimination law requiring organisations to provide accessible web content; applies broadly to organisations of all sizes.",
+  "nz-web-standards": "New Zealand government standard requiring public-sector websites to meet WCAG-based accessibility requirements.",
+  "israel-eq-rights": "Israeli law (with standard SI 5568, based on WCAG) requiring businesses and public bodies to make websites accessible, with fines for non-compliance.",
+};
+
+export function getFrameworkDescription(id: string): string {
+  return FRAMEWORK_DESCRIPTIONS[id] ?? "";
+}
+
 export function getFrameworkById(id: string): FrameworkWithTags | undefined {
   return FRAMEWORKS.find((f) => f.id === id);
 }

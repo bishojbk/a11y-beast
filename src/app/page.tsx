@@ -9,7 +9,8 @@ import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
 import { useAxeAnalysis } from "@/hooks/useAxeAnalysis";
-import { FRAMEWORKS, type FrameworkWithTags } from "@/lib/compliance/frameworks";
+import { FRAMEWORKS, getFrameworkDescription, type FrameworkWithTags } from "@/lib/compliance/frameworks";
+import { computeConformance } from "@/lib/compliance/wcag-criteria";
 import ScanningCard from "@/components/scanner/ScanningCard";
 
 /* Shared motion primitives — restrained, ease-out-expo, no springs */
@@ -580,6 +581,7 @@ function Stats() {
    Frameworks centerpiece — 4×4 grid driven by real FRAMEWORKS
    ═══════════════════════════════════════════════════════════════ */
 function Frameworks() {
+  const [selected, setSelected] = useState<FrameworkWithTags | null>(null);
   return (
     <section className="frameworks" id="frameworks">
       <div className="fw-inner">
@@ -615,8 +617,14 @@ function Frameworks() {
               <motion.article
                 key={f.id}
                 className={`fw-cell ${i === 1 ? "active" : ""}`}
-                aria-label={`${f.name}, ${f.region}, ${risk} risk`}
+                role="button"
+                tabIndex={0}
+                aria-label={`${f.name}, ${f.region}, ${risk} risk — view details`}
                 variants={fadeUp}
+                onClick={() => setSelected(f)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(f); }
+                }}
               >
                 <div>
                   <div className="fw-top">
@@ -639,7 +647,115 @@ function Frameworks() {
           })}
         </motion.div>
       </div>
+      <FrameworkInfoModal fw={selected} onClose={() => setSelected(null)} />
     </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Framework info modal — homepage "click a framework for detail"
+   ═══════════════════════════════════════════════════════════════ */
+function appliesToLabel(a: FrameworkWithTags["appliesTo"]): string {
+  return a === "both" ? "Public & private sector" : a === "public" ? "Public sector" : "Private sector";
+}
+
+/** Plain-English description of how our scorer weights this specific framework
+ *  (derived from its real bonusPenalties — describes OUR method, not new legal claims). */
+function scoringFactors(fw: FrameworkWithTags): string[] {
+  const b = fw.bonusPenalties;
+  const out: string[] = [];
+  if (b.severityMultiplier && b.severityMultiplier >= 1.2) out.push(`High-litigation: violations weighted ${b.severityMultiplier}× in scoring`);
+  if (b.elementCountWeight && b.elementCountWeight > 0) out.push("Per-violation statute — every affected element adds exposure");
+  if (b.missingA11yStatement) out.push("A published accessibility statement is expected");
+  if (b.missingSkipLink) out.push("A skip-navigation link is expected");
+  if (b.missingLang) out.push("Page language must be declared (lang attribute)");
+  return out;
+}
+
+function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onClose: () => void }) {
+  useEffect(() => {
+    if (!fw) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [fw, onClose]);
+
+  const fld: React.CSSProperties = { fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.55 };
+  const lbl: React.CSSProperties = { fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-tertiary)", marginBottom: 4 };
+
+  return (
+    <AnimatePresence>
+      {fw && (
+        <motion.div
+          role="dialog" aria-modal="true" aria-label={`${fw.name} details`}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: EASE }}
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+          style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(0,0,0,0.62)", backdropFilter: "blur(6px)", display: "grid", placeItems: "center", padding: 24 }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 14, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ duration: 0.3, ease: EASE }}
+            style={{ width: "min(520px, 100%)", maxHeight: "calc(100vh - 48px)", overflow: "auto", background: "var(--bg-raised)", border: "1px solid var(--border-strong)", borderRadius: 8, boxShadow: "var(--shadow-pop)" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid var(--border-default)", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Flag code={flagFor(fw)} />
+                <div>
+                  <div className="font-display" style={{ fontSize: 17 }}>{fw.name}</div>
+                  <div className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{fw.region} · {fw.wcagBasis}</div>
+                </div>
+              </div>
+              <button type="button" className="modal-close" onClick={onClose} aria-label="Close"><XCircle size={16} aria-hidden="true" /></button>
+            </div>
+
+            <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 16 }}>
+              {getFrameworkDescription(fw.id) && (
+                <p style={{ fontSize: 14.5, color: "var(--text-primary)", lineHeight: 1.55, margin: 0 }}>
+                  {getFrameworkDescription(fw.id)}
+                </p>
+              )}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div><div className="mono" style={lbl}>Who it applies to</div><div style={fld}>{appliesToLabel(fw.appliesTo)}</div></div>
+                <div>
+                  <div className="mono" style={lbl}>WCAG scope</div>
+                  <div style={fld}>{(() => { const c = computeConformance(fw, []); return `${c.total} success criteria · ${c.target}`; })()}</div>
+                </div>
+              </div>
+              <div><div className="mono" style={lbl}>Penalties / enforcement</div><div style={fld}>{fw.penalties}</div></div>
+              {scoringFactors(fw).length > 0 && (
+                <div>
+                  <div className="mono" style={lbl}>What raises exposure here</div>
+                  <ul style={{ ...fld, margin: 0, paddingLeft: 16, display: "flex", flexDirection: "column", gap: 4 }}>
+                    {scoringFactors(fw).map((s) => <li key={s}>{s}</li>)}
+                  </ul>
+                </div>
+              )}
+              {fw.enforcementDate && (
+                <div>
+                  <div className="mono" style={lbl}>Key date</div>
+                  <div style={fld}>
+                    {new Date(fw.enforcementDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    {fw.deadlineAlert ? ` — ${fw.deadlineAlert}` : ""}
+                  </div>
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", paddingTop: 4 }}>
+                <a href={fw.url} target="_blank" rel="noopener noreferrer" className="btn">Read the law ↗</a>
+                <button type="button" className="btn primary" onClick={() => { onClose(); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                  Scan for exposure →
+                </button>
+              </div>
+              <p style={{ fontSize: 11, color: "var(--text-tertiary)", lineHeight: 1.5, margin: 0 }}>
+                Penalty figures are historical or statutory reference points, not predictions, and vary by jurisdiction and case. Not legal advice.
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 

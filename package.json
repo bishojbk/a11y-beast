@@ -25,6 +25,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",
     "@sparticuz/chromium": "^143.0.4",
+    "@vercel/analytics": "^2.0.1",
     "axe-core": "^4.11.2",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.7.0",
