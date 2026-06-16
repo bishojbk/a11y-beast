@@ -59,7 +59,7 @@ export default async function BlogPostPage({
       <Header />
       <main
         id="main-content"
-        className="page-enter"
+        className="stagger-in"
         role="main"
         style={{ flex: 1, maxWidth: 720, margin: "0 auto", padding: "56px 24px 96px", width: "100%" }}
       >
@@ -69,7 +69,7 @@ export default async function BlogPostPage({
           </Link>
         </nav>
 
-        <article>
+        <article className="stagger-in">
           <div className="mono" style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 12 }}>
             <time dateTime={post.datePublished}>{post.datePublished}</time> · {post.readingMinutes} min read
           </div>

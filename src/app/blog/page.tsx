@@ -18,7 +18,7 @@ export default function BlogIndex() {
       <Header />
       <main
         id="main-content"
-        className="page-enter"
+        className="stagger-in"
         role="main"
         style={{ flex: 1, maxWidth: 760, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}
       >
@@ -33,7 +33,7 @@ export default function BlogIndex() {
           compliance&rdquo; is a myth.
         </p>
 
-        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+        <ul className="stagger-in" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
           {posts.map((post) => (
             <li key={post.slug}>
               <Link

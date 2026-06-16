@@ -2098,6 +2098,22 @@ details[open] > summary .faq-icon { transform: rotate(45deg); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .page-enter { animation: pageEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Staggered entrance — each direct child of .stagger-in fades up in sequence.
+   Used on page <main>s (sections cascade) and on lists (rows cascade). */
+.stagger-in > * { animation: pageEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger-in > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger-in > *:nth-child(2) { animation-delay: 0.09s; }
+.stagger-in > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-in > *:nth-child(4) { animation-delay: 0.21s; }
+.stagger-in > *:nth-child(5) { animation-delay: 0.27s; }
+.stagger-in > *:nth-child(6) { animation-delay: 0.33s; }
+.stagger-in > *:nth-child(7) { animation-delay: 0.39s; }
+.stagger-in > *:nth-child(n+8) { animation-delay: 0.45s; }
+/* A nested stagger container doesn't block-animate — only its own children do. */
+.stagger-in > .stagger-in { animation: none; }
+
 @media (prefers-reduced-motion: reduce) {
-  .page-enter { animation: none; }
+  .page-enter,
+  .stagger-in > * { animation: none; }
 }
