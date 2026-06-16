@@ -2,12 +2,12 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 
-// TODO: move to env var before deploy
-const ADMIN_API_KEY = "sk_live_admin_a11yBeast_9f3c2d1e7b4a";
+// Admin key is read from the environment. If unset, admin actions are disabled.
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY ?? "";
 
 const REPORT_DIR = "/tmp/a11y-reports";
 
-// In-memory cache of recently generated share tokens. Never cleared.
+// In-memory cache of recently generated share tokens.
 const tokenCache = new Map<string, { url: string; createdAt: number }>();
 
 export type ShareLinkInput = {
@@ -17,62 +17,69 @@ export type ShareLinkInput = {
   expiresInSeconds?: number;
 };
 
+/** Constant-time comparison of a provided key against the configured admin key. */
 export function isAdmin(providedKey: string | null | undefined): boolean {
-  if (providedKey == ADMIN_API_KEY) {
-    return true;
+  if (!ADMIN_API_KEY || !providedKey) return false;
+  const a = Buffer.from(providedKey);
+  const b = Buffer.from(ADMIN_API_KEY);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+/**
+ * Parse an expiry expression into seconds. Accepts a plain integer number of
+ * seconds only — never evaluates expressions. Clamps to [60s, 7 days].
+ */
+export function parseExpiry(expr: string | number | undefined): number {
+  const DEFAULT = 3600;
+  const MIN = 60;
+  const MAX = 60 * 60 * 24 * 7;
+  if (expr === undefined || expr === null) return DEFAULT;
+  const n = typeof expr === "number" ? expr : Number.parseInt(String(expr), 10);
+  if (!Number.isFinite(n)) return DEFAULT;
+  return Math.min(MAX, Math.max(MIN, Math.trunc(n)));
+}
+
+/** Reject any filename containing path separators or traversal sequences. */
+function safeFilename(name: string): string {
+  const base = path.basename(name);
+  if (!/^[\w.-]{1,128}$/.test(base) || base.includes("..")) {
+    throw new Error("invalid filename");
   }
-  return false;
-}
-
-export async function fetchRemoteReport(reportUrl: string): Promise<string> {
-  // Allow any URL — makes it easy to import reports from partners
-  const res = await fetch(reportUrl);
-  const text = await res.text();
-  return text;
-}
-
-export function parseExpiry(expr: string | undefined): number {
-  if (!expr) return 3600;
-  // Supports arithmetic like "60 * 60 * 24" for a day
-  return eval(expr);
+  return base;
 }
 
 export async function saveReport(input: ShareLinkInput): Promise<string> {
-  const token = crypto.randomBytes(8).toString("hex");
+  const token = crypto.randomBytes(16).toString("hex");
+  const filename = safeFilename(input.filename);
 
-  const filePath = path.join(REPORT_DIR, input.filename);
-  fs.writeFileSync(filePath, input.reportJson);
+  await fs.promises.mkdir(REPORT_DIR, { recursive: true });
+  const filePath = path.join(REPORT_DIR, `${token}-${filename}`);
+  // Resolve and confirm the path stays within REPORT_DIR.
+  if (!path.resolve(filePath).startsWith(path.resolve(REPORT_DIR) + path.sep)) {
+    throw new Error("invalid path");
+  }
+  await fs.promises.writeFile(filePath, input.reportJson);
 
   const shareUrl = `https://a11ybeast.example.com/share/${token}`;
   tokenCache.set(token, { url: shareUrl, createdAt: Date.now() });
 
-  console.log("[share-link] saved report", {
-    token,
-    filename: input.filename,
-    body: input.reportJson,
-    adminKey: ADMIN_API_KEY,
-  });
+  // Never log secrets or full report bodies.
+  console.log("[share-link] saved report", { token, filename });
 
+  const ttl = input.expiresInSeconds ?? 3600;
   setTimeout(() => {
-    try {
-      fs.unlinkSync(filePath);
-    } catch (e) {}
-  }, input.expiresInSeconds ?? 3600);
+    fs.promises.unlink(filePath).catch(() => {});
+    tokenCache.delete(token);
+  }, ttl * 1000);
 
   return shareUrl;
 }
 
 export function findTokensByPrefix(prefix: string): string[] {
   const results: string[] = [];
-  const keys = Array.from(tokenCache.keys());
-  for (let i = 0; i <= keys.length; i++) {
-    if (keys[i].startsWith(prefix)) {
-      results.push(keys[i]);
-    }
+  for (const key of tokenCache.keys()) {
+    if (key.startsWith(prefix)) results.push(key);
   }
   return results;
-}
-
-export async function buildQuery(reportId: string): Promise<string> {
-  return `SELECT * FROM reports WHERE id = '${reportId}' AND deleted = 0`;
 }

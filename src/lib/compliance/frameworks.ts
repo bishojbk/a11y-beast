@@ -17,7 +17,11 @@ export interface FrameworkWithTags extends ComplianceFramework {
   };
 }
 
-const WCAG_20: WcagTagSet = ["wcag2a", "wcag2aa", "wcag111", "wcag131", "wcag143", "wcag211", "wcag244", "wcag311", "wcag412", "best-practice"];
+// NOTE: "best-practice" is deliberately NOT included. axe-core best-practice
+// rules (e.g. region, landmark-one-main, page-has-heading-one) are not WCAG
+// success criteria and are not legally required, so they must not count toward
+// any legal framework's conformance. They still surface in the issue list.
+const WCAG_20: WcagTagSet = ["wcag2a", "wcag2aa", "wcag111", "wcag131", "wcag143", "wcag211", "wcag244", "wcag311", "wcag412"];
 const WCAG_21: WcagTagSet = [...WCAG_20, "wcag21a", "wcag21aa"];
 const WCAG_22: WcagTagSet = [...WCAG_21, "wcag22aa"];
 
@@ -44,7 +48,7 @@ export const FRAMEWORKS: FrameworkWithTags[] = [
     region: "USA",
     wcagBasis: "WCAG 2.1 AA",
     appliesTo: "both",
-    penalties: "5,114 lawsuits in 2025. Settlements $5K-$75K.",
+    penalties: "3,117 federal web lawsuits in 2025, +27% YoY. Settlements $5K-$75K.",
     url: "https://www.ada.gov/topics/title-iii/",
     acceptedTags: WCAG_21,
     bonusPenalties: { severityMultiplier: 1.5, missingSkipLink: 2 }, // Highest litigation — severity matters most
@@ -82,7 +86,7 @@ export const FRAMEWORKS: FrameworkWithTags[] = [
     wcagBasis: "WCAG 2.1 AA",
     appliesTo: "both",
     enforcementDate: "2025-06-28",
-    penalties: "Member-state dependent. Up to 4% revenue. Enforced since June 28, 2025.",
+    penalties: "Member-state dependent fines (vary by country). Enforced since June 28, 2025.",
     url: "https://ec.europa.eu/social/main.jsp?catId=1202",
     deadlineAlert: "EAA is now in effect since June 28, 2025. Non-compliance may result in penalties.",
     acceptedTags: WCAG_21,

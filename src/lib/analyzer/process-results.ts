@@ -3,6 +3,7 @@ import type { ScanResult, PageMeta } from "@/lib/types/scan-result";
 import { getApplicableFrameworks } from "@/lib/compliance/mapper";
 import { calculateScore, extractPassDistribution } from "./scoring";
 import { extractWcagCriterion } from "./wcag-data";
+import { filterRedundantCustomIssues } from "./dedupe";
 
 function mapSeverity(impact: string | null | undefined): Severity {
   switch (impact) {
@@ -94,9 +95,15 @@ export function processServerResults(
     }
   }
 
-  // Process custom issues (checks axe-core doesn't cover)
+  // Process custom issues (checks axe-core doesn't cover), after dropping any
+  // that duplicate a CONFIRMED axe VIOLATION. We intentionally do NOT dedupe
+  // against axe "incomplete" results — those are unverified, so suppressing a
+  // confirmed custom finding because axe was merely unsure would lose a real
+  // barrier (it would silently downgrade to needs-review and vanish from score).
   if (data.customIssues) {
-    for (const custom of data.customIssues) {
+    const axeRuleIdsPresent = new Set<string>(axeResults.violations.map((v) => v.id));
+    const dedupedCustom = filterRedundantCustomIssues(data.customIssues, axeRuleIdsPresent);
+    for (const custom of dedupedCustom) {
       for (const node of custom.nodes) {
         issues.push({
           id: `${custom.ruleId}-${counter++}`,
@@ -139,6 +146,7 @@ export function processServerResults(
     score,
     issues,
     passedRules,
+    passedRuleTags,
     incompleteRules,
     inapplicableRules,
     totalRulesRun: axeResults.violations.length + passedRules + incompleteRules + inapplicableRules,

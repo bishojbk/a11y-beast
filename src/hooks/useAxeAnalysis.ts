@@ -2,12 +2,14 @@
 
 import { useState, useCallback, useRef } from "react";
 import type { ScanResult } from "@/lib/types/scan-result";
+import type { SiteScanResult } from "@/lib/types/site-scan";
 
 export type ScanStage =
   | "idle"
   | "fetching"
   | "rendering"
   | "analyzing"
+  | "crawling"
   | "scoring"
   | "done"
   | "error";
@@ -15,6 +17,7 @@ export type ScanStage =
 export interface ScanState {
   stage: ScanStage;
   result: ScanResult | null;
+  site: SiteScanResult | null;
   error: string | null;
 }
 
@@ -22,6 +25,7 @@ export function useAxeAnalysis() {
   const [state, setState] = useState<ScanState>({
     stage: "idle",
     result: null,
+    site: null,
     error: null,
   });
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -35,12 +39,12 @@ export function useAxeAnalysis() {
 
   const reset = useCallback(() => {
     cleanup();
-    setState({ stage: "idle", result: null, error: null });
+    setState({ stage: "idle", result: null, site: null, error: null });
   }, [cleanup]);
 
   // ── URL SCAN: Server-side Puppeteer (real browser rendering) ──
   const scanUrl = useCallback(async (url: string) => {
-    setState({ stage: "fetching", result: null, error: null });
+    setState({ stage: "fetching", result: null, site: null, error: null });
 
     try {
       setState((s) => ({ ...s, stage: "rendering" }));
@@ -62,15 +66,43 @@ export function useAxeAnalysis() {
       setState((s) => ({ ...s, stage: "scoring" }));
       await new Promise((r) => setTimeout(r, 300));
 
-      setState({ stage: "done", result, error: null });
+      setState({ stage: "done", result, site: null, error: null });
     } catch (err) {
-      setState({ stage: "error", result: null, error: err instanceof Error ? err.message : "Scan failed" });
+      setState({ stage: "error", result: null, site: null, error: err instanceof Error ? err.message : "Scan failed" });
+    }
+  }, []);
+
+  // ── SITE CRAWL: multi-page server-side scan + aggregate ──
+  const crawlUrl = useCallback(async (url: string, maxPages?: number) => {
+    setState({ stage: "fetching", result: null, site: null, error: null });
+
+    try {
+      setState((s) => ({ ...s, stage: "crawling" }));
+
+      const res = await fetch("/api/v1/crawl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, maxPages }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || "Crawl failed");
+
+      const site = data.site as SiteScanResult;
+
+      setState((s) => ({ ...s, stage: "scoring" }));
+      await new Promise((r) => setTimeout(r, 300));
+
+      // The aggregate is shaped like a single-page ScanResult, so the results
+      // page renders it directly; `site` drives the per-page breakdown.
+      setState({ stage: "done", result: site.aggregate, site, error: null });
+    } catch (err) {
+      setState({ stage: "error", result: null, site: null, error: err instanceof Error ? err.message : "Crawl failed" });
     }
   }, []);
 
   // ── PASTE/UPLOAD: Client-side iframe analysis ──
   const analyzeHtml = useCallback(async (html: string, url: string, method: ScanResult["inputMethod"]) => {
-    setState({ stage: "rendering", result: null, error: null });
+    setState({ stage: "rendering", result: null, site: null, error: null });
 
     try {
       const iframe = document.createElement("iframe");
@@ -98,17 +130,18 @@ export function useAxeAnalysis() {
       setState((s) => ({ ...s, stage: "scoring" }));
       await new Promise((r) => setTimeout(r, 300));
 
-      setState({ stage: "done", result, error: null });
+      setState({ stage: "done", result, site: null, error: null });
       cleanup();
     } catch (err) {
       cleanup();
-      setState({ stage: "error", result: null, error: err instanceof Error ? err.message : "Analysis failed" });
+      setState({ stage: "error", result: null, site: null, error: err instanceof Error ? err.message : "Analysis failed" });
     }
   }, [cleanup]);
 
   return {
     ...state,
     scanUrl,
+    crawlUrl,
     analyzeHtml,
     reset,
     isScanning: state.stage !== "idle" && state.stage !== "done" && state.stage !== "error",

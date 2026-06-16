@@ -1,7 +1,7 @@
 <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="48" height="48" rx="12" fill="url(#g)"/>
-  <path d="M24 16C17 16 12 24 12 24C12 24 17 32 24 32C31 32 36 24 36 24C36 24 31 16 24 16Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <circle cx="24" cy="24" r="5" fill="white"/>
-  <path d="M21.5 24L23 25.5L26.5 22" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  <defs><linearGradient id="g" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs>
+  <rect width="48" height="48" rx="12" fill="url(#ember)"/>
+  <path d="M10 24C10 24 16 15 24 15C32 15 38 24 38 24C38 24 32 33 24 33C16 33 10 24 10 24Z" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="24" cy="24" r="5" fill="white" opacity="0.9"/>
+  <circle cx="24" cy="24" r="2" fill="url(#ember)"/>
+  <defs><linearGradient id="ember" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stop-color="#D4502A"/><stop offset="1" stop-color="#F0874A"/></linearGradient></defs>
 </svg>

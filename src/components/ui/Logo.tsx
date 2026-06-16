@@ -9,33 +9,24 @@ export function LogoIcon({ size = 32, className = "" }: { size?: number; classNa
       className={className}
       aria-hidden="true"
     >
-      {/* Background rounded square */}
-      <rect width="48" height="48" rx="14" fill="url(#logo-grad)" />
-
-      {/* Shield shape */}
+      <rect width="48" height="48" rx="12" fill="url(#logo-ember)" />
+      {/* Lens/eye shape */}
       <path
-        d="M24 9L13 14.5V23.5C13 30.4 17.8 36.8 24 39C30.2 36.8 35 30.4 35 23.5V14.5L24 9Z"
+        d="M10 24C10 24 16 15 24 15C32 15 38 24 38 24C38 24 32 33 24 33C16 33 10 24 10 24Z"
         stroke="white"
-        strokeWidth="2"
+        strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        fill="rgba(255,255,255,0.08)"
+        fill="none"
       />
-
-      {/* Checkmark inside shield */}
-      <path
-        d="M18 24.5L22 28.5L30 19.5"
-        stroke="white"
-        strokeWidth="2.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
+      {/* Iris */}
+      <circle cx="24" cy="24" r="5" fill="white" opacity="0.9" />
+      {/* Pupil */}
+      <circle cx="24" cy="24" r="2" fill="url(#logo-ember)" />
       <defs>
-        <linearGradient id="logo-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#8b5cf6" />
-          <stop offset="0.5" stopColor="#3b82f6" />
-          <stop offset="1" stopColor="#8b5cf6" />
+        <linearGradient id="logo-ember" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#B4283A" />
+          <stop offset="1" stopColor="#FF6B7A" />
         </linearGradient>
       </defs>
     </svg>
@@ -46,7 +37,7 @@ export function LogoFull({ iconSize = 32, className = "" }: { iconSize?: number;
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
       <LogoIcon size={iconSize} />
-      <span className="text-base font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
+      <span className="mono text-foreground" style={{ fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase" }}>
         A11y Beast
       </span>
     </div>

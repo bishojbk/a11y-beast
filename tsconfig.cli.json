@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "lib": ["ES2022"],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "baseUrl": "."
+  },
+  "include": [
+    "src/cli/**/*.ts",
+    "src/lib/**/*.ts",
+    "src/benchmark/**/*.ts"
+  ],
+  "exclude": [
+    "src/app/**",
+    "src/components/**",
+    "src/hooks/**",
+    "src/lib/analyzer/index.ts",
+    "src/lib/analyzer/axe-runner.ts",
+    "node_modules"
+  ]
+}

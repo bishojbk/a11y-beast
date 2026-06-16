@@ -2,14 +2,28 @@
   "name": "accesslens",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "accesslens": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist/",
+    "package.json",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "next dev",
-    "postinstall": "mkdir -p public/axe-core && cp node_modules/axe-core/axe.min.js public/axe-core/axe.min.js",
     "build": "next build",
+    "build:cli": "tsup",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "[ -d public ] && mkdir -p public/axe-core && cp node_modules/axe-core/axe.min.js public/axe-core/axe.min.js || true",
+    "prepublishOnly": "npm run build:cli"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.88.0",
     "@sparticuz/chromium": "^143.0.4",
     "axe-core": "^4.11.2",
     "framer-motion": "^12.38.0",
@@ -24,9 +38,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "commander": "^14.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "tailwindcss": "^4",
+    "tsup": "^8.5.1",
     "typescript": "^5"
   }
 }

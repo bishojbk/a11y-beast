@@ -1,30 +1,5 @@
-import type { AccessibilityIssue, Severity } from "@/lib/types/issue";
 import type { PageMeta } from "@/lib/types/scan-result";
-import { getApplicableFrameworks } from "@/lib/compliance/mapper";
-import { extractWcagCriterion } from "./wcag-data";
-
-function mapSeverity(impact: string | null | undefined): Severity {
-  switch (impact) {
-    case "critical": return "critical";
-    case "serious": return "major";
-    case "moderate": return "minor";
-    case "minor": return "best-practice";
-    default: return "minor";
-  }
-}
-
-function getImpactGroups(ruleId: string, tags: string[]): AccessibilityIssue["impact"] {
-  const groups: AccessibilityIssue["impact"] = [];
-  const id = ruleId.toLowerCase();
-  if (id.includes("color") || id.includes("contrast") || id.includes("image") || id.includes("alt")) groups.push("visual");
-  if (id.includes("keyboard") || id.includes("focus") || id.includes("tabindex") || id.includes("target-size")) groups.push("motor");
-  if (id.includes("label") || id.includes("heading") || id.includes("lang") || id.includes("autocomplete")) groups.push("cognitive");
-  if (id.includes("audio") || id.includes("video") || id.includes("caption") || id.includes("media")) groups.push("auditory");
-  if (tags.some((t) => t.includes("cat.text-alternatives"))) groups.push("visual");
-  if (tags.some((t) => t.includes("cat.keyboard"))) groups.push("motor");
-  if (tags.some((t) => t.includes("cat.aria") || t.includes("cat.name-role-value"))) groups.push("visual");
-  return [...new Set(groups)].length > 0 ? [...new Set(groups)] : ["visual"];
-}
+import { runCustomChecks, type CustomIssue } from "./custom-checks";
 
 // Raw axe result shape (serializable subset — what we get back from the iframe)
 interface RawAxeNode {
@@ -48,41 +23,17 @@ interface RawAxeResults {
   passes: RawAxeResult[];
   incomplete: RawAxeResult[];
   inapplicable: RawAxeResult[];
-}
-
-function axeResultToIssues(violations: RawAxeResult[]): AccessibilityIssue[] {
-  const issues: AccessibilityIssue[] = [];
-  for (const violation of violations) {
-    for (const node of violation.nodes) {
-      issues.push({
-        id: `${violation.id}-${issues.length}`,
-        ruleId: violation.id,
-        source: "axe-core",
-        severity: mapSeverity(violation.impact),
-        wcagCriterion: extractWcagCriterion(violation.tags),
-        impact: getImpactGroups(violation.id, violation.tags),
-        element: {
-          html: node.html.slice(0, 500),
-          selector: node.target.map(String).join(" > "),
-        },
-        description: violation.description,
-        fixSuggestion: violation.help,
-        whyItMatters: node.failureSummary ?? violation.helpUrl,
-        needsManualReview: false,
-        applicableFrameworks: getApplicableFrameworks(violation.tags),
-      });
-    }
-  }
-  return issues;
+  custom: CustomIssue[];
 }
 
 export interface AxeRunResult {
-  issues: AccessibilityIssue[];
-  passedRules: number;
-  passedRuleTags: string[][];
-  incompleteRules: number;
-  inapplicableRules: number;
-  totalRulesRun: number;
+  axeResults: {
+    violations: RawAxeResult[];
+    passes: RawAxeResult[];
+    incomplete: RawAxeResult[];
+    inapplicable: RawAxeResult[];
+  };
+  customIssues: CustomIssue[];
 }
 
 /**
@@ -137,10 +88,14 @@ export async function runAxeInIframe(iframe: HTMLIFrameElement): Promise<AxeRunR
       reject(new Error("axe-core timed out after 30 seconds"));
     }, 30000);
 
-    // Inject a script that runs axe and stores the result
+    // Inject a script that runs axe AND the custom checks in the iframe's own
+    // context (so document/getComputedStyle resolve to the scanned page), then
+    // stores the combined result. runCustomChecks is self-contained, so it
+    // serializes cleanly via toString() — the same way Puppeteer runs it.
     const runScript = iframeWin.document.createElement("script");
     runScript.textContent = `
       (function() {
+        var runCustom = ${runCustomChecks.toString()};
         window.axe.run(document, {
           runOnly: { type: "tag", values: ["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa","best-practice"] },
           resultTypes: ["violations","passes","incomplete","inapplicable"]
@@ -151,11 +106,14 @@ export async function runAxeInIframe(iframe: HTMLIFrameElement): Promise<AxeRunR
           function mapRule(v, includeNodes) {
             return { id: v.id, impact: v.impact, tags: v.tags, description: v.description, help: v.help, helpUrl: v.helpUrl, nodes: includeNodes ? mapNodes(v.nodes) : [] };
           }
+          var custom = [];
+          try { custom = runCustom(); } catch (e) { custom = []; }
           window["${resultKey}"] = {
             violations: r.violations.map(function(v) { return mapRule(v, true); }),
             passes: r.passes.map(function(v) { return mapRule(v, false); }),
             incomplete: r.incomplete.map(function(v) { return mapRule(v, true); }),
-            inapplicable: r.inapplicable.map(function(v) { return mapRule(v, false); })
+            inapplicable: r.inapplicable.map(function(v) { return mapRule(v, false); }),
+            custom: custom
           };
         }).catch(function(e) {
           window["${errorKey}"] = e.message || "axe-core failed";
@@ -165,15 +123,14 @@ export async function runAxeInIframe(iframe: HTMLIFrameElement): Promise<AxeRunR
     iframeWin.document.body.appendChild(runScript);
   });
 
-  const issues = axeResultToIssues(results.violations);
-
   return {
-    issues,
-    passedRules: results.passes.length,
-    passedRuleTags: results.passes.map((p) => p.tags),
-    incompleteRules: results.incomplete.length,
-    inapplicableRules: results.inapplicable.length,
-    totalRulesRun: results.violations.length + results.passes.length + results.incomplete.length + results.inapplicable.length,
+    axeResults: {
+      violations: results.violations,
+      passes: results.passes,
+      incomplete: results.incomplete,
+      inapplicable: results.inapplicable,
+    },
+    customIssues: results.custom ?? [],
   };
 }
 

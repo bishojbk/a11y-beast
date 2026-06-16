@@ -22,7 +22,7 @@
 
 A11y Beast scans any website for accessibility issues and maps every violation to real-world legal frameworks — not just WCAG pass/fail, but which **laws** your site is breaking and in which **countries**.
 
-Most accessibility tools tell you "you fail WCAG 1.1.1." A11y Beast tells you "this failure puts you at risk under **ADA Title III** (5,114 lawsuits in 2025), **EAA** (enforceable across 27 EU states), and **13 more laws** — and here's the code to fix it."
+Most accessibility tools tell you "you fail WCAG 1.1.1." A11y Beast tells you "this failure puts you at risk under **ADA Title III** (3,117 federal web lawsuits in 2025, up 27% YoY), the **EAA** (enforceable across 27 EU states since June 28, 2025), and **13 more laws** — and here's the code to fix it." Real browser rendering and code-level findings — **not an overlay widget** (27% of defendants sued in May 2026 were running one).
 
 ## Features
 

@@ -1,12 +1,13 @@
 import { runAxeInIframe, extractPageMeta } from "./axe-runner";
-import { calculateScore, extractPassDistribution } from "./scoring";
+import { processServerResults } from "./process-results";
 import type { ScanResult } from "@/lib/types/scan-result";
 
-let scanCounter = 0;
-
 /**
- * Analyze an iframe that has HTML loaded into it.
- * axe-core is injected INTO the iframe and runs in its context.
+ * Analyze an iframe that has HTML loaded into it. axe-core AND the 20 custom
+ * checks run inside the iframe; results then flow through the SAME pipeline as
+ * URL scans (processServerResults) — so paste/upload get identical handling:
+ * custom checks, needs-review (axe incomplete), dedup, best-practice exclusion,
+ * and per-framework denominators.
  */
 export async function analyzeIframe(
   iframe: HTMLIFrameElement,
@@ -18,32 +19,22 @@ export async function analyzeIframe(
   const iframeDoc = iframe.contentDocument;
   if (!iframeDoc) throw new Error("Cannot access iframe document");
 
-  // Extract page meta from the iframe document (this works cross-frame for same-origin)
+  // Page metadata from the iframe document (works cross-frame for same-origin).
   const pageMeta = extractPageMeta(iframeDoc, url);
 
-  // Run axe-core inside the iframe
-  const axeResult = await runAxeInIframe(iframe);
+  // Run axe-core + custom checks inside the iframe.
+  const { axeResults, customIssues } = await runAxeInIframe(iframe);
 
-  const passDistribution = extractPassDistribution(axeResult.passedRuleTags);
-  const score = calculateScore(
-    axeResult.issues,
-    axeResult.passedRules,
-    axeResult.incompleteRules,
-    passDistribution
+  const result = processServerResults(
+    {
+      finalUrl: url,
+      fetchDurationMs: Math.round(performance.now() - start),
+      axeResults,
+      customIssues,
+      pageMeta,
+    },
+    url
   );
-
-  return {
-    id: `scan-${Date.now()}-${++scanCounter}`,
-    url,
-    inputMethod,
-    timestamp: new Date().toISOString(),
-    scanDurationMs: Math.round(performance.now() - start),
-    pageMeta,
-    score,
-    issues: axeResult.issues,
-    passedRules: axeResult.passedRules,
-    incompleteRules: axeResult.incompleteRules,
-    inapplicableRules: axeResult.inapplicableRules,
-    totalRulesRun: axeResult.totalRulesRun,
-  };
+  result.inputMethod = inputMethod;
+  return result;
 }

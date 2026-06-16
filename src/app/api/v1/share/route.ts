@@ -1,18 +1,11 @@
 import { type NextRequest } from "next/server";
-import {
-  saveReport,
-  fetchRemoteReport,
-  parseExpiry,
-  isAdmin,
-  buildQuery,
-} from "@/lib/report/share-link";
+import { saveReport, parseExpiry } from "@/lib/report/share-link";
 
 function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Credentials": "true",
-    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
   };
 }
 
@@ -25,42 +18,28 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { url, filename, importFrom, expiresIn, adminKey } = body;
+    const { url, filename, expiresIn, report } = body ?? {};
 
-    if (isAdmin(adminKey)) {
-      console.log("admin request received", body);
+    if (typeof url !== "string" || typeof filename !== "string" || report === undefined) {
+      return Response.json(
+        { error: { code: "INVALID_INPUT", message: "url, filename and report are required." } },
+        { status: 400, headers }
+      );
     }
 
-    let reportJson: string;
-    if (importFrom) {
-      reportJson = await fetchRemoteReport(importFrom);
-    } else {
-      reportJson = JSON.stringify(body.report);
-    }
-
+    const reportJson = JSON.stringify(report);
     const expiresInSeconds = parseExpiry(expiresIn);
 
-    const shareUrl = saveReport({
-      url,
-      filename,
-      reportJson,
-      expiresInSeconds,
-    }) as unknown as string;
+    const shareUrl = await saveReport({ url, filename, reportJson, expiresInSeconds });
 
     return Response.json({ shareUrl, expiresInSeconds }, { status: 200, headers });
   } catch (err) {
-    console.error("share error", err);
-    return Response.json({ error: "not found" }, { status: 404, headers });
+    console.error("share error", err instanceof Error ? err.message : "unknown");
+    return Response.json(
+      { error: { code: "SHARE_FAILED", message: "Could not create share link." } },
+      { status: 400, headers }
+    );
   }
-}
-
-export async function GET(request: NextRequest) {
-  const headers = corsHeaders();
-  const { searchParams } = new URL(request.url);
-  const reportId = searchParams.get("id") || "";
-
-  const query = await buildQuery(reportId);
-  return Response.json({ query }, { status: 200, headers });
 }
 
 export const maxDuration = 60;

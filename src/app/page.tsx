@@ -1,511 +1,1010 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
-import {
-  Shield, Scale, Zap, Globe, Lock, Eye, Code, FileSearch,
-  ArrowRight, CheckCircle2, XCircle,
-  Upload, ClipboardPaste, Search,
-  BarChart3, Users, Gavel, ShieldCheck, BrainCircuit,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-react";
-import { useAxeAnalysis, type ScanStage } from "@/hooks/useAxeAnalysis";
-import type { ScanResult } from "@/lib/types/scan-result";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Code2, GitCompare, Globe, Trash2, Upload, XCircle } from "lucide-react";
+import { loadHistory, clearHistory, type ScanHistoryEntry } from "@/lib/history";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
+import { useAxeAnalysis } from "@/hooks/useAxeAnalysis";
+import { FRAMEWORKS, type FrameworkWithTags } from "@/lib/compliance/frameworks";
+import ScanningCard from "@/components/scanner/ScanningCard";
 
-const STAGES: { key: ScanStage; label: string }[] = [
-  { key: "fetching", label: "Fetching page HTML..." },
-  { key: "rendering", label: "Rendering page (CSS, JS, images)..." },
-  { key: "analyzing", label: "Running 105+ WCAG rules + 20 custom checks..." },
-  { key: "scoring", label: "Mapping to 16 legal frameworks..." },
+/* Shared motion primitives — restrained, ease-out-expo, no springs */
+const EASE = [0.22, 1, 0.36, 1] as const;
+const fadeUp = {
+  hidden: { opacity: 0, y: 14 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE } },
+};
+const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
+const inView = { once: true, amount: 0.15 } as const;
+
+/* ═══════════════════════════════════════════════════════════════
+   Static data — lawsuit ticker + HOW_STEPS
+   (curated, not live — see handoff §data.js)
+   ═══════════════════════════════════════════════════════════════ */
+const LAWSUITS: ReadonlyArray<{ date: string; tag: string; msg: string }> = [
+  { date: "2025.11.18", tag: "ADA III", msg: "S.D.N.Y · Hospitality co. sued for inaccessible booking flow" },
+  { date: "2025.11.14", tag: "Unruh", msg: "California class action · $4M settlement, retail e-comm" },
+  { date: "2025.11.09", tag: "EAA", msg: "Austria — BKS Bank fined for non-compliant online banking" },
+  { date: "2025.11.03", tag: "ADA III", msg: "C.D. Cal · fitness platform settles for $1.2M, remediation" },
+  { date: "2025.10.28", tag: "UK EA", msg: "EHRC compliance notice issued to national retailer" },
+  { date: "2025.10.21", tag: "ADA III", msg: "E.D.N.Y · 142-plaintiff serial filer, university sites" },
+  { date: "2025.10.14", tag: "AODA", msg: "Ontario — CAD $110K/day penalty affirmed on appeal" },
+  { date: "2025.10.08", tag: "EAA", msg: "Germany — BFSG enforcement action, fintech onboarding" },
+  { date: "2025.09.30", tag: "Sec 508", msg: "GSA procurement disqualification, federal vendor" },
+  { date: "2025.09.22", tag: "Unruh", msg: "San Francisco · per-visit damages affirmed" },
+  { date: "2025.09.15", tag: "SI 5568", msg: "Israel — ILS 150K fine, second-offense news publisher" },
+  { date: "2025.09.03", tag: "ADA III", msg: "S.D. Fla · hotel reservation system, $85K settlement" },
 ];
 
-const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as const } } };
-const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
-const vpOnce = { once: true, amount: 0.01 };
+const HOW_STEPS = [
+  {
+    idx: "01",
+    tag: "Fetch",
+    title: "Fetch the page",
+    desc: "Puppeteer pulls a real browser render — SPAs, JS-gated content and all. SSRF-guarded, private IPs blocked.",
+  },
+  {
+    idx: "02",
+    tag: "Render",
+    title: "Render the DOM",
+    desc: "Full document, computed styles, role tree, focus order. No static parsing shortcuts — what users actually see.",
+  },
+  {
+    idx: "03",
+    tag: "Analyse",
+    title: "Run 125+ rules",
+    desc: "axe-core's 105 rules plus 20 custom checks axe-core doesn't catch: heading gaps, small text, suspicious alt, zoom-lock.",
+  },
+  {
+    idx: "04",
+    tag: "Map",
+    title: "Map to 16 laws",
+    desc: "Every finding scored against jurisdiction WCAG scope, severity multiplier, deadline exposure. One scan, 16 verdicts.",
+  },
+];
 
-/* ── Floating Orbs ── */
-function FloatingOrbs() {
+const SAMPLES = ["shopify.com", "hermes.com", "ticketmaster.com", "stripe.com"];
+
+/* ═══════════════════════════════════════════════════════════════
+   Framework → flag + risk (derived from the real FRAMEWORKS list)
+   ═══════════════════════════════════════════════════════════════ */
+function flagFor(fw: FrameworkWithTags): string {
+  const r = fw.region.toLowerCase();
+  if (r.includes("california")) return "CA";
+  if (r.includes("usa") || r.includes("federal")) return "US";
+  if (r.includes("ontario") || r.includes("canada")) return "CA";
+  if (r.includes("eu")) return "EU";
+  if (r.includes("united kingdom") || r.includes("uk")) return "UK";
+  if (r.includes("australia")) return "AU";
+  if (r.includes("japan")) return "JP";
+  if (r.includes("india")) return "IN";
+  if (r.includes("korea")) return "KR";
+  if (r.includes("new zealand")) return "NZ";
+  if (r.includes("israel")) return "IL";
+  return "—";
+}
+
+function riskFor(fw: FrameworkWithTags): "high" | "med" | "low" {
+  const mult = fw.bonusPenalties.severityMultiplier ?? 1;
+  if (fw.bonusPenalties.elementCountWeight && fw.bonusPenalties.elementCountWeight > 0) return "high";
+  if (mult >= 1.2) return "high";
+  if (mult >= 1.0) return "med";
+  return "low";
+}
+
+const FLAG_STYLES: Record<string, { bg: string; fg: string }> = {
+  US: { bg: "#1a2547", fg: "#E8EAF2" },
+  CA: { bg: "#3a1f20", fg: "#E8D4D4" },
+  EU: { bg: "#1a2b4a", fg: "#F0D96A" },
+  UK: { bg: "#1e2747", fg: "#E8EAF2" },
+  AU: { bg: "#1a2747", fg: "#E8EAF2" },
+  JP: { bg: "#2c1417", fg: "#E8D4D4" },
+  IN: { bg: "#33260f", fg: "#F0C87A" },
+  KR: { bg: "#1b2a3f", fg: "#E8EAF2" },
+  NZ: { bg: "#1a2747", fg: "#E8EAF2" },
+  IL: { bg: "#1a2a3f", fg: "#E8EAF2" },
+};
+
+function Flag({ code }: { code: string }) {
+  const c = FLAG_STYLES[code] ?? { bg: "var(--bg-overlay)", fg: "var(--text-secondary)" };
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-      <div className="absolute top-[15%] left-[10%] w-80 h-80 rounded-full blur-[120px] opacity-[0.14]"
-        style={{ background: "var(--accent)", animation: "float-orb-1 25s ease-in-out infinite" }} />
-      <div className="absolute bottom-[20%] right-[8%] w-96 h-96 rounded-full blur-[140px] opacity-[0.10]"
-        style={{ background: "var(--accent-secondary)", animation: "float-orb-2 30s ease-in-out infinite" }} />
-      <div className="absolute top-[40%] right-[25%] w-56 h-56 rounded-full blur-[100px] opacity-[0.07]"
-        style={{ background: "var(--accent-tertiary)", animation: "float-orb-3 22s ease-in-out infinite" }} />
-      <div className="absolute bottom-[10%] left-[30%] w-44 h-44 rounded-full blur-[90px] opacity-[0.06]"
-        style={{ background: "var(--accent)", animation: "float-orb-2 28s ease-in-out infinite reverse" }} />
-    </div>
+    <span className="flag-mono" style={{ background: c.bg, color: c.fg }} aria-hidden="true">
+      {code}
+    </span>
   );
 }
 
-/* ── Scan Progress ── */
-function ScanProgress({ stage }: { stage: ScanStage }) {
-  const idx = STAGES.findIndex((s) => s.key === stage);
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-sm mx-auto mt-10 space-y-3">
-      {STAGES.map((s, i) => (
-        <motion.div key={s.key} initial={{ opacity: 0, x: -10 }} animate={{ opacity: i <= idx ? 1 : 0.2, x: 0 }} transition={{ delay: i * 0.1, duration: 0.4 }}
-          className="flex items-center gap-3 text-xs">
-          {i < idx ? (
-            <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "var(--pass-bg)", color: "var(--pass)" }}>
-              <CheckCircle2 size={13} />
-            </span>
-          ) : i === idx ? (
-            <span className="w-5 h-5 rounded-full animate-scan-pulse" style={{ background: "var(--accent)", boxShadow: "0 0 12px var(--accent-glow)" }} />
-          ) : (
-            <span className="w-5 h-5 rounded-full" style={{ background: "var(--border-default)" }} />
-          )}
-          <span style={{ color: i <= idx ? "var(--text-primary)" : "var(--text-tertiary)" }}>{s.label}</span>
-        </motion.div>
-      ))}
-    </motion.div>
-  );
+function formatDeadline(iso?: string): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-/* ── Scanner Input with Tabs ── */
-type InputTab = "url" | "paste" | "upload";
+/* ═══════════════════════════════════════════════════════════════
+   Scanner — 3-tab (URL / paste HTML / upload)
+   ═══════════════════════════════════════════════════════════════ */
+type Tab = "url" | "paste" | "upload";
 
-function ScannerInput({ onScanUrl, onAnalyzeHtml, isScanning }: {
+const PAGE_OPTIONS = [3, 5, 8, 12] as const;
+
+function Scanner({
+  onScanUrl,
+  onCrawlUrl,
+  onAnalyzeHtml,
+  isScanning,
+}: {
   onScanUrl: (url: string) => void;
+  onCrawlUrl: (url: string, maxPages: number) => void;
   onAnalyzeHtml: (html: string, name: string, method: "paste" | "upload") => void;
   isScanning: boolean;
 }) {
-  const [tab, setTab] = useState<InputTab>("url");
+  const [tab, setTab] = useState<Tab>("url");
   const [url, setUrl] = useState("");
   const [html, setHtml] = useState("");
+  const [crawl, setCrawl] = useState(false);
+  const [maxPages, setMaxPages] = useState<number>(5);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const tabs: { key: InputTab; label: string; Icon: LucideIcon }[] = [
-    { key: "url", label: "URL", Icon: Search },
-    { key: "paste", label: "Paste HTML", Icon: ClipboardPaste },
-    { key: "upload", label: "Upload", Icon: Upload },
-  ];
+  const submit = useCallback(
+    (raw: string) => {
+      const trimmed = raw.trim();
+      if (!trimmed) return;
+      const normalized = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      if (crawl) onCrawlUrl(normalized, maxPages);
+      else onScanUrl(normalized);
+    },
+    [onScanUrl, onCrawlUrl, crawl, maxPages]
+  );
 
   return (
-    <div className="w-full">
-      <div role="tablist" aria-label="Scan input method" className="flex gap-1 p-1 rounded-xl mb-5 w-fit mx-auto"
-        style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-default)" }}>
-        {tabs.map((t) => (
-          <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)} disabled={isScanning}
-            className="px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-            style={{
-              background: tab === t.key ? "var(--bg-raised)" : "transparent",
-              color: tab === t.key ? "var(--text-primary)" : "var(--text-tertiary)",
-              boxShadow: tab === t.key ? "var(--shadow-sm)" : "none",
-            }}>
-            <t.Icon size={12} aria-hidden="true" /> {t.label}
-          </button>
-        ))}
+    <section className="scanner" aria-label="Scan a website">
+      <div role="tablist" aria-label="Input method" className="scanner-tabs">
+        <button
+          role="tab"
+          id="tab-url"
+          aria-selected={tab === "url"}
+          aria-controls="panel-url"
+          tabIndex={tab === "url" ? 0 : -1}
+          className="scanner-tab"
+          onClick={() => setTab("url")}
+          disabled={isScanning}
+        >
+          <Globe size={14} aria-hidden="true" /> URL
+        </button>
+        <button
+          role="tab"
+          id="tab-paste"
+          aria-selected={tab === "paste"}
+          aria-controls="panel-paste"
+          tabIndex={tab === "paste" ? 0 : -1}
+          className="scanner-tab"
+          onClick={() => setTab("paste")}
+          disabled={isScanning}
+        >
+          <Code2 size={14} aria-hidden="true" /> Paste HTML
+        </button>
+        <button
+          role="tab"
+          id="tab-upload"
+          aria-selected={tab === "upload"}
+          aria-controls="panel-upload"
+          tabIndex={tab === "upload" ? 0 : -1}
+          className="scanner-tab"
+          onClick={() => setTab("upload")}
+          disabled={isScanning}
+        >
+          <Upload size={14} aria-hidden="true" /> Upload file
+        </button>
       </div>
 
-      {tab === "url" && (
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          const raw = url.trim();
-          if (!raw) return;
-          // Normalize: prepend https:// if user typed a bare domain like "example.com" or "www.example.com"
-          const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-          onScanUrl(normalized);
-        }} className="flex gap-2.5 scanner-input rounded-xl p-1.5"
-          style={{ background: "var(--bg-input)", border: "1px solid var(--border-strong)" }}>
-          <label htmlFor="url-input" className="sr-only">Website URL to scan</label>
-          <input id="url-input" type="text" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="example.com" disabled={isScanning} autoComplete="url"
-            className="flex-1 h-11 px-4 rounded-lg text-sm transition-all outline-none bg-transparent"
-            style={{ color: "var(--text-primary)" }} />
-          <button type="submit" disabled={isScanning || !url.trim()}
-            className="scan-btn h-11 px-8 rounded-lg text-sm font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
-            style={{ color: "var(--text-inverse)" }}>
-            <span>{isScanning ? "Scanning..." : "Scan"}</span>
-          </button>
-        </form>
-      )}
+      <div className="scanner-body">
+        {tab === "url" && (
+          <div role="tabpanel" id="panel-url" aria-labelledby="tab-url">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                submit(url);
+              }}
+            >
+              <div className="url-row">
+                <div className="url-field">
+                  <span className="scheme" aria-hidden="true">https://</span>
+                  <label htmlFor="scan-url" className="sr-only">
+                    Website URL
+                  </label>
+                  <input
+                    id="scan-url"
+                    type="text"
+                    inputMode="url"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="yoursite.com"
+                    spellCheck={false}
+                    autoComplete="url"
+                    disabled={isScanning}
+                  />
+                </div>
+                <button type="submit" className="btn-scan" disabled={isScanning || !url.trim()}>
+                  {crawl ? "Scan whole site" : "Scan for legal risk"} <ArrowRight size={14} aria-hidden="true" />
+                </button>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  marginTop: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-secondary)", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={crawl}
+                    onChange={(e) => setCrawl(e.target.checked)}
+                    disabled={isScanning}
+                  />
+                  Scan the whole site (crawl)
+                </label>
+                {crawl && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    <label htmlFor="max-pages" className="mono" style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
+                      Up to
+                    </label>
+                    <select
+                      id="max-pages"
+                      value={maxPages}
+                      onChange={(e) => setMaxPages(Number(e.target.value))}
+                      disabled={isScanning}
+                      className="mono"
+                      style={{ background: "var(--bg-input)", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "3px 6px", color: "var(--text-primary)", fontSize: 12 }}
+                    >
+                      {PAGE_OPTIONS.map((n) => (
+                        <option key={n} value={n}>{n} pages</option>
+                      ))}
+                    </select>
+                    <span className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+                      · same-origin, robots-aware
+                    </span>
+                  </span>
+                )}
+              </div>
+            </form>
+            <div className="sample-row">
+              <span className="label">Try:</span>
+              {SAMPLES.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className="chip"
+                  onClick={() => {
+                    setUrl(s);
+                    submit(s);
+                  }}
+                  disabled={isScanning}
+                >
+                  {s}
+                </button>
+              ))}
+              <Link href="/results?sample=1" className="sample-link">
+                or see a sample report <ArrowRight size={12} aria-hidden="true" />
+              </Link>
+            </div>
+            <p className="scanner-trust mono">
+              Free · no signup · your HTML never leaves your browser on paste/upload
+            </p>
+          </div>
+        )}
 
-      {tab === "paste" && (
-        <div className="space-y-3">
-          <label htmlFor="html-paste" className="sr-only">HTML code to analyze</label>
-          <textarea id="html-paste" value={html} onChange={(e) => setHtml(e.target.value)} placeholder="Paste your HTML here..." rows={7} disabled={isScanning}
-            className="w-full rounded-xl p-4 text-xs outline-none resize-y scanner-input"
-            style={{ background: "var(--bg-input)", border: "1px solid var(--border-strong)", color: "var(--text-primary)", fontFamily: "var(--font-mono)" }} />
-          <button onClick={() => { if (html.trim()) onAnalyzeHtml(html, "pasted-html", "paste"); }} disabled={isScanning || !html.trim()}
-            className="scan-btn h-11 px-8 rounded-lg text-sm font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
-            style={{ color: "var(--text-inverse)" }}>
-            <span>Analyze HTML</span>
-          </button>
+        {tab === "paste" && (
+          <div role="tabpanel" id="panel-paste" aria-labelledby="tab-paste" className="html-paste">
+            <label htmlFor="html-paste" className="sr-only">
+              HTML to analyse
+            </label>
+            <textarea
+              id="html-paste"
+              value={html}
+              onChange={(e) => setHtml(e.target.value)}
+              placeholder={'<!doctype html>\n<html>\n  <head><title>Paste your document</title></head>\n  <body>...</body>\n</html>'}
+              disabled={isScanning}
+              spellCheck={false}
+            />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginTop: 12,
+                alignItems: "center",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <span
+                className="mono"
+                style={{ fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.08em", textTransform: "uppercase" }}
+              >
+                Analysed in-browser · 0 bytes sent to server
+              </span>
+              <button
+                type="button"
+                className="btn-scan"
+                disabled={isScanning || !html.trim()}
+                onClick={() => {
+                  if (html.trim()) onAnalyzeHtml(html, "pasted.html", "paste");
+                }}
+              >
+                Analyse <ArrowRight size={14} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {tab === "upload" && (
+          <div role="tabpanel" id="panel-upload" aria-labelledby="tab-upload">
+            <label
+              className="file-drop"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileRef.current?.click();
+                }
+              }}
+              tabIndex={0}
+            >
+              <Upload size={28} aria-hidden="true" />
+              <div
+                className="mono"
+                style={{ marginTop: 10, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase" }}
+              >
+                Drop .html file, or <u>browse</u>
+              </div>
+              <div style={{ marginTop: 6, fontSize: 12 }}>
+                Max 5 MB. Rendered in an isolated iframe.
+              </div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".html,.htm,text/html"
+                className="sr-only"
+                disabled={isScanning}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f && f.size <= 5 * 1024 * 1024) {
+                    const r = new FileReader();
+                    r.onload = () => {
+                      if (typeof r.result === "string") onAnalyzeHtml(r.result, f.name, "upload");
+                    };
+                    r.readAsText(f);
+                  }
+                }}
+              />
+            </label>
+          </div>
+        )}
+      </div>
+
+      <div className="scanner-meta" aria-hidden="true">
+        <span><span className="check">●</span> 105 axe-core rules</span>
+        <span><span className="check">●</span> 20 custom checks</span>
+        <span><span className="check">●</span> 16 legal frameworks</span>
+        <span><span className="check">●</span> No data stored</span>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Indictment — signature hero interaction. Cycles through real
+   violations and "indicts" the specific laws each one breaks,
+   stamping the law badges in one at a time. The whole product
+   thesis ("we say which laws") in a single animated glance.
+   ═══════════════════════════════════════════════════════════════ */
+const INDICTMENTS: ReadonlyArray<{ rule: string; wcag: string; selector: string; laws: string[] }> = [
+  { rule: "Image missing alt text", wcag: "1.1.1", selector: "img.hero-banner", laws: ["ADA III", "EAA", "Unruh", "Section 508"] },
+  { rule: "Button has no accessible name", wcag: "4.1.2", selector: "button.icon-only", laws: ["ADA III", "EAA", "AODA", "Equality Act"] },
+  { rule: "Text contrast below 4.5:1", wcag: "1.4.3", selector: ".muted-label", laws: ["ADA III", "EAA", "EN 301 549", "Unruh"] },
+  { rule: "Form input without a label", wcag: "3.3.2", selector: "input#email", laws: ["ADA III", "Section 508", "EAA", "DDA"] },
+];
+
+function Indictment() {
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => {
+    if (paused) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % INDICTMENTS.length), 3600);
+    return () => clearInterval(t);
+  }, [paused]);
+
+  const cur = INDICTMENTS[idx];
+  return (
+    <div
+      className="indict"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div className="indict-label">
+        <span className="dot" aria-hidden="true" /> One violation · {INDICTMENTS.length} verdicts
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={idx}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.4, ease: EASE }}
+        >
+          <div className="indict-finding">
+            <span className="indict-sev" aria-hidden="true" />
+            <div>
+              <div className="indict-rule">{cur.rule}</div>
+              <div className="indict-meta mono">
+                WCAG {cur.wcag} · <span className="indict-sel">{cur.selector}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="indict-arrow mono" aria-hidden="true">↓ indicts</div>
+
+          <ul className="indict-laws" aria-label={`Laws implicated: ${cur.laws.join(", ")}`}>
+            {cur.laws.map((law, i) => (
+              <motion.li
+                key={law}
+                className="indict-law"
+                initial={{ opacity: 0, scale: 0.9, x: -6 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                transition={{ duration: 0.32, ease: EASE, delay: 0.25 + i * 0.12 }}
+              >
+                {law}
+              </motion.li>
+            ))}
+          </ul>
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="indict-foot mono">Illustrative · your scan maps every finding to all 16</div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Hero
+   ═══════════════════════════════════════════════════════════════ */
+function Hero({
+  onScanUrl,
+  onCrawlUrl,
+  onAnalyzeHtml,
+  isScanning,
+}: {
+  onScanUrl: (url: string) => void;
+  onCrawlUrl: (url: string, maxPages: number) => void;
+  onAnalyzeHtml: (html: string, name: string, method: "paste" | "upload") => void;
+  isScanning: boolean;
+}) {
+  return (
+    <section className="hero" id="main-content">
+      <motion.div
+        className="hero-inner"
+        variants={stagger}
+        initial="hidden"
+        animate="visible"
+        transition={{ delayChildren: 0.05, staggerChildren: 0.09 }}
+      >
+        <div className="hero-main">
+          <motion.span variants={fadeUp} className="hero-eyebrow">
+            <span className="dot" /> 5,000+ digital accessibility lawsuits filed in 2025
+          </motion.span>
+          <motion.h1 variants={fadeUp} className="hero-title">
+            Most tools say you fail <span className="wcag-mono">WCAG&nbsp;1.1.1.</span>
+            <br />
+            We say <span className="ember">you&rsquo;re breaking 16 laws.</span>
+          </motion.h1>
+          <motion.p variants={fadeUp} className="hero-lede">
+            Know exactly which of <b>16 laws</b> your site is exposed under — and the code to fix each issue.
+            We render your page in a real browser and run 125+ checks against every framework. Real findings,{" "}
+            <b>not an overlay widget</b>.
+          </motion.p>
         </div>
-      )}
 
-      {tab === "upload" && (
-        <div className="flex flex-col items-center gap-3">
-          <label htmlFor="file-upload" tabIndex={0} role="button"
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileRef.current?.click(); } }}
-            className="w-full rounded-xl p-12 text-center cursor-pointer transition-all duration-300 hover:scale-[1.01] glass-strong gradient-border-card"
-            style={{ borderColor: "var(--border-default)" }}>
-            <Upload size={28} className="mx-auto mb-3" style={{ color: "var(--accent)" }} aria-hidden="true" />
-            <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Drop .html file here or click to browse</p>
-            <p className="text-xs mt-1.5" style={{ color: "var(--text-tertiary)" }}>Accepts .html and .htm files, max 5MB</p>
-          </label>
-          <input ref={fileRef} id="file-upload" type="file" accept=".html,.htm" className="sr-only"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f && f.size <= 5*1024*1024) { const r = new FileReader(); r.onload = () => { if (typeof r.result === "string") onAnalyzeHtml(r.result, f.name, "upload"); }; r.readAsText(f); } }} />
+        <motion.aside variants={fadeUp} className="hero-aside" aria-label="How one violation maps to the law">
+          <Indictment />
+        </motion.aside>
+
+        <motion.div variants={fadeUp} className="hero-scanner">
+          <Scanner onScanUrl={onScanUrl} onCrawlUrl={onCrawlUrl} onAnalyzeHtml={onAnalyzeHtml} isScanning={isScanning} />
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Ticker
+   ═══════════════════════════════════════════════════════════════ */
+function Ticker() {
+  const items = [...LAWSUITS, ...LAWSUITS];
+  return (
+    <div className="ticker" aria-label="Recent accessibility enforcement — curated sample">
+      <div className="ticker-track">
+        {items.map((l, i) => (
+          <span key={i} className="ticker-item">
+            <span className="date">{l.date}</span>
+            <span className="tag">[{l.tag}]</span>
+            <span>{l.msg}</span>
+            <span className="tick-sep">·</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Stats strip
+   ═══════════════════════════════════════════════════════════════ */
+function Stats() {
+  const s = [
+    { num: "3,117", sub: "", label: "Federal web accessibility lawsuits in 2025", extra: "Up 27% YoY — Seyfarth Shaw" },
+    { num: "1,416", sub: "", label: "2025 lawsuits hit sites running an a11y widget", extra: "Overlays don't stop lawsuits — UsableNet" },
+    { num: "$4,000", sub: "/visit", label: "California Unruh minimum damages", extra: "Per violation, per visitor" },
+    { num: "16", sub: "laws", label: "Frameworks we map your scan to", extra: "1 scan, 16 verdicts" },
+  ];
+  return (
+    <motion.section
+      className="stats"
+      aria-label="Why legal risk matters"
+      variants={stagger}
+      initial="hidden"
+      whileInView="visible"
+      viewport={inView}
+    >
+      {s.map((x) => (
+        <motion.div key={x.label} className="stat" variants={fadeUp}>
+          <div className="stat-num">
+            {x.num}
+            {x.sub && <span className="sub">{x.sub}</span>}
+          </div>
+          <div className="stat-label">{x.label}</div>
+          <div className="stat-sub">{x.extra}</div>
+        </motion.div>
+      ))}
+    </motion.section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Frameworks centerpiece — 4×4 grid driven by real FRAMEWORKS
+   ═══════════════════════════════════════════════════════════════ */
+function Frameworks() {
+  return (
+    <section className="frameworks" id="frameworks">
+      <div className="fw-inner">
+        <div className="section-head">
+          <div>
+            <div className="kicker">The map · 16 frameworks</div>
+            <h2>
+              One scan.
+              <br />
+              Sixteen jurisdictions.
+              <br />
+              Sixteen verdicts.
+            </h2>
+          </div>
+          <p className="desc">
+            Every WCAG failure we detect is scored separately against each framework&rsquo;s applicable WCAG tags,
+            severity multipliers, per-violation rules, and jurisdictional penalties. You see where you&rsquo;re actually
+            exposed, not just where you fail in theory.
+          </p>
+        </div>
+
+        <motion.div
+          className="fw-grid"
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
+          initial="hidden"
+          whileInView="visible"
+          viewport={inView}
+        >
+          {FRAMEWORKS.map((f, i) => {
+            const risk = riskFor(f);
+            const deadline = formatDeadline(f.enforcementDate);
+            return (
+              <motion.article
+                key={f.id}
+                className={`fw-cell ${i === 1 ? "active" : ""}`}
+                aria-label={`${f.name}, ${f.region}, ${risk} risk`}
+                variants={fadeUp}
+              >
+                <div>
+                  <div className="fw-top">
+                    <span className="fw-num">{String(i + 1).padStart(2, "0")} / 16</span>
+                    <Flag code={flagFor(f)} />
+                  </div>
+                  <div className="fw-name">{f.name}</div>
+                  <div className="fw-region">{f.region}</div>
+                  {deadline && <span className="fw-deadline">◆ {deadline}</span>}
+                </div>
+                <div>
+                  <div className="fw-penalty">{f.penalties}</div>
+                  <div className="fw-meta">
+                    <span className="fw-wcag">{f.wcagBasis}</span>
+                    <span className={`fw-risk ${risk}`}>{risk} risk</span>
+                  </div>
+                </div>
+              </motion.article>
+            );
+          })}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   How it works
+   ═══════════════════════════════════════════════════════════════ */
+function HowItWorks() {
+  return (
+    <section className="section" id="how">
+      <div className="section-head">
+        <div>
+          <div className="kicker">Under the hood</div>
+          <h2>Real browsers. Real rules. Real penalties.</h2>
+        </div>
+        <p className="desc">
+          Most scanners lint static HTML and miss anything rendered by JavaScript. We render every page in headless
+          Chromium, run the full axe-core suite and our 20 custom checks, then map every finding to legal frameworks in
+          one pass.
+        </p>
+      </div>
+      <motion.div
+        className="how-steps"
+        variants={stagger}
+        initial="hidden"
+        whileInView="visible"
+        viewport={inView}
+      >
+        {HOW_STEPS.map((s) => (
+          <motion.div key={s.idx} className="how-step" variants={fadeUp}>
+            <div>
+              <span className="tag">{s.tag}</span>
+              <div style={{ display: "flex", gap: 10, alignItems: "baseline", marginTop: 4 }}>
+                <span className="idx">{s.idx}</span>
+              </div>
+              <h3>{s.title}</h3>
+              <p>{s.desc}</p>
+            </div>
+            <div className="rule">───────</div>
+          </motion.div>
+        ))}
+      </motion.div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Trust bar — honest credibility signals (no fabricated counts).
+   The per-device scan count is real localStorage data.
+   ═══════════════════════════════════════════════════════════════ */
+const TRUST_SIGNALS = [
+  "Real-browser rendering",
+  "125+ checks · axe-core + 20 custom",
+  "Benchmarked vs axe-core, Lighthouse & Pa11y",
+  "WCAG-EM aligned methodology",
+  "No overlay — code-level findings",
+];
+
+function TrustBar() {
+  const [localScans, setLocalScans] = useState(0);
+  useEffect(() => {
+    setLocalScans(loadHistory().length);
+  }, []);
+
+  return (
+    <section className="trustbar" aria-label="Why this scan is credible">
+      <div className="trustbar-inner">
+        {localScans > 0 && (
+          <span className="trustbar-item trustbar-count mono">
+            <span className="dot" aria-hidden="true" /> {localScans} scan{localScans === 1 ? "" : "s"} run in this browser
+          </span>
+        )}
+        {TRUST_SIGNALS.map((s) => (
+          <span key={s} className="trustbar-item mono">
+            <span className="tick" aria-hidden="true">✓</span> {s}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Recent scans + compare (localStorage, no backend)
+   ═══════════════════════════════════════════════════════════════ */
+function timeAgo(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const mins = Math.round((Date.now() - then) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+}
+
+function scoreColor(n: number): string {
+  return n >= 90 ? "var(--pass)" : n >= 60 ? "var(--severity-minor)" : "var(--severity-critical)";
+}
+
+function hostOf(url: string): string {
+  try { return new URL(url).host; } catch { return url; }
+}
+
+function Delta({ n, suffix = "", invert = false }: { n: number; suffix?: string; invert?: boolean }) {
+  const good = invert ? n < 0 : n > 0;
+  const color = n === 0 ? "var(--text-tertiary)" : good ? "var(--pass)" : "var(--severity-critical)";
+  return <span style={{ color, fontWeight: 600 }}>{n > 0 ? "+" : ""}{n}{suffix}</span>;
+}
+
+function ComparePanel({ a, b }: { a: ScanHistoryEntry; b: ScanHistoryEntry }) {
+  // a = older, b = newer (sorted by caller)
+  const overallDelta = b.overall - a.overall;
+  const issueDelta = b.issueCount - a.issueCount;
+  const fwDeltas = b.frameworks
+    .map((fb) => {
+      const fa = a.frameworks.find((x) => x.id === fb.id);
+      return fa ? { shortName: fb.shortName, delta: fb.percentage - fa.percentage, now: fb.percentage } : null;
+    })
+    .filter((x): x is { shortName: string; delta: number; now: number } => !!x && x.delta !== 0)
+    .sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta))
+    .slice(0, 6);
+
+  return (
+    <div style={{ marginTop: 14, padding: 16, border: "1px solid var(--border-default)", borderRadius: 10, background: "var(--bg-overlay)" }}>
+      <div className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+        {hostOf(a.url)} · {timeAgo(a.timestamp)} → {timeAgo(b.timestamp)}
+      </div>
+      <div style={{ display: "flex", gap: 24, flexWrap: "wrap", marginBottom: fwDeltas.length ? 12 : 0 }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+          Overall score: <b style={{ color: "var(--text-primary)" }}>{a.overall} → {b.overall}</b> <Delta n={overallDelta} />
+        </div>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+          Issues: <b style={{ color: "var(--text-primary)" }}>{a.issueCount} → {b.issueCount}</b> <Delta n={issueDelta} invert />
+        </div>
+      </div>
+      {fwDeltas.length > 0 && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {fwDeltas.map((f) => (
+            <span key={f.shortName} className="mono" style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, border: "1px solid var(--border-default)", color: "var(--text-secondary)" }}>
+              {f.shortName} {f.now}% <Delta n={f.delta} suffix="pt" />
+            </span>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-/* ═══════════════════════════════ MAIN PAGE ═══════════════════════════════ */
+function RecentScans() {
+  const [history, setHistory] = useState<ScanHistoryEntry[]>([]);
+  const [comparing, setComparing] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
 
+  // localStorage can only be read after mount — doing it during render would
+  // cause an SSR hydration mismatch, so the one-shot setState here is intentional.
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
+
+  if (history.length === 0) return null;
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 2) return [prev[1], id];
+      return [...prev, id];
+    });
+  };
+
+  const pair = selected
+    .map((id) => history.find((h) => h.id === id))
+    .filter((x): x is ScanHistoryEntry => !!x)
+    .sort((x, y) => new Date(x.timestamp).getTime() - new Date(y.timestamp).getTime());
+
+  return (
+    <section className="dash-section" aria-label="Recent scans" style={{ maxWidth: 1100, margin: "0 auto", padding: "64px 24px 40px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+        <h2 className="font-display" style={{ fontSize: 22 }}>Recent scans</h2>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            className="btn"
+            aria-pressed={comparing}
+            onClick={() => { setComparing((c) => !c); setSelected([]); }}
+          >
+            <GitCompare size={13} /> {comparing ? "Done comparing" : "Compare two"}
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => { clearHistory(); setHistory([]); setSelected([]); setComparing(false); }}
+          >
+            <Trash2 size={13} /> Clear
+          </button>
+        </div>
+      </div>
+
+      {comparing && (
+        <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 10 }}>
+          Pick two scans to see what changed. {pair.length < 2 ? `${2 - pair.length} more to select.` : ""}
+        </p>
+      )}
+
+      <div style={{ border: "1px solid var(--border-default)", borderRadius: 10, overflow: "hidden" }}>
+        {history.map((h, i) => {
+          const isSel = selected.includes(h.id);
+          return (
+            <div
+              key={h.id + i}
+              onClick={comparing ? () => toggleSelect(h.id) : undefined}
+              style={{
+                display: "grid",
+                gridTemplateColumns: comparing ? "auto auto 1fr auto auto" : "auto 1fr auto auto",
+                gap: 14,
+                alignItems: "center",
+                padding: "12px 16px",
+                borderTop: i === 0 ? "none" : "1px solid var(--border-default)",
+                background: isSel ? "var(--bg-overlay)" : "transparent",
+                cursor: comparing ? "pointer" : "default",
+              }}
+            >
+              {comparing && (
+                <input type="checkbox" checked={isSel} readOnly aria-label={`Select scan of ${hostOf(h.url)}`} />
+              )}
+              <span className="mono" style={{ fontSize: 18, fontWeight: 700, color: scoreColor(h.overall), minWidth: 32 }}>
+                {h.overall}
+              </span>
+              <span className="mono" style={{ fontSize: 13, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {hostOf(h.url)}
+                {h.isSite && <span style={{ marginLeft: 8, fontSize: 10, color: "var(--text-tertiary)" }}>SITE · {h.pagesScanned}p</span>}
+              </span>
+              <span className="mono" style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                {h.issueCount} issue{h.issueCount === 1 ? "" : "s"}
+              </span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+                {timeAgo(h.timestamp)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {comparing && pair.length === 2 && <ComparePanel a={pair[0]} b={pair[1]} />}
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Main page
+   ═══════════════════════════════════════════════════════════════ */
 export default function Home() {
-  const { stage, result, error, scanUrl, analyzeHtml, isScanning } = useAxeAnalysis();
+  const router = useRouter();
+  const { stage, result, site, error, scanUrl, crawlUrl, analyzeHtml, isScanning } = useAxeAnalysis();
+  const [scanTarget, setScanTarget] = useState<string>("");
 
   useEffect(() => {
     if (result) {
       sessionStorage.setItem("a11y-beast-result", JSON.stringify(result));
-      window.location.href = "/results";
-    }
-  }, [result]);
+      if (site) sessionStorage.setItem("a11y-beast-site", JSON.stringify(site));
+      else sessionStorage.removeItem("a11y-beast-site");
 
-  const handleAnalyzeHtml = useCallback((html: string, name: string, method: "paste" | "upload") => {
-    analyzeHtml(html, name, method);
-  }, [analyzeHtml]);
+      // Capture a trimmed history entry (summary metrics only).
+      Promise.all([
+        import("@/lib/compliance/mapper"),
+        import("@/lib/history"),
+      ]).then(([{ generateComplianceResults }, { pushHistory }]) => {
+        const compliance = generateComplianceResults(result.issues, result.passedRules, {
+          hasAccessibilityStatement: result.pageMeta.hasAccessibilityStatement,
+          hasSkipLink: result.pageMeta.hasSkipLink,
+          lang: result.pageMeta.lang,
+        }, result.passedRuleTags);
+        pushHistory({
+          id: result.id,
+          url: result.url,
+          timestamp: result.timestamp,
+          isSite: !!site,
+          pagesScanned: site?.stats.scanned,
+          overall: result.score.overall,
+          grade: result.score.grade,
+          issueCount: result.issues.length,
+          bySeverity: result.score.bySeverity,
+          frameworks: compliance.map((c) => ({
+            id: c.framework.id,
+            shortName: c.framework.shortName,
+            percentage: c.percentage,
+          })),
+        });
+      }).catch(() => { /* history is best-effort */ });
+
+      router.push("/results");
+    }
+  }, [result, site, router]);
+
+  const handleScanUrl = useCallback(
+    (url: string) => {
+      setScanTarget(url);
+      scanUrl(url);
+    },
+    [scanUrl]
+  );
+
+  const handleCrawlUrl = useCallback(
+    (url: string, maxPages: number) => {
+      setScanTarget(url);
+      crawlUrl(url, maxPages);
+    },
+    [crawlUrl]
+  );
+
+  const handleAnalyzeHtml = useCallback(
+    (html: string, name: string, method: "paste" | "upload") => {
+      setScanTarget(name);
+      analyzeHtml(html, name, method);
+    },
+    [analyzeHtml]
+  );
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-semibold"
-        style={{ background: "var(--accent)", color: "var(--text-inverse)" }}>Skip to main content</a>
-
-      <div aria-live="polite" aria-atomic="true" className="sr-only" role="status">
-        {stage === "fetching" && "Fetching page content."}
-        {stage === "analyzing" && "Running accessibility analysis."}
-        {stage === "scoring" && "Calculating scores."}
-        {stage === "error" && error && `Error: ${error}`}
-      </div>
+    <MotionConfig reducedMotion="user">
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
 
       <Header />
 
-      <main id="main-content" className="flex-1" role="main">
-        {/* ══════════════════════════════════════════
-            HERO — Aurora Background + Floating Orbs
-            ══════════════════════════════════════════ */}
-        <section className={`aurora-hero relative ${isScanning ? "py-12" : "min-h-[88vh] flex items-center"} transition-all duration-700`}>
-          <FloatingOrbs />
-          <div className="dot-grid absolute inset-0 opacity-30 pointer-events-none" aria-hidden="true" />
+      {isScanning ? (
+        <ScanningCard
+          target={scanTarget}
+          stage={stage}
+          onCancel={() => window.location.reload()}
+        />
+      ) : (
+        <main id="main-content" role="main" style={{ flex: 1 }}>
+          <Hero onScanUrl={handleScanUrl} onCrawlUrl={handleCrawlUrl} onAnalyzeHtml={handleAnalyzeHtml} isScanning={isScanning} />
+          <TrustBar />
+          <Ticker />
+          <RecentScans />
+          <Stats />
+          <Frameworks />
+          <HowItWorks />
 
-          <div className="relative z-10 text-center px-6 w-full">
-            {!isScanning && (
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}>
-                <div className="glass inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-medium mb-8"
-                  style={{ color: "var(--accent)" }}>
-                  <Sparkles size={11} aria-hidden="true" />
-                  Free &middot; Open Source &middot; Puppeteer + axe-core
-                </div>
-
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.05]"
-                  style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.04em" }}>
-                  <span style={{ color: "var(--text-primary)" }}>The Ultimate</span>
-                  <br />
-                  <span className="gradient-text-animated">Accessibility Checker</span>
-                </h1>
-
-                <p className="text-base md:text-lg mb-12 max-w-xl mx-auto leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                  125+ rules. 16 global legal frameworks. 20 custom checks beyond axe-core.
-                  <br className="hidden md:block" />
-                  Real browser rendering via Puppeteer. Accurate results.
-                </p>
-              </motion.div>
-            )}
-
-            {/* Scanner Card — Glass with Glow */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="max-w-2xl mx-auto glass-strong rounded-2xl p-6 glow-accent"
+          {error && (
+            <div
+              role="alert"
+              style={{
+                maxWidth: 720,
+                margin: "0 auto 40px",
+                padding: "14px 20px",
+                background: "var(--severity-critical-bg)",
+                border: "1px solid color-mix(in oklch, var(--severity-critical) 30%, transparent)",
+                borderRadius: 10,
+                color: "var(--severity-critical)",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                fontSize: 13,
+              }}
             >
-              <ScannerInput onScanUrl={scanUrl} onAnalyzeHtml={handleAnalyzeHtml} isScanning={isScanning} />
-            </motion.div>
-
-            {!isScanning && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.6 }}>
-                <div className="flex items-center justify-center gap-5 mt-8 flex-wrap text-[11px]" style={{ color: "var(--text-tertiary)" }}>
-                  {["WCAG 2.2", "ADA", "EAA", "Section 508", "AODA", "DDA"].map((s) => (
-                    <span key={s} className="flex items-center gap-1.5"><CheckCircle2 size={10} style={{ color: "var(--pass)" }} aria-hidden="true" /> {s}</span>
-                  ))}
-                </div>
-                <div className="flex items-center justify-center gap-8 mt-4 flex-wrap text-[10px]" style={{ color: "var(--text-tertiary)", opacity: 0.7 }}>
-                  <span className="flex items-center gap-1"><Shield size={10} aria-hidden="true" /> Open Source</span>
-                  <span className="flex items-center gap-1"><Zap size={10} aria-hidden="true" /> 125+ Rules</span>
-                  <span className="flex items-center gap-1"><Lock size={10} aria-hidden="true" /> SSRF Protected</span>
-                  <span className="flex items-center gap-1"><Globe size={10} aria-hidden="true" /> 16 Frameworks</span>
-                </div>
-              </motion.div>
-            )}
-
-            {isScanning && <ScanProgress stage={stage} />}
-
-            {error && (
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mt-8 max-w-lg mx-auto p-4 rounded-xl text-sm flex items-center gap-2.5"
-                style={{ background: "var(--severity-critical-bg)", border: "1px solid rgba(244,63,94,0.2)", color: "var(--severity-critical)" }}>
-                <XCircle size={16} aria-hidden="true" /> {error}
-              </motion.div>
-            )}
-          </div>
-        </section>
-
-        {/* ═══ LANDING SECTIONS ═══ */}
-        {!isScanning && (
-          <>
-            {/* ── Why Accessibility ── */}
-            <section id="why-a11y" className="relative py-24 px-6 scroll-mt-16">
-              <div className="section-separator absolute top-0 left-0 right-0" />
-
-              <div className="max-w-5xl mx-auto">
-                <motion.div initial="hidden" whileInView="visible" viewport={vpOnce} variants={stagger} className="text-center mb-16">
-                  <motion.p variants={fadeUp} className="text-[11px] font-bold uppercase tracking-[0.2em] mb-4" style={{ color: "var(--accent)", fontFamily: "var(--font-display)" }}>
-                    Why It Matters
-                  </motion.p>
-                  <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-5"
-                    style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>
-                    Why your website needs accessibility
-                  </motion.h2>
-                  <motion.p variants={fadeUp} className="text-base max-w-2xl mx-auto leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                    Web accessibility isn&rsquo;t optional. It&rsquo;s a legal obligation, a business advantage, and simply the right thing to do.
-                  </motion.p>
-                </motion.div>
-
-                {/* Stats Grid */}
-                <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={vpOnce} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-14">
-                  {[
-                    { value: "1.3B", label: "People with disabilities", sub: "16% of global population", Icon: Users },
-                    { value: "5,114", label: "ADA lawsuits in 2025", sub: "Up 27% year over year", Icon: Gavel },
-                    { value: "96.3%", label: "Top 1M sites have issues", sub: "WebAIM Million report", Icon: BarChart3 },
-                    { value: "$13T", label: "Spending power of PWD", sub: "Return on Disability Group", Icon: Globe },
-                  ].map((stat) => (
-                    <motion.div key={stat.label} variants={fadeUp}
-                      className="rounded-2xl p-5 text-center gradient-border-card transition-all duration-300 hover:-translate-y-1"
-                      style={{ background: "var(--bg-raised)" }}>
-                      <stat.Icon size={18} className="mx-auto mb-3" style={{ color: "var(--accent)" }} aria-hidden="true" />
-                      <div className="text-2xl md:text-3xl font-extrabold" style={{ color: "var(--accent)", fontFamily: "var(--font-display)" }}>{stat.value}</div>
-                      <div className="text-xs font-medium mt-1" style={{ color: "var(--text-primary)" }}>{stat.label}</div>
-                      <div className="text-[10px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>{stat.sub}</div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-
-                {/* Case Cards */}
-                <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={vpOnce} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {([
-                    { Icon: Users, color: "var(--accent)", title: "The Human Case", points: ["1.3 billion people live with disabilities — larger than China's population", "Everyone benefits: captions in noisy places, contrast in sunlight, keyboard for power users"] },
-                    { Icon: Gavel, color: "var(--severity-critical)", title: "The Legal Case", points: ["5,114 ADA lawsuits in 2025 — 77% target eCommerce", "California Unruh Act: $4,000 minimum per violation per visit"] },
-                    { Icon: BarChart3, color: "var(--pass)", title: "The Business Case", points: ["$13 trillion annual spending power of people with disabilities", "Accessible sites rank higher — Google rewards semantic HTML and alt text"] },
-                    { Icon: Code, color: "var(--severity-minor)", title: "The Technical Case", points: ["Accessible code is better code — semantic HTML, proper ARIA", "Catch issues early in development before they become expensive"] },
-                  ] as { Icon: LucideIcon; color: string; title: string; points: string[] }[]).map((p) => (
-                    <motion.div key={p.title} variants={fadeUp}
-                      className="rounded-2xl p-6 gradient-border-card transition-all duration-300 hover:-translate-y-1"
-                      style={{ background: "var(--bg-raised)" }}>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                          style={{ background: `color-mix(in srgb, ${p.color} 10%, transparent)`, color: p.color }}>
-                          <p.Icon size={18} aria-hidden="true" />
-                        </div>
-                        <h3 className="text-base font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>{p.title}</h3>
-                      </div>
-                      <ul className="space-y-2.5">
-                        {p.points.map((pt, i) => (
-                          <li key={i} className="flex gap-2.5 text-xs leading-relaxed">
-                            <CheckCircle2 size={13} className="flex-shrink-0 mt-0.5" style={{ color: p.color }} aria-hidden="true" />
-                            <span style={{ color: "var(--text-secondary)" }}>{pt}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </motion.div>
-                  ))}
-                </motion.div>
-
-                {/* WCAG Explainer */}
-                <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={vpOnce}
-                  className="mt-8 rounded-2xl p-6 gradient-border-card"
-                  style={{ background: "var(--bg-raised)" }}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
-                      <FileSearch size={18} aria-hidden="true" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>What is WCAG?</h3>
-                      <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>Web Content Accessibility Guidelines — the global standard</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-                    {[
-                      { letter: "P", name: "Perceivable", desc: "Content presentable in ways users can perceive", color: "var(--accent)" },
-                      { letter: "O", name: "Operable", desc: "UI operable via keyboard, enough time, navigable", color: "var(--pass)" },
-                      { letter: "U", name: "Understandable", desc: "Readable, predictable, helps avoid mistakes", color: "var(--severity-minor)" },
-                      { letter: "R", name: "Robust", desc: "Works with assistive tech and future agents", color: "var(--severity-major)" },
-                    ].map((p) => (
-                      <div key={p.letter} className="rounded-xl p-4 transition-all duration-300 hover:-translate-y-0.5"
-                        style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-default)" }}>
-                        <div className="text-2xl font-extrabold" style={{ color: p.color, fontFamily: "var(--font-display)" }}>{p.letter}</div>
-                        <div className="text-xs font-semibold mt-1" style={{ color: "var(--text-primary)" }}>{p.name}</div>
-                        <div className="text-[10px] mt-0.5 leading-snug" style={{ color: "var(--text-tertiary)" }}>{p.desc}</div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              </div>
-            </section>
-
-            {/* ── Features ── */}
-            <section id="features" className="relative py-24 px-6 scroll-mt-16" style={{ background: "var(--bg-raised)" }}>
-              <div className="section-separator absolute top-0 left-0 right-0" />
-              <div className="max-w-5xl mx-auto">
-                <motion.div initial="hidden" whileInView="visible" viewport={vpOnce} variants={stagger} className="text-center mb-16">
-                  <motion.p variants={fadeUp} className="text-[11px] font-bold uppercase tracking-[0.2em] mb-4" style={{ color: "var(--accent)", fontFamily: "var(--font-display)" }}>
-                    Features
-                  </motion.p>
-                  <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-5"
-                    style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>
-                    More than a WCAG checker
-                  </motion.h2>
-                </motion.div>
-                <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={vpOnce} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {([
-                    { Icon: ShieldCheck, title: "Accessibility Score", desc: "0-100 score with A-F grade. Track improvements over time." },
-                    { Icon: Scale, title: "Legal Risk Mapping", desc: "Every issue mapped to ADA, EAA, Section 508, and 13 more laws." },
-                    { Icon: Code, title: "Code-Level Fixes", desc: "Exact HTML element, CSS selector, and fix guidance for every issue." },
-                    { Icon: BarChart3, title: "POUR Breakdown", desc: "Perceivable, Operable, Understandable, Robust principle analysis." },
-                    { Icon: Users, title: "Impact Analysis", desc: "Visual, motor, cognitive, or auditory — who is affected and how." },
-                    { Icon: Gavel, title: "Compliance Dashboard", desc: "Per-framework pass/fail with deadline alerts and penalty info." },
-                  ] as { Icon: LucideIcon; title: string; desc: string }[]).map((f) => (
-                    <motion.div key={f.title} variants={fadeUp}
-                      className="rounded-2xl p-6 gradient-border-card transition-all duration-300 hover:-translate-y-1.5"
-                      style={{ background: "var(--bg-base)", boxShadow: "var(--shadow-sm)" }}>
-                      <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5"
-                        style={{ background: "var(--accent-subtle)", color: "var(--accent)", border: "1px solid var(--border-default)" }}>
-                        <f.Icon size={20} aria-hidden="true" />
-                      </div>
-                      <h3 className="text-sm font-bold mb-2" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>{f.title}</h3>
-                      <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>{f.desc}</p>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </div>
-            </section>
-
-            {/* ── How It Works ── */}
-            <section id="how-it-works" className="relative py-24 px-6 scroll-mt-16">
-              <div className="section-separator absolute top-0 left-0 right-0" />
-              <div className="max-w-4xl mx-auto">
-                <motion.div initial="hidden" whileInView="visible" viewport={vpOnce} variants={stagger} className="text-center mb-16">
-                  <motion.p variants={fadeUp} className="text-[11px] font-bold uppercase tracking-[0.2em] mb-4" style={{ color: "var(--accent)", fontFamily: "var(--font-display)" }}>
-                    How It Works
-                  </motion.p>
-                  <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-5"
-                    style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>
-                    Three ways to scan
-                  </motion.h2>
-                </motion.div>
-                <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={vpOnce} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {([
-                    { Icon: Search, step: "01", title: "Enter a URL", desc: "Puppeteer renders the full page — JS, CSS, images. Then axe-core + 20 custom checks run against the live DOM." },
-                    { Icon: ClipboardPaste, step: "02", title: "Paste HTML", desc: "Paste raw HTML for instant client-side analysis. No server round-trip. Great for testing components." },
-                    { Icon: Upload, step: "03", title: "Upload a File", desc: "Drag and drop .html files. 100% client-side. Perfect for testing before deployment." },
-                  ] as { Icon: LucideIcon; step: string; title: string; desc: string }[]).map((s, i) => (
-                    <motion.div key={s.step} variants={fadeUp} className="text-center group">
-                      <div className="relative w-16 h-16 mx-auto mb-5">
-                        <div className="absolute inset-0 rounded-2xl transition-all duration-300 group-hover:scale-110"
-                          style={{ background: "var(--accent-subtle)", border: "1px solid var(--border-default)" }} />
-                        <div className="relative w-full h-full flex items-center justify-center" style={{ color: "var(--accent)" }}>
-                          <s.Icon size={24} aria-hidden="true" />
-                        </div>
-                      </div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-[0.25em] mb-2.5"
-                        style={{ color: "var(--accent)", fontFamily: "var(--font-display)" }}>Step {s.step}</div>
-                      <h3 className="text-base font-bold mb-2.5" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>{s.title}</h3>
-                      <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>{s.desc}</p>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </div>
-            </section>
-
-            {/* ── Standards ── */}
-            <section id="standards" className="relative py-24 px-6 scroll-mt-16" style={{ background: "var(--bg-raised)" }}>
-              <div className="section-separator absolute top-0 left-0 right-0" />
-              <div className="max-w-5xl mx-auto">
-                <motion.div initial="hidden" whileInView="visible" viewport={vpOnce} variants={stagger} className="text-center mb-16">
-                  <motion.p variants={fadeUp} className="text-[11px] font-bold uppercase tracking-[0.2em] mb-4" style={{ color: "var(--accent)", fontFamily: "var(--font-display)" }}>
-                    Global Coverage
-                  </motion.p>
-                  <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-5"
-                    style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>
-                    16 legal frameworks. 6 continents.
-                  </motion.h2>
-                </motion.div>
-                <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={vpOnce} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {[
-                    { name: "ADA Title III", region: "USA", risk: "5,114 lawsuits in 2025" },
-                    { name: "Section 508", region: "US Federal", risk: "Procurement required" },
-                    { name: "EAA", region: "EU (27 states)", risk: "Up to 4% revenue" },
-                    { name: "EN 301 549", region: "EU", risk: "Harmonised standard" },
-                    { name: "Equality Act", region: "UK", risk: "Compensation orders" },
-                    { name: "AODA", region: "Canada", risk: "CAD 100K/day" },
-                    { name: "ACA", region: "Canada Federal", risk: "CAD 250K/violation" },
-                    { name: "DDA", region: "Australia", risk: "Court orders" },
-                    { name: "Unruh Act", region: "California", risk: "$4K/violation" },
-                    { name: "ADA Title II", region: "USA", risk: "Deadline: Apr 2026" },
-                    { name: "JIS X 8341", region: "Japan", risk: "Since 2024" },
-                    { name: "KDDA", region: "South Korea", risk: "All orgs since 2013" },
-                    { name: "RPD Act", region: "India", risk: "Gov mandate" },
-                    { name: "NZ WAS 1.1", region: "New Zealand", risk: "Gov standard" },
-                    { name: "SI 5568", region: "Israel", risk: "ILS 75K offense" },
-                    { name: "EU WAD", region: "EU Public Sector", risk: "Monitoring" },
-                  ].map((fw) => (
-                    <motion.div key={fw.name} variants={fadeUp}
-                      className="rounded-xl p-4 gradient-border-card transition-all duration-300 hover:-translate-y-0.5"
-                      style={{ background: "var(--bg-base)" }}>
-                      <div className="flex items-start justify-between mb-1.5">
-                        <h4 className="text-xs font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>{fw.name}</h4>
-                        <Scale size={11} style={{ color: "var(--text-tertiary)" }} aria-hidden="true" />
-                      </div>
-                      <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{fw.region}</p>
-                      <p className="text-[10px] mt-1.5 font-medium" style={{ color: "var(--severity-major)" }}>{fw.risk}</p>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </div>
-            </section>
-
-            {/* ── CTA ── */}
-            <section className="aurora-hero relative py-28 px-6 overflow-hidden">
-              <div className="section-separator absolute top-0 left-0 right-0" />
-              <FloatingOrbs />
-              <div className="relative z-10 max-w-2xl mx-auto text-center">
-                <motion.div initial="hidden" whileInView="visible" viewport={vpOnce} variants={stagger}>
-                  <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-5"
-                    style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>
-                    Ready to check your site?
-                  </motion.h2>
-                  <motion.p variants={fadeUp} className="text-base mb-10" style={{ color: "var(--text-secondary)" }}>
-                    Free. Open source. No account required.
-                  </motion.p>
-                  <motion.div variants={fadeUp}>
-                    <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                      className="scan-btn h-12 px-8 rounded-xl text-sm font-bold cursor-pointer inline-flex items-center gap-2.5 transition-all hover:scale-105 active:scale-95"
-                      style={{ color: "var(--text-inverse)" }}>
-                      <span className="flex items-center gap-2">Scan Now <ArrowRight size={15} /></span>
-                    </button>
-                  </motion.div>
-                </motion.div>
-              </div>
-            </section>
-          </>
-        )}
-      </main>
+              <XCircle size={16} aria-hidden="true" /> {error}
+            </div>
+          )}
+        </main>
+      )}
 
       <Footer />
-    </div>
+    </MotionConfig>
   );
 }

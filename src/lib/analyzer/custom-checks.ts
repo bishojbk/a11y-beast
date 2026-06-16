@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 /**
  * Custom accessibility checks that axe-core does NOT cover.
  * Runs inside Puppeteer's page.evaluate() — pure DOM + getComputedStyle.
