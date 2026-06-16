@@ -3,16 +3,24 @@ import Header from "@/components/ui/Header";
 import PricingTable from "@/components/PricingTable";
 import PricingComparison from "@/components/PricingComparison";
 import PricingFaq from "@/components/PricingFaq";
+import JsonLd from "@/components/JsonLd";
+import { buildFaqPageLd } from "@/lib/seo/structured-data";
 
 export const metadata: Metadata = {
-  title: "Pricing — A11y Beast",
+  // Title only — the root layout's template ("%s — A11y Beast") adds the brand
+  // suffix. Setting the full title here produced "Pricing — A11y Beast — A11y Beast".
+  title: "Pricing",
   description:
     "Free forensic accessibility scanning with 16-framework legal mapping. Pro and Agency tiers add site crawls, legal report exports, and bulk scanning. Not an overlay.",
+  // Self-canonical — without this the page inherits the layout's canonical "/",
+  // telling Google /pricing is a duplicate of the homepage.
+  alternates: { canonical: "/pricing" },
 };
 
 export default function PricingPage() {
   return (
     <>
+      <JsonLd data={buildFaqPageLd()} />
       <a href="#main-content" className="skip-link">Skip to content</a>
       <Header />
       <main id="main-content" role="main" style={{ flex: 1, maxWidth: 1180, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}>

@@ -27,6 +27,7 @@ const NAV_ITEMS = [
   { href: "/#how", label: "How it works", desc: "Puppeteer · axe-core · 125+ rules" },
   { href: "/pricing", label: "Pricing", desc: "Free · Pro · Agency" },
   { href: "/results?sample=1", label: "Sample report", desc: "See a live results dashboard" },
+  { href: "/about", label: "About", desc: "How it works · what we won't claim" },
 ];
 
 function ThemeToggle({ large }: { large?: boolean }) {

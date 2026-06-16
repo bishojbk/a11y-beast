@@ -12,6 +12,8 @@ import { useAxeAnalysis } from "@/hooks/useAxeAnalysis";
 import { FRAMEWORKS, getFrameworkDescription, type FrameworkWithTags } from "@/lib/compliance/frameworks";
 import { computeConformance } from "@/lib/compliance/wcag-criteria";
 import ScanningCard from "@/components/scanner/ScanningCard";
+import JsonLd from "@/components/JsonLd";
+import { organizationLd, softwareApplicationLd, howToLd } from "@/lib/seo/structured-data";
 
 /* Shared motion primitives — restrained, ease-out-expo, no springs */
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -1075,6 +1077,7 @@ export default function Home() {
 
   return (
     <MotionConfig reducedMotion="user">
+      <JsonLd data={[organizationLd, softwareApplicationLd, howToLd]} />
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>
