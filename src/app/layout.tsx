@@ -33,14 +33,20 @@ const plexMono = IBM_Plex_Mono({
 });
 
 const SITE_URL = "https://accesslens-green.vercel.app";
-const TITLE = "A11y Beast — you're not just failing WCAG. You're breaking 16 laws.";
+// SEO_TITLE is the keyword-led <title> shown in search results and the browser tab —
+// it targets the real head terms people search ("free accessibility checker", ADA, WCAG),
+// surfaced from Google Autocomplete demand data (see docs/seo-keyword-map.md).
+// BRAND_TITLE is the distinctive hook reserved for SOCIAL shares (og/twitter), where
+// curiosity converts better than keywords. Splitting the two gets both: ranking + swagger.
+const SEO_TITLE = "Free Accessibility Checker for ADA & WCAG | A11y Beast";
+const BRAND_TITLE = "A11y Beast — you're not just failing WCAG. You're breaking 16 laws.";
 const DESCRIPTION =
-  "Free forensic accessibility scanner. 125+ checks in a real browser, every violation mapped to 16 legal frameworks (ADA, EAA, Section 508, California Unruh + more). One scan, sixteen verdicts — not an overlay.";
+  "Free accessibility checker that maps every WCAG violation to 16 laws — ADA, EAA, Section 508, California Unruh and more. 125+ checks in a real browser. Not an overlay.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: TITLE,
+    default: SEO_TITLE,
     template: "%s — A11y Beast",
   },
   description: DESCRIPTION,
@@ -55,12 +61,12 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     siteName: "A11y Beast",
-    title: TITLE,
+    title: BRAND_TITLE,
     description: DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
-    title: TITLE,
+    title: BRAND_TITLE,
     description: DESCRIPTION,
   },
   robots: { index: true, follow: true },
