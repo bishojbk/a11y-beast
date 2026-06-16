@@ -95,6 +95,45 @@ export const howToLd = {
   ],
 };
 
+// BlogPosting — per-article schema. author = founder, publisher = org.
+export function buildBlogPostingLd(post: {
+  slug: string;
+  title: string;
+  description: string;
+  datePublished: string;
+  dateModified?: string;
+  tags?: string[];
+}) {
+  const url = `${SITE_URL}/blog/${post.slug}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.description,
+    datePublished: post.datePublished,
+    dateModified: post.dateModified ?? post.datePublished,
+    author: { "@id": `${SITE_URL}/#founder` },
+    publisher: { "@id": `${SITE_URL}/#organization` },
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    url,
+    ...(post.tags?.length ? { keywords: post.tags.join(", ") } : {}),
+  };
+}
+
+// BreadcrumbList — e.g. Home › Blog › <post>.
+export function buildBreadcrumbLd(trail: { name: string; path: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: trail.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: c.name,
+      item: `${SITE_URL}${c.path}`,
+    })),
+  };
+}
+
 // FAQPage — built from the shared PRICING_FAQ so it can't drift from the UI.
 export function buildFaqPageLd(items: FaqItem[] = PRICING_FAQ) {
   return {
