@@ -39,6 +39,7 @@ export default function AboutPage() {
       <Header />
       <main
         id="main-content"
+        className="page-enter"
         role="main"
         style={{ flex: 1, maxWidth: 760, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}
       >

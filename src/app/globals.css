@@ -2088,3 +2088,16 @@ details[open] > summary .faq-icon { transform: rotate(45deg); }
   .stmt-grid { grid-template-columns: 1fr !important; }
   .stmt-grid > div[style*="sticky"] { position: static !important; }
 }
+
+/* Page entrance — subtle fade-up on navigation so static pages (about, blog,
+   posts, pricing, tools) match the homepage's animated feel instead of popping
+   in. Same ease as the homepage's framer-motion. Disabled under reduced-motion
+   (and this is an accessibility tool — we respect that, WCAG 2.3.3). */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: pageEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .page-enter { animation: none; }
+}

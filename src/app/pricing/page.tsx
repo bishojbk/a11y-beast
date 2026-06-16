@@ -23,7 +23,7 @@ export default function PricingPage() {
       <JsonLd data={buildFaqPageLd()} />
       <a href="#main-content" className="skip-link">Skip to content</a>
       <Header />
-      <main id="main-content" role="main" style={{ flex: 1, maxWidth: 1180, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}>
+      <main id="main-content" className="page-enter" role="main" style={{ flex: 1, maxWidth: 1180, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: 12 }}>
           <div className="mono" style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
             Pricing · forensic accessibility

@@ -17,6 +17,7 @@ export default function StatementGeneratorPage() {
       <Header />
       <main
         id="main-content"
+        className="page-enter"
         role="main"
         style={{ flex: 1, maxWidth: 1080, margin: "0 auto", padding: "56px 24px 96px", width: "100%" }}
       >
