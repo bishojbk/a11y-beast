@@ -2082,3 +2082,9 @@ details > summary:hover { background: var(--bg-raised); }
 details > summary:focus-visible { outline: 2px solid var(--border-focus); outline-offset: -2px; }
 .faq-icon { transition: transform .2s ease; }
 details[open] > summary .faq-icon { transform: rotate(45deg); }
+
+/* Accessibility statement generator — stack form/output on small screens */
+@media (max-width: 820px) {
+  .stmt-grid { grid-template-columns: 1fr !important; }
+  .stmt-grid > div[style*="sticky"] { position: static !important; }
+}

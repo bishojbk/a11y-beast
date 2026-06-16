@@ -57,7 +57,7 @@ export default function Footer() {
             {[
               { label: "Web scanner", href: "/", internal: true },
               { label: "CLI (npx accesslens)", href: "#cli", internal: false },
-              { label: "Sample report", href: "/results", internal: true },
+              { label: "Sample report", href: "/results?sample=1", internal: true },
               { label: "API", href: "#api", internal: false },
             ].map((l) =>
               l.internal ? (
@@ -123,6 +123,16 @@ export default function Footer() {
             Resources
           </h5>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+            <li>
+              <Link href="/blog" style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+                Blog
+              </Link>
+            </li>
+            <li>
+              <Link href="/accessibility-statement-generator" style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+                Statement generator
+              </Link>
+            </li>
             <li>
               <a
                 href="https://www.w3.org/WAI/standards-guidelines/wcag/"

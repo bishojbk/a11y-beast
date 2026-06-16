@@ -85,11 +85,13 @@ _A11y Beast · created 2026-06-16. Turns the keyword research into an executable
 ## Competitor pattern note
 The incumbents (accessiBe, UserWay, AudioEye, Siteimprove, Level Access, Deque, WebAIM) publish heavily around exactly these clusters: **free checker/scanner pages, ADA compliance guides, accessibility-statement generators, WCAG checklists, and state/law explainers.** That both validates the demand and means these terms are competitive — our edge is the **legal-risk angle + honesty (anti-overlay, "automated indicator not a verdict")**, which the overlay vendors can't credibly claim.
 
-## Suggested execution order (by demand × effort)
+## Execution status (by demand × effort)
 1. ✅ Homepage title/meta split — _done._
-2. 🔨 `ada-compliance-deadline-2026` post — top demand, timely, low effort.
-3. 🔨 Shopify platform guide — high intent, repeatable template for WordPress/Wix/Squarespace.
-4. ✏️ Re-angle the lawsuits post toward settlement cost.
-5. 🔨 ADA/WCAG checklist post — link-magnet.
-6. 🔨 Accessibility-statement generator micro-tool — bigger build; strong link-bait + capture.
-7. 🔭 Set up Google Search Console to measure all of the above; revisit with Ahrefs/Semrush volume data.
+2. ✅ `/blog/ada-compliance-deadline-2026` — top demand, timely. _Built._
+3. ✅ Platform guides — `/blog/make-your-shopify-store-ada-compliant` + `/blog/make-your-wordpress-site-ada-compliant`. _Built_ (Wix/Squarespace can reuse the template later).
+4. ✅ Re-angled the lawsuits post toward settlement cost (`/blog/why-web-accessibility-lawsuits-are-surging`). _Done._
+5. ✅ `/blog/ada-wcag-compliance-checklist` — link-magnet, [auto]/[manual] tagged. _Built._
+6. ✅ `/accessibility-statement-generator` micro-tool — interactive, W3C-structured, honest defaults. _Built._
+7. 🔭 **Next, on you:** set up Google Search Console to measure all of the above; revisit with Ahrefs/Semrush volume data. Optional: add one keyword-bearing H2 to the homepage; Wix/Squarespace platform guides.
+
+_All blog content is drafted and should be reviewed before publishing. Every statistic is primary-source-verified and inline-cited; the lawsuit-cost figures deliberately avoid the unverifiable vendor ranges that circulate online._

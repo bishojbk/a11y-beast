@@ -364,12 +364,47 @@ function LawsuitTrendsBody() {
         </li>
       </ul>
 
+      <h2 className="font-display" style={h2}>What does one actually cost?</h2>
+      <p style={p}>
+        Be skeptical of the precise dollar ranges that dominate search results (&ldquo;$5,000 demand
+        letter,&rdquo; &ldquo;$5K&ndash;$75K settlement&rdquo;) — most trace to companies selling
+        remediation, not to Seyfarth, UsableNet, the DOJ, or court data, and pre-litigation settlements
+        are confidential. The figures that <em>are</em> attributable:
+      </p>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}>
+          <strong>California (Unruh Act): at least $4,000 per case.</strong> Civil Code § 52(a) sets a
+          $4,000 statutory-damages floor, and an ADA violation is automatically an Unruh violation. For a
+          website, courts treat it as a <em>single</em> violation — in <em>Robles v. Domino&rsquo;s</em>
+          the court awarded one $4,000, rejecting &ldquo;per visit&rdquo; stacking (
+          <Ext href="https://www.bclplaw.com/en-US/events-insights-news/california-federal-court-holds-dominos-website-violates-the-ada-limits-penalties-under-unruh-act-to-dollar4000.html">BCLP</Ext>).
+        </li>
+        <li style={li}>
+          <strong>~$16,000</strong> is what California ADA/Unruh website-type cases &ldquo;regularly settle
+          for,&rdquo; per the US Chamber-affiliated Institute for Legal Reform (
+          <Ext href="https://instituteforlegalreform.com/blog/ada-lawsuits-in-california-a-gold-rush-for-serial-filers/">ILR</Ext>).
+        </li>
+        <li style={li}>
+          <strong>~$143,000</strong> is what one business recovered in fees after <em>winning</em> through
+          trial and appeal — a real proxy for what fighting a case to the end costs (
+          <Ext href="https://ada.jeffer.com/defending-ada-and-unruh-act-lawsuits-winning-attorneys-fees-as-a-business/">JMBM, Garcia v. Zarco</Ext>).
+        </li>
+      </ul>
+      <p style={p}>
+        And note: under federal ADA Title III a private plaintiff <strong>can&rsquo;t win damages</strong> —
+        only an injunction plus <strong>attorneys&rsquo; fees</strong> (
+        <Ext href="https://www.law.cornell.edu/uscode/text/42/12205">42 U.S.C. § 12205</Ext>). You still
+        pay because the bill is the plaintiff&rsquo;s legal fees, your own defense counsel, and the
+        remediation the court orders anyway — so &ldquo;no damages&rdquo; never means &ldquo;free.&rdquo;
+      </p>
+
       <h2 className="font-display" style={h2}>What it means for you</h2>
       <p style={p}>
-        The cheapest case to defend is the one you prevent. Find and fix real issues in your source,
-        keep checking as you ship, and don&rsquo;t rely on a widget to make the risk disappear. A11y
-        Beast gives you the legal-risk view in one pass — <a href="/" style={aStyle}>scan your page</a>{" "}
-        and see exactly which of 16 frameworks each finding implicates.
+        The cheapest case to defend is the one you prevent — and remediation is the one cost you&rsquo;d
+        pay regardless of outcome, so do it first. Find and fix real issues in your source, keep checking
+        as you ship, and don&rsquo;t rely on a widget to make the risk disappear. A11y Beast gives you the
+        legal-risk view in one pass — <a href="/" style={aStyle}>scan your page</a> and see exactly which
+        of 16 frameworks each finding implicates.
       </p>
     </>
   );
@@ -490,6 +525,247 @@ function AutomatedLimitsBody() {
   );
 }
 
+function DeadlineBody() {
+  return (
+    <>
+      <p style={p}>
+        Search interest in an &ldquo;ADA compliance April 2026 deadline&rdquo; has spiked — and most of
+        what&rsquo;s circulating gets it wrong. Here&rsquo;s the accurate version: that date comes from a
+        specific government rule, it has since been <strong>pushed back a year</strong>, and if
+        you&rsquo;re a private business it probably was never your deadline in the first place. What you
+        actually have is ongoing ADA exposure with no deadline at all.
+      </p>
+
+      <h2 className="font-display" style={h2}>Where the &ldquo;April 2026&rdquo; date comes from</h2>
+      <p style={p}>
+        In April 2024 the US Department of Justice published a final rule under <strong>ADA Title II</strong>{" "}
+        setting <strong>WCAG 2.1 Level AA</strong> as the technical standard for the websites and mobile
+        apps of <strong>state and local governments</strong> (
+        <Ext href="https://www.ada.gov/resources/2024-03-08-web-rule/">ADA.gov</Ext>). The original
+        compliance date for larger entities (population ≥ 50,000) was <strong>April 24, 2026</strong> —
+        that&rsquo;s the &ldquo;April 2026&rdquo; everyone is searching.
+      </p>
+
+      <h2 className="font-display" style={h2}>It&rsquo;s been extended by a year</h2>
+      <p style={p}>
+        An interim final rule in April 2026 <strong>extended those deadlines by roughly one year</strong>:
+        larger entities now have until <strong>April 26, 2027</strong>, and smaller entities (population
+        under 50,000) and special district governments until <strong>April 26, 2028</strong> (
+        <Ext href="https://www.federalregister.gov/documents/2026/04/20/2026-07663/extension-of-compliance-dates-for-nondiscrimination-on-the-basis-of-disability-accessibility-of-web">Federal Register</Ext>).
+        So even for the governments it covers, &ldquo;April 2026&rdquo; is no longer the operative date.
+      </p>
+
+      <h2 className="font-display" style={h2}>Does any of this apply to my business?</h2>
+      <p style={p}>
+        If you run a private business, <strong>no</strong> — Title II covers government entities only.
+        Private &ldquo;public accommodations&rdquo; fall under <strong>ADA Title III</strong>, and DOJ
+        has <strong>no</strong> regulation setting a web standard or deadline for Title III; it treats
+        WCAG as &ldquo;helpful guidance&rdquo; and enforces under the ADA&rsquo;s general
+        anti-discrimination duty (
+        <Ext href="https://www.ada.gov/resources/web-guidance/">ADA.gov web guidance</Ext>). The
+        practical effect is the opposite of relief: there&rsquo;s no countdown because the expectation
+        to be accessible <em>already</em> applies, and lawsuits are filed continuously, not on a deadline.
+      </p>
+
+      <h2 className="font-display" style={h2}>The dates that might actually matter to you</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}><strong>EU — European Accessibility Act:</strong> in effect since <strong>28 June 2025</strong> for businesses selling to EU consumers (WCAG 2.1 AA via EN 301 549).</li>
+        <li style={li}><strong>US federal agencies &amp; vendors — Section 508:</strong> WCAG 2.0 AA, in force since 2018.</li>
+        <li style={li}><strong>US state/local government — ADA Title II:</strong> WCAG 2.1 AA by April 2027/2028 (above).</li>
+        <li style={li}><strong>US private business — ADA Title III:</strong> no deadline, no codified version — but continuously enforceable.</li>
+      </ul>
+      <p style={p}>
+        Don&rsquo;t panic over a date that may not be yours — but don&rsquo;t mistake &ldquo;no
+        deadline&rdquo; for &ldquo;no risk.&rdquo; <a href="/" style={aStyle}>Scan your site</a> to see
+        which of these frameworks your pages are actually exposed under.
+      </p>
+    </>
+  );
+}
+
+function ShopifyBody() {
+  return (
+    <>
+      <p style={p}>
+        Shopify gives you a strong accessibility starting point — but a Shopify store is not accessible
+        by default just because it&rsquo;s on Shopify. Some of the responsibility is Shopify&rsquo;s, and
+        some is squarely yours. Here&rsquo;s how to tell them apart and close the gaps you own.
+      </p>
+
+      <h2 className="font-display" style={h2}>What Shopify handles (and documents)</h2>
+      <p style={p}>
+        Shopify states that <strong>WCAG 2.2 Level AA</strong> is its guiding principle and publishes{" "}
+        <strong>Accessibility Conformance Reports (VPATs)</strong> for its own products — Checkout, Admin,
+        and the default <strong>Dawn</strong> theme (
+        <Ext href="https://www.shopify.com/accessibility">shopify.com/accessibility</Ext>). Tellingly,
+        Shopify&rsquo;s own <Ext href="https://www.shopify.com/accessibility/vpat-checkout">Checkout VPAT</Ext>{" "}
+        openly lists unresolved barriers (focus-order and focus-visibility issues, some small touch
+        targets). Because checkout is Shopify-hosted, standard merchants can&rsquo;t rewrite its markup —
+        that part&rsquo;s on Shopify. Everything above checkout is on you.
+      </p>
+
+      <h2 className="font-display" style={h2}>What you own — and the fixes</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}>
+          <strong>Product image alt text.</strong> Set it per image in <em>Admin → Products → [product] →
+          select the media → Add alt text</em>; describe the product, ~125 characters (
+          <Ext href="https://help.shopify.com/en/manual/products/product-media/add-alt-text">Shopify Help</Ext>).
+        </li>
+        <li style={li}>
+          <strong>Theme choice.</strong> Dawn and other free Online Store 2.0 themes carry Shopify&rsquo;s
+          accessibility work and a published VPAT — the strongest free baseline. (A good theme is a
+          floor, not a guarantee; customizations and apps can still break it.) Shopify Theme Store themes
+          must hit a minimum Lighthouse accessibility score of 90 (
+          <Ext href="https://www.shopify.com/partners/blog/theme-store-accessibility-requirements">Shopify Partners</Ext>).
+        </li>
+        <li style={li}>
+          <strong>Color contrast.</strong> Shopify&rsquo;s documented thresholds: 4.5:1 for body/button
+          text, 3:1 for large text and for icons/input borders (
+          <Ext href="https://help.shopify.com/en/manual/online-store/themes/customizing-themes/accessibility">Shopify Help</Ext>).
+        </li>
+        <li style={li}>
+          <strong>Keyboard &amp; focus.</strong> Tab the whole path to checkout: dropdowns open on
+          Enter/Space, cart drawers and modals trap focus and close on Esc, and the focus ring is always
+          visible (never <code>outline:none</code>).
+        </li>
+        <li style={li}>
+          <strong>Apps &amp; pop-ups.</strong> Third-party apps inject their own markup; audit pop-ups,
+          modals, and add-on widgets for contrast, focus traps, and dismissibility.
+        </li>
+      </ul>
+
+      <h2 className="font-display" style={h2}>The one trap to avoid</h2>
+      <p style={p}>
+        The Shopify App Store has an Accessibility category full of one-click &ldquo;compliance&rdquo;
+        overlay widgets. They don&rsquo;t fix your code, they don&rsquo;t stop lawsuits, and the US FTC
+        fined overlay vendor accessiBe <strong>$1M</strong> in 2025 for claiming otherwise (
+        <Ext href="https://www.ftc.gov/news-events/news/press-releases/2025/01/ftc-order-requires-online-marketer-pay-1-million-deceptive-claims-its-ai-product-could-make-websites">FTC</Ext>).
+        Remediate the source instead.
+      </p>
+      <p style={p}>
+        Want to know exactly which issues your store has and which laws they implicate?{" "}
+        <a href="/" style={aStyle}>Scan your Shopify URL</a> — real browser, 125+ checks, mapped to 16
+        frameworks.
+      </p>
+    </>
+  );
+}
+
+function WordPressBody() {
+  return (
+    <>
+      <p style={p}>
+        WordPress can absolutely be made accessible — the platform has an official accessibility team and
+        real standards — but nothing about installing WordPress makes your site compliant. Most failures
+        come from theme choice, missing alt text, and (ironically) &ldquo;accessibility&rdquo; plugins
+        that make things worse. Here&rsquo;s the practical path.
+      </p>
+
+      <h2 className="font-display" style={h2}>WordPress has real accessibility standards</h2>
+      <p style={p}>
+        The <Ext href="https://make.wordpress.org/accessibility/">Make WordPress Accessible</Ext> team
+        maintains an <strong>&ldquo;accessibility-ready&rdquo; theme tag</strong> granted only after a
+        manual audit (skip links, keyboard support, labelled fields, heading structure, sufficient
+        contrast, alt text, and more —{" "}
+        <Ext href="https://make.wordpress.org/themes/handbook/review/accessibility/required/">requirements</Ext>),
+        and WordPress&rsquo;s coding standard targets <strong>WCAG 2.2 Level AA</strong> (
+        <Ext href="https://developer.wordpress.org/coding-standards/wordpress-coding-standards/accessibility/">handbook</Ext>).
+        Note the tag is WordPress&rsquo;s minimum bar — it doesn&rsquo;t by itself certify full conformance.
+      </p>
+
+      <h2 className="font-display" style={h2}>Where WordPress sites actually fail</h2>
+      <p style={p}>
+        The web-wide failure pattern shows up on WordPress too. In WebAIM&rsquo;s 2025 analysis of the top
+        million home pages, <strong>94.8% had detectable WCAG failures</strong> — low-contrast text on
+        79.1%, missing alt text on 55.5%, missing form labels on 48.2% (
+        <Ext href="https://webaim.org/projects/million/2025">WebAIM Million 2025</Ext>). The fixes:
+      </p>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}><strong>Alt text</strong> in the Media Library / Image-block &ldquo;Alternative Text&rdquo; field; mark purely decorative images with empty <code>alt=&quot;&quot;</code>.</li>
+        <li style={li}><strong>Heading structure</strong> — one <code>&lt;h1&gt;</code>, logical nesting, never skip levels; choose levels for structure, not font size.</li>
+        <li style={li}><strong>Contrast</strong> — WCAG AA 4.5:1 for normal text, 3:1 for large text and UI.</li>
+        <li style={li}><strong>Accessible forms</strong> — visible labels programmatically tied to inputs, clear error messages.</li>
+        <li style={li}><strong>Page builders</strong> (Elementor, Divi) can introduce issues in interactive widgets, but they&rsquo;re not inherently inaccessible — Divi was actually the best-performing platform in WebAIM Million 2025. Build carefully and test.</li>
+      </ul>
+
+      <h2 className="font-display" style={h2}>Helpful plugins vs. the overlay trap</h2>
+      <p style={p}>
+        Genuinely useful, non-overlay tools include <strong>WP Accessibility</strong> (Joe Dolson),{" "}
+        <strong>Editoria11y</strong> (an author-facing checker maintained by Princeton), and{" "}
+        <strong>Equalize Digital Accessibility Checker</strong> (scans posts against WCAG in the admin —
+        explicitly not a front-end overlay). Avoid the opposite category: one-script overlay/widget
+        plugins that promise instant ADA compliance. The{" "}
+        <Ext href="https://overlayfactsheet.com/">Overlay Fact Sheet</Ext> (1,000+ signatories) states no
+        overlay can make a site fully compliant, and overlays haven&rsquo;t stopped lawsuits — UsableNet
+        recorded over 1,000 suits in 2024 against sites already running one.
+      </p>
+      <p style={p}>
+        Automated tools (including ours) catch a portion of issues; manual and screen-reader testing
+        cover the rest. <a href="/" style={aStyle}>Scan your WordPress URL</a> to see which findings map
+        to which of 16 laws — then fix them in your theme and content, not with a widget.
+      </p>
+    </>
+  );
+}
+
+function ChecklistBody() {
+  return (
+    <>
+      <p style={p}>
+        Most laws point at the same target: <strong>WCAG 2.1 Level AA</strong> (Section 508 sits at 2.0
+        AA, which 2.1 fully includes). This is a practical, plain-English checklist of what that means,
+        grouped by WCAG&rsquo;s four principles. Each item is marked <strong>[auto]</strong> if an
+        automated scanner can reliably catch it, or <strong>[manual]</strong> if it needs human judgement —
+        because no tool can certify the whole list (
+        <Ext href="https://www.w3.org/WAI/test-evaluate/tools/selecting/">W3C: tools assist, they
+        can&rsquo;t determine conformance</Ext>).
+      </p>
+
+      <h2 className="font-display" style={h2}>1. Perceivable</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}>Every meaningful image has alt text; decorative images are empty <code>alt=&quot;&quot;</code>. <strong>[auto]</strong> presence / <strong>[manual]</strong> whether it&rsquo;s meaningful.</li>
+        <li style={li}>Video has captions and (where needed) audio description. <strong>[manual]</strong></li>
+        <li style={li}>Information isn&rsquo;t conveyed by color alone. <strong>[manual]</strong></li>
+        <li style={li}>Text contrast ≥ 4.5:1 (≥ 3:1 for large text); UI components and graphics ≥ 3:1. <strong>[auto]</strong></li>
+        <li style={li}>Content reflows at 400% zoom / 320px without horizontal scrolling, and text spacing can be increased. <strong>[manual]</strong></li>
+        <li style={li}>Structure (headings, lists, tables) is marked up semantically, not faked with styling. <strong>[auto]</strong> partial.</li>
+      </ul>
+
+      <h2 className="font-display" style={h2}>2. Operable</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}>Everything works by keyboard alone, with no keyboard traps. <strong>[manual]</strong></li>
+        <li style={li}>A visible focus indicator is always present. <strong>[auto]</strong> partial / <strong>[manual]</strong>.</li>
+        <li style={li}>A &ldquo;skip to content&rdquo; link or equivalent bypass is available. <strong>[auto]</strong></li>
+        <li style={li}>Pages have unique, descriptive <code>&lt;title&gt;</code>s and link text that makes sense out of context. <strong>[auto]</strong> presence / <strong>[manual]</strong> clarity.</li>
+        <li style={li}>No content flashes more than three times per second. <strong>[manual]</strong></li>
+        <li style={li}>Time limits can be turned off, adjusted, or extended. <strong>[manual]</strong></li>
+      </ul>
+
+      <h2 className="font-display" style={h2}>3. Understandable</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}>Page language is set (<code>&lt;html lang&gt;</code>). <strong>[auto]</strong></li>
+        <li style={li}>Navigation and components behave consistently across pages. <strong>[manual]</strong></li>
+        <li style={li}>Form fields have visible, programmatically associated labels. <strong>[auto]</strong></li>
+        <li style={li}>Errors are identified in text, with suggestions for fixing them. <strong>[manual]</strong></li>
+      </ul>
+
+      <h2 className="font-display" style={h2}>4. Robust</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}>Markup is valid; elements have complete start/end tags and unique IDs. <strong>[auto]</strong></li>
+        <li style={li}>Custom widgets expose correct name, role, and value via ARIA. <strong>[auto]</strong> partial / <strong>[manual]</strong>.</li>
+        <li style={li}>Status messages are announced to assistive tech without moving focus. <strong>[manual]</strong></li>
+      </ul>
+
+      <p style={p}>
+        Notice how many items are <strong>[manual]</strong>: that&rsquo;s why an automated pass is the
+        start, not the finish. The fastest way to clear the <strong>[auto]</strong> half of this list is
+        to <a href="/" style={aStyle}>scan your page</a> — you&rsquo;ll get each finding mapped to the law
+        it implicates and the code to fix it, plus a clear view of what still needs a human.
+      </p>
+    </>
+  );
+}
+
 export const POSTS: BlogPost[] = [
   {
     slug: "european-accessibility-act-deadline",
@@ -548,10 +824,10 @@ export const POSTS: BlogPost[] = [
   },
   {
     slug: "why-web-accessibility-lawsuits-are-surging",
-    title: "Why web accessibility lawsuits are surging",
+    title: "Web accessibility lawsuits in 2025 — the surge, and what they cost",
     description:
-      "More than 5,000 digital accessibility lawsuits were filed in 2025 (UsableNet: 5,114); federal website suits rose 27% (Seyfarth: 3,117). Here's what's driving the surge and what it means for your site.",
-    dek: "5,114 digital accessibility suits in 2025; federal website filings up 27%. The drivers — repeat targeting, e-commerce, state courts, and overlays that don't help.",
+      "5,114 digital accessibility lawsuits in 2025 (UsableNet); federal website suits up 27% (Seyfarth: 3,117). What's driving it — and what one actually costs: the $4,000 Unruh floor, ~$16K typical CA settlement, ~$143K to fight to the end.",
+    dek: "5,114 suits in 2025, federal filings up 27% — plus what one actually costs (the $4,000 Unruh floor, ~$16K typical CA settlement, ~$143K to fight to the end).",
     datePublished: "2026-06-16",
     tags: ["accessibility lawsuits", "ADA", "UsableNet", "Seyfarth", "litigation trends"],
     readingMinutes: 4,
@@ -578,6 +854,50 @@ export const POSTS: BlogPost[] = [
     tags: ["automated testing", "WCAG", "axe-core", "WCAG-EM", "conformance"],
     readingMinutes: 5,
     Body: AutomatedLimitsBody,
+  },
+  {
+    slug: "ada-compliance-deadline-2026",
+    title: "The April 2026 ADA compliance deadline, explained",
+    description:
+      "The 'April 2026 ADA deadline' is the DOJ's Title II rule for state and local governments — and it's been extended to 2027/2028. If you're a private business, it was never your deadline. Here's what actually applies.",
+    dek: "It's the government (Title II) deadline — now pushed to 2027/2028 — not a private-business one. What the date really means, and the dates that do apply to you.",
+    datePublished: "2026-06-16",
+    tags: ["ADA", "Title II", "compliance deadline", "WCAG 2.1", "DOJ"],
+    readingMinutes: 4,
+    Body: DeadlineBody,
+  },
+  {
+    slug: "make-your-shopify-store-ada-compliant",
+    title: "How to make your Shopify store ADA compliant",
+    description:
+      "Shopify gives you an accessibility head start, but a store isn't compliant by default. What Shopify handles (checkout, themes), what you own (alt text, contrast, apps), and the overlay-app trap to avoid.",
+    dek: "What Shopify handles, what you own (alt text, contrast, theme, apps), and the one-click overlay app to avoid.",
+    datePublished: "2026-06-16",
+    tags: ["Shopify", "ADA", "WCAG", "ecommerce", "accessibility"],
+    readingMinutes: 5,
+    Body: ShopifyBody,
+  },
+  {
+    slug: "make-your-wordpress-site-ada-compliant",
+    title: "How to make your WordPress site ADA compliant",
+    description:
+      "WordPress can be fully accessible — but installing it doesn't make your site compliant. Accessibility-ready themes, alt text, the real failure data, helpful plugins, and the overlay plugins to avoid.",
+    dek: "Accessibility-ready themes, alt text, the real WebAIM failure data, genuinely useful plugins — and the overlay plugins that make things worse.",
+    datePublished: "2026-06-16",
+    tags: ["WordPress", "ADA", "WCAG", "themes", "plugins", "accessibility"],
+    readingMinutes: 5,
+    Body: WordPressBody,
+  },
+  {
+    slug: "ada-wcag-compliance-checklist",
+    title: "ADA & WCAG 2.1 AA compliance checklist (2026)",
+    description:
+      "A plain-English WCAG 2.1 AA checklist grouped by the four principles, with each item marked [auto] (a scanner can catch it) or [manual] (needs human review) — so you know what tooling covers and what it can't.",
+    dek: "A plain-English WCAG 2.1 AA checklist by principle, each item marked [auto] or [manual] — so you know what a scanner covers and what still needs a human.",
+    datePublished: "2026-06-16",
+    tags: ["ADA", "WCAG 2.1", "checklist", "Level AA", "compliance"],
+    readingMinutes: 6,
+    Body: ChecklistBody,
   },
 ];
 
