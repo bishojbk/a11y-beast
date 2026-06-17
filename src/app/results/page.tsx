@@ -23,6 +23,7 @@ import Footer from "@/components/ui/Footer";
 import Gauge from "@/components/results/Gauge";
 import Flag, { flagForRegion } from "@/components/results/Flag";
 import { GithubActionDialog, DownloadReportDialog, LegalReportDialog } from "@/components/results/ExportDialogs";
+import MonitorCta from "@/components/MonitorCta";
 import { FRAMEWORKS, type FrameworkWithTags } from "@/lib/compliance/frameworks";
 import { computeConformance, type CriterionStatus } from "@/lib/compliance/wcag-criteria";
 import type { ScanResult } from "@/lib/types/scan-result";
@@ -736,6 +737,11 @@ export default function ResultsPage() {
             </motion.div>
           </motion.div>
         </div>
+
+        {/* ─── Monitor opt-in (free weekly re-scan; email capture). Real URL scans only — not paste/upload or the sample. ─── */}
+        {result.url && /^https?:\/\//i.test(result.url) && result !== SAMPLE_RESULT && (
+          <MonitorCta url={result.url} />
+        )}
 
         {/* ─── Site crawl banner ─── */}
         {site && <SiteBanner site={site} />}

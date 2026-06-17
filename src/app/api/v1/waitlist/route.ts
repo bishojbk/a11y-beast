@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: { email?: string; plan?: string; note?: string };
+  let body: { email?: string; plan?: string; note?: string; url?: string; source?: string };
   try {
     body = await request.json();
   } catch {
@@ -38,6 +38,11 @@ export async function POST(request: NextRequest) {
   const email = String(body.email ?? "").trim().toLowerCase();
   const plan = String(body.plan ?? "").trim().slice(0, 40) || "unspecified";
   const note = String(body.note ?? "").trim().slice(0, 500);
+  // Optional: the URL being monitored (from the "monitor this page" opt-in) and
+  // the lead source, so monitor leads are distinguishable from pricing waitlist
+  // leads in the sheet/logs. Defaults keep the existing waitlist behavior intact.
+  const url = String(body.url ?? "").trim().slice(0, 300);
+  const source = String(body.source ?? "").trim().slice(0, 40) || "pricing";
 
   if (!EMAIL_RE.test(email) || email.length > 254) {
     return Response.json(
@@ -50,7 +55,8 @@ export async function POST(request: NextRequest) {
     email,
     plan,
     note,
-    source: "pricing",
+    url: url || null,
+    source,
     referer: request.headers.get("referer") ?? null,
     at: new Date().toISOString(),
   };
