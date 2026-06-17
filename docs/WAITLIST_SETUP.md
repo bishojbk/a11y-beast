@@ -1,15 +1,19 @@
 # Waitlist → Google Sheet setup
 
-Waitlist signups from the pricing page POST to `/api/v1/waitlist`, which forwards
-each lead as JSON to whatever URL is in the `WAITLIST_WEBHOOK_URL` env var.
-
-This guide points that webhook at a Google Sheet you own — free, no API keys, ~2 minutes.
+Both the **pricing waitlist** and the **"monitor this page" opt-in** POST to
+`/api/v1/waitlist`, which forwards each lead as JSON to whatever URL is in the
+`WAITLIST_WEBHOOK_URL` env var. This guide points that webhook at a Google Sheet
+you own — free, no API keys, ~2 minutes.
 
 The route sends this JSON body:
 
 ```json
-{ "email": "...", "plan": "Pro", "note": "", "source": "pricing", "referer": "...", "at": "ISO-8601" }
+{ "email": "...", "plan": "Pro", "note": "", "url": null, "source": "pricing", "referer": "...", "at": "ISO-8601" }
 ```
+
+Distinguish the two lead types by `source`:
+- `source: "pricing"` → a pricing-page waitlist signup (`plan` = Free/Pro/Agency).
+- `source: "monitor"` → a "monitor this page" opt-in; `url` holds the page they want watched, `plan` = `"monitor"`.
 
 ## Steps
 
@@ -28,7 +32,7 @@ The route sends this JSON body:
    - Apply to Production (and Preview if you want).
    - **Redeploy** so the new env var is picked up.
 
-That's it. Every signup now appends a row: Received · Email · Plan · Note · Source · Referer.
+That's it. Every signup now appends a row: Received · Email · Plan · Note · URL · Source · Referer.
 
 ## The script
 
@@ -43,13 +47,14 @@ function doPost(e) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName('Waitlist') || ss.insertSheet('Waitlist');
     if (sheet.getLastRow() === 0) {
-      sheet.appendRow(['Received', 'Email', 'Plan', 'Note', 'Source', 'Referer']);
+      sheet.appendRow(['Received', 'Email', 'Plan', 'Note', 'URL', 'Source', 'Referer']);
     }
     sheet.appendRow([
       data.at || new Date().toISOString(),
       data.email || '',
       data.plan || '',
       data.note || '',
+      data.url || '',
       data.source || '',
       data.referer || ''
     ]);
