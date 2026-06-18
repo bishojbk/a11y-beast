@@ -14,6 +14,7 @@ import { computeConformance } from "@/lib/compliance/wcag-criteria";
 import ScanningCard from "@/components/scanner/ScanningCard";
 import JsonLd from "@/components/JsonLd";
 import { organizationLd, softwareApplicationLd, howToLd } from "@/lib/seo/structured-data";
+import { track } from "@/lib/analytics";
 
 /* Shared motion primitives — restrained, ease-out-expo, no springs */
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -1018,6 +1019,15 @@ export default function Home() {
       sessionStorage.setItem("a11y-beast-result", JSON.stringify(result));
       if (site) sessionStorage.setItem("a11y-beast-site", JSON.stringify(site));
       else sessionStorage.removeItem("a11y-beast-site");
+
+      track("scan_completed", {
+        url: result.url,
+        is_site: !!site,
+        pages_scanned: site?.stats.scanned ?? 1,
+        issue_count: result.issues.length,
+        score: result.score.overall,
+        grade: result.score.grade,
+      });
 
       // Capture a trimmed history entry (summary metrics only).
       Promise.all([

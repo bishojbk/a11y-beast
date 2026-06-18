@@ -29,6 +29,7 @@
     "axe-core": "^4.11.2",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.7.0",
+    "mixpanel-browser": "^2.80.0",
     "next": "16.2.2",
     "puppeteer": "^24.40.0",
     "react": "19.2.4",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/mixpanel-browser": "^2.60.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

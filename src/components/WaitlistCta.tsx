@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, X } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 type Status = "idle" | "submitting" | "success" | "error";
@@ -49,6 +50,7 @@ export default function WaitlistCta({
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error?.message ?? "Something went wrong.");
+        track("waitlist_submitted", { plan });
         setStatus("success");
       } catch (err) {
         setStatus("error");

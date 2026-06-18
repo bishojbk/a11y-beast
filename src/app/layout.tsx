@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
+import AnalyticsInit from "@/components/AnalyticsInit";
 import { Newsreader, Archivo, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -89,6 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer style={{ textAlign: "center", padding: "16px", fontSize: "13px", opacity: 0.6 }}>
           Made by <a href="https://github.com/bishojbk" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>EJR</a>
         </footer>
+        <AnalyticsInit />
         <Analytics />
       </body>
     </html>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Bell, Check } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 // Free "monitor this page" opt-in — the email-capture hook shown after a scan.
 // Posts to the same lead pipeline as the waitlist, tagged source:"monitor" with
@@ -31,6 +32,7 @@ export default function MonitorCta({ url }: { url: string }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error?.message ?? "Something went wrong.");
+      track("monitor_optin_submitted", { url });
       setStatus("success");
     } catch (err) {
       setStatus("error");
