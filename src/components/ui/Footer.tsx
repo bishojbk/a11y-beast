@@ -179,6 +179,11 @@ export default function Footer() {
           gap: 12,
         }}
       >
+        <span>
+          <Link href="/privacy" style={{ color: "inherit", textDecoration: "underline" }}>Privacy</Link>
+          {" · "}
+          <Link href="/terms" style={{ color: "inherit", textDecoration: "underline" }}>Terms</Link>
+        </span>
         <span>A11Y BEAST · BUILT OPEN · AGPL-3.0</span>
         <span>AXE-CORE BY DEQUE SYSTEMS · MPL-2.0</span>
         <span>NOT LEGAL ADVICE · USE WITH AN AUDIT</span>
