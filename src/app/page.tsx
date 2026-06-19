@@ -771,10 +771,10 @@ function HowItWorks() {
       <div className="section-head">
         <div>
           <div className="kicker">Under the hood</div>
-          <h2>Real browsers. Real rules. Real penalties.</h2>
+          <h2>How the free accessibility checker works</h2>
         </div>
         <p className="desc">
-          Most scanners lint static HTML and miss anything rendered by JavaScript. We render every page in headless
+          <strong>Real browsers. Real rules. Real penalties.</strong> Most scanners lint static HTML and miss anything rendered by JavaScript. We render every page in headless
           Chromium, run the full axe-core suite and our 20 custom checks, then map every finding to legal frameworks in
           one pass.
         </p>

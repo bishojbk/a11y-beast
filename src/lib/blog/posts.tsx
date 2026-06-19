@@ -767,6 +767,124 @@ function ChecklistBody() {
   );
 }
 
+function WixBody() {
+  return (
+    <>
+      <p style={p}>
+        Wix gives you more accessibility tooling than most site builders — but a Wix site isn&rsquo;t accessible just
+        because it&rsquo;s on Wix. And it has one signature problem the others don&rsquo;t: the drag-and-drop canvas can
+        scramble the order screen readers and keyboards follow. Here&rsquo;s how to handle it.
+      </p>
+
+      <h2 className="font-display" style={h2}>Your head start: the Accessibility Wizard</h2>
+      <p style={p}>
+        In the editor, go to <strong>Settings → Accessibility Wizard → Scan Site</strong>. It returns two tabs —{" "}
+        <strong>Detected Issues</strong> (auto-found) and <strong>Manual Tasks</strong> (things a scan can&rsquo;t
+        catch) — with checks based on <strong>WCAG 2.2 Level AA</strong> (
+        <Ext href="https://support.wix.com/en/article/accessibility-about-the-accessibility-wizard-5119725">Wix Help</Ext>).
+        It&rsquo;s a genuinely useful first pass — but a starting point, not a guarantee: Wix itself notes the Wizard
+        does <strong>not</strong> scan your CMS content, checkout, password-protected pages, or third-party apps, and
+        only covers your primary language.
+      </p>
+
+      <h2 className="font-display" style={h2}>The signature Wix problem: reading &amp; tab order</h2>
+      <p style={p}>
+        Wix&rsquo;s free-form canvas lets you drop elements anywhere visually — but screen readers and the keyboard
+        Tab key follow the underlying <strong>DOM order</strong>, not where things sit on screen. So content can be
+        announced or focused out of sequence. Fix it in the Wizard:{" "}
+        <strong>Detected Issues → Site Level → Organize DOM Order → Manually</strong>, then drag elements into a logical
+        order in the Layers panel (
+        <Ext href="https://support.wix.com/en/article/accessibility-checking-and-adjusting-a-sites-dom-order">Wix Help</Ext>).
+        Watch the gotcha: <strong>pinned elements</strong> (sticky headers, floating buttons) get pushed to the{" "}
+        <em>end</em> of the tab sequence.
+      </p>
+
+      <h2 className="font-display" style={h2}>What you own</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}><strong>Alt text</strong> — click an image → the <em>Settings</em> icon → fill in &ldquo;What&rsquo;s in the image?&rdquo;. Wix can auto-generate alt text with AI; review it before shipping — don&rsquo;t trust it blind.</li>
+        <li style={li}><strong>Heading structure</strong> — select text → Text panel → <em>SEO &amp; Accessibility</em> → choose the HTML tag. One <code>&lt;h1&gt;</code> per page, sequential H2/H3, no skipped levels.</li>
+        <li style={li}><strong>Color contrast</strong> — add the Wix <strong>Contrast Checker</strong>; aim for 4.5:1 (normal text) / 3:1 (large text). Template defaults sometimes fail.</li>
+        <li style={li}><strong>Descriptive link text</strong> — the Wizard&rsquo;s Manual Tasks prompt for this; avoid bare &ldquo;click here.&rdquo;</li>
+        <li style={li}><strong>Third-party apps</strong> — the Wizard can&rsquo;t scan App Market apps you&rsquo;ve embedded, so test those by hand.</li>
+      </ul>
+
+      <h2 className="font-display" style={h2}>The trap to avoid</h2>
+      <p style={p}>
+        The Wix App Market has one-click &ldquo;accessibility&rdquo; overlay/widget apps. They don&rsquo;t fix your
+        underlying site and they don&rsquo;t stop lawsuits — the{" "}
+        <Ext href="https://overlayfactsheet.com/">Overlay Fact Sheet</Ext> (1,000+ signatories) states no overlay makes
+        a site compliant, and in 2025 the US FTC charged overlay vendor accessiBe over compliance claims it
+        couldn&rsquo;t back up, settling for <strong>$1M</strong> (
+        <Ext href="https://www.ftc.gov/news-events/news/press-releases/2025/01/ftc-order-requires-online-marketer-pay-1-million-deceptive-claims-its-ai-product-could-make-websites">FTC</Ext>).
+        Use the Wizard and fix the real issues instead.
+      </p>
+      <p style={p}>
+        Want to see which laws your Wix site is exposed under — beyond what the Wizard checks?{" "}
+        <a href="/" style={aStyle}>Scan your URL</a> with A11y Beast: real browser, 125+ checks, mapped to 16 frameworks.
+      </p>
+    </>
+  );
+}
+
+function SquarespaceBody() {
+  return (
+    <>
+      <p style={p}>
+        Squarespace gives you accessible building blocks — alt-text fields, a built-in focus outline, contrast
+        controls — but unlike Wix, it has <strong>no built-in accessibility checker</strong>, so the auditing is on
+        you. And alt text behaves differently depending on the kind of image. Here&rsquo;s the practical path.
+      </p>
+
+      <h2 className="font-display" style={h2}>What Squarespace gives you — and what it doesn&rsquo;t</h2>
+      <p style={p}>
+        Squarespace <em>recommends</em> WCAG but doesn&rsquo;t claim its templates conform, and it provides: dedicated
+        alt-text fields, a focus outline + &ldquo;Skip to Content&rdquo; link on Tab, contrast controls in the Colors
+        panel, and captions/transcripts (
+        <Ext href="https://support.squarespace.com/hc/en-us/articles/215129127-Accessibility-resources-at-Squarespace">Squarespace docs</Ext>).
+        Two honest caveats: the Colors panel is a <strong>manual design aid, not an automated contrast checker</strong>;
+        and there&rsquo;s <strong>no native scanner or wizard</strong> — Squarespace points you to third-party tools,
+        and its SEO Report only flags <em>missing</em> alt text (presence, not quality). So you have to bring your own
+        auditing.
+      </p>
+
+      <h2 className="font-display" style={h2}>Alt text: it depends on the block</h2>
+      <p style={p}>
+        This is the Squarespace gotcha — alt text isn&rsquo;t set the same way everywhere (
+        <Ext href="https://support.squarespace.com/hc/en-us/articles/206542357-Adding-alt-text-to-images">Squarespace docs</Ext>):
+      </p>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}><strong>Image blocks:</strong> a dedicated <em>Image alt text</em> field (Content tab) — type it in.</li>
+        <li style={li}><strong>Gallery images:</strong> the image <em>description</em> becomes the alt text.</li>
+        <li style={li}><strong>Product images:</strong> set in the product metadata — otherwise the product name is used.</li>
+        <li style={li}><strong>Background images:</strong> can&rsquo;t take alt text at all; use an image block instead if the image carries meaning.</li>
+      </ul>
+
+      <h2 className="font-display" style={h2}>The usual suspects</h2>
+      <ul style={{ marginBottom: 18, paddingLeft: 22 }}>
+        <li style={li}><strong>Color contrast</strong> — the most-cited Squarespace issue (pastel text/buttons). Since there&rsquo;s no native checker, test with an external tool and target 4.5:1 (normal) / 3:1 (large), then fix in the Colors panel.</li>
+        <li style={li}><strong>Heading structure</strong> — one <code>&lt;h1&gt;</code> per page, logical H2/H3 order; never fake a heading with bold text.</li>
+        <li style={li}><strong>Descriptive link text</strong> — &ldquo;visit our contact page,&rdquo; not &ldquo;click here.&rdquo;</li>
+        <li style={li}><strong>Code Injection</strong> (Business/Commerce plans) — anything you paste in can add untested, inaccessible markup; audit it.</li>
+      </ul>
+
+      <h2 className="font-display" style={h2}>The trap to avoid</h2>
+      <p style={p}>
+        Many Squarespace owners paste an &ldquo;accessibility&rdquo; overlay/widget script into Code Injection. It
+        doesn&rsquo;t fix the underlying site and doesn&rsquo;t stop lawsuits — the{" "}
+        <Ext href="https://overlayfactsheet.com/">Overlay Fact Sheet</Ext> (1,000+ signatories) says no overlay makes a
+        site compliant, and in 2025 the US FTC charged overlay vendor accessiBe over compliance claims it couldn&rsquo;t
+        back up, settling for <strong>$1M</strong> (
+        <Ext href="https://www.ftc.gov/news-events/news/press-releases/2025/01/ftc-order-requires-online-marketer-pay-1-million-deceptive-claims-its-ai-product-could-make-websites">FTC</Ext>).
+        Fix the content and markup instead.
+      </p>
+      <p style={p}>
+        Because Squarespace won&rsquo;t audit for you, <a href="/" style={aStyle}>scan your URL</a> with A11y Beast —
+        real browser, 125+ checks, every finding mapped to the 16 laws it implicates, plus the code to fix it.
+      </p>
+    </>
+  );
+}
+
 export const POSTS: BlogPost[] = [
   {
     slug: "european-accessibility-act-deadline",
@@ -899,6 +1017,28 @@ export const POSTS: BlogPost[] = [
     tags: ["ADA", "WCAG 2.1", "checklist", "Level AA", "compliance"],
     readingMinutes: 6,
     Body: ChecklistBody,
+  },
+  {
+    slug: "make-your-wix-site-ada-compliant",
+    title: "How to make your Wix site ADA compliant",
+    description:
+      "Wix gives you a real accessibility head start (the Accessibility Wizard), but a Wix site isn't compliant by default. The signature reading/tab-order issue, what you own, and the overlay-app trap.",
+    dek: "Wix's Accessibility Wizard, the drag-and-drop reading/tab-order trap, what you own (alt text, headings, contrast), and the overlay apps to skip.",
+    datePublished: "2026-06-19",
+    tags: ["Wix", "ADA", "WCAG", "accessibility", "site builder"],
+    readingMinutes: 5,
+    Body: WixBody,
+  },
+  {
+    slug: "make-your-squarespace-site-ada-compliant",
+    title: "How to make your Squarespace site ADA compliant",
+    description:
+      "Squarespace has accessible building blocks but no built-in accessibility checker — so auditing is on you. Per-block alt-text rules, the usual contrast/heading issues, and the overlay-script trap.",
+    dek: "No native checker (unlike Wix), alt text that changes per block type, the usual contrast/heading issues, and the Code-Injection overlay trap.",
+    datePublished: "2026-06-19",
+    tags: ["Squarespace", "ADA", "WCAG", "accessibility", "site builder"],
+    readingMinutes: 5,
+    Body: SquarespaceBody,
   },
 ];
 
