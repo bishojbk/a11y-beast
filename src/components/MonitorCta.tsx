@@ -43,7 +43,7 @@ export default function MonitorCta({ url }: { url: string }) {
   return (
     <div className="monitor-cta">
       <section
-        aria-label="Free weekly accessibility monitoring"
+        aria-label="Get early access to free weekly accessibility monitoring"
         style={{
           border: "1px solid var(--border-default)",
           borderLeft: "3px solid var(--accent-text)",
@@ -64,8 +64,8 @@ export default function MonitorCta({ url }: { url: string }) {
               <Check size={15} aria-hidden="true" />
             </span>
             <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>
-              <b style={{ color: "var(--text-primary)" }}>Monitoring on.</b> We&rsquo;ll re-check{" "}
-              <b className="mono" style={{ color: "var(--text-primary)" }}>{host}</b> weekly and email you only if new issues appear.
+              <b style={{ color: "var(--text-primary)" }}>You&rsquo;re on the list.</b> We&rsquo;ll email you the moment free weekly monitoring goes live for{" "}
+              <b className="mono" style={{ color: "var(--text-primary)" }}>{host}</b> — then flag new accessibility issues as they appear.
             </span>
           </div>
         ) : (
@@ -75,7 +75,7 @@ export default function MonitorCta({ url }: { url: string }) {
                 Keep an eye on <span className="mono">{host}</span>
               </div>
               <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.45 }}>
-                We&rsquo;ll re-scan it weekly and email you <b>only</b> if new accessibility issues appear. Free, no signup.
+                Free weekly monitoring is on the way — leave your email and you&rsquo;ll be first to get it. We&rsquo;ll email you <b>only</b> when new accessibility issues appear. No signup.
               </div>
             </div>
             <form onSubmit={submit} style={{ display: "flex", gap: 8, flex: "1 1 320px", flexWrap: "wrap" }}>
@@ -96,7 +96,7 @@ export default function MonitorCta({ url }: { url: string }) {
                 disabled={status === "submitting" || !email.trim()}
                 style={{ justifyContent: "center", whiteSpace: "nowrap" }}
               >
-                {status === "submitting" ? "Turning on…" : "Monitor free"}
+                {status === "submitting" ? "Adding you…" : "Get early access"}
               </button>
               {status === "error" && (
                 <p role="alert" style={{ flexBasis: "100%", margin: 0, color: "var(--severity-critical)", fontSize: 12.5 }}>{errorMsg}</p>
