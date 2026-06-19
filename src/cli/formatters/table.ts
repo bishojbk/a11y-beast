@@ -41,7 +41,7 @@ export function formatTable(
 
   // Header
   lines.push("");
-  lines.push(`${c.BOLD}  AccessLens Scan Report${c.RESET}`);
+  lines.push(`${c.BOLD}  A11y Beast Scan Report${c.RESET}`);
   lines.push(`  ${c.DIM}${rule}${c.RESET}`);
   lines.push(`  URL:       ${c.BOLD}${scan.url}${c.RESET}`);
   lines.push(`  Score:     ${scoreColor(scan.score.overall)}${c.BOLD}${scan.score.overall}/100${c.RESET} ${gradeColor(scan.score.grade)}(Grade ${scan.score.grade})${c.RESET}`);
