@@ -338,8 +338,9 @@ function LawsuitTrendsBody() {
         Tracking federal website cases specifically, Seyfarth Shaw counted{" "}
         <strong>3,117 — up 27% over 2024</strong> (
         <Ext href="https://www.adatitleiii.com/2026/03/federal-court-website-accessibility-lawsuit-filings-bounce-back-in-2025/">Seyfarth ADA Title III</Ext>).
-        (The two counts differ slightly because each firm tracks a different scope — cite them
-        separately, not as one number.)
+        (The two counts differ because each firm tracks a different scope. And while the 2025 rebound
+        is sharp, it&rsquo;s still a hair below the 2022 peak of ~3,255 federal suits — a resurgence,
+        not an all-time record.)
       </p>
 
       <h2 className="font-display" style={h2}>What&rsquo;s driving the surge</h2>
@@ -482,7 +483,7 @@ function AutomatedLimitsBody() {
         <Ext href="https://alphagov.github.io/accessibility-tool-audit/">GDS tool audit</Ext>).
         Measured differently — by volume of issues rather than by success criteria — Deque reports its
         axe engine surfaces about <strong>57% of issues automatically</strong>, while noting the
-        traditional &ldquo;success-criteria&rdquo; figure is often cited at 20–30% (
+        traditional &ldquo;success-criteria&rdquo; figure spans roughly 20–40% depending on the source (
         <Ext href="https://www.deque.com/blog/automated-testing-study-identifies-57-percent-of-digital-accessibility-issues/">Deque</Ext>).
         Those measure different things — but both land on the same conclusion: a large share of
         accessibility can only be assessed by a human.
@@ -697,7 +698,7 @@ function WordPressBody() {
         plugins that promise instant ADA compliance. The{" "}
         <Ext href="https://overlayfactsheet.com/">Overlay Fact Sheet</Ext> (1,000+ signatories) states no
         overlay can make a site fully compliant, and overlays haven&rsquo;t stopped lawsuits — UsableNet
-        recorded over 1,000 suits in 2024 against sites already running one.
+        recorded 1,416 suits in 2025 against sites already running one.
       </p>
       <p style={p}>
         Automated tools (including ours) catch a portion of issues; manual and screen-reader testing
