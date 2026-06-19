@@ -1525,6 +1525,15 @@ h1, h2, h3, h4 {
 .deadline-bar .msg { color: var(--text-primary); }
 .deadline-bar .msg b { color: var(--severity-critical); font-weight: 600; }
 
+/* Free weekly-monitor opt-in — matches the dashboard rhythm so the card aligns
+   edge-to-edge with the score strip above and the site-scan band below. */
+.monitor-cta {
+  max-width: 1440px;
+  margin: 24px auto;
+  padding: 0 32px;
+  width: 100%;
+}
+
 /* Dash section */
 .dash-section {
   max-width: 1440px;
@@ -2052,6 +2061,7 @@ h1, h2, h3, h4 {
     padding: 20px 16px;
   }
   .deadline-bar { padding: 14px 16px; }
+  .monitor-cta { padding: 0 16px; }
   .gauge-wrap { justify-content: center; }
   .how-steps { grid-template-columns: 1fr; }
   .url-row { flex-direction: column; }

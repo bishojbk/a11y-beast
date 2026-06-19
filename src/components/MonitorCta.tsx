@@ -41,7 +41,7 @@ export default function MonitorCta({ url }: { url: string }) {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: "20px auto 0", padding: "0 28px", width: "100%" }}>
+    <div className="monitor-cta">
       <section
         aria-label="Free weekly accessibility monitoring"
         style={{
