@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -13,6 +14,7 @@ import {
   Copy,
   Download,
   ExternalLink,
+  FileText,
   RefreshCw,
   Search,
   Sparkles,
@@ -24,6 +26,7 @@ import Gauge from "@/components/results/Gauge";
 import Flag, { flagForRegion } from "@/components/results/Flag";
 import { GithubActionDialog, DownloadReportDialog, LegalReportDialog } from "@/components/results/ExportDialogs";
 import MonitorCta from "@/components/MonitorCta";
+import { EAA_STANDARD, PREFILL_KEY, type StatementPrefill } from "@/components/StatementGenerator";
 import { FRAMEWORKS, type FrameworkWithTags } from "@/lib/compliance/frameworks";
 import { computeConformance, type CriterionStatus } from "@/lib/compliance/wcag-criteria";
 import type { ScanResult } from "@/lib/types/scan-result";
@@ -31,6 +34,35 @@ import type { AccessibilityIssue, ImpactGroup, Severity } from "@/lib/types/issu
 import type { ComplianceResult } from "@/lib/types/compliance";
 import type { SiteScanResult } from "@/lib/types/site-scan";
 import { SAMPLE_RESULT } from "@/lib/sample-result";
+
+// Build a statement pre-fill from a scan so the EN 301 549 / EAA statement is
+// backed by real findings. Worst-severity issues become the "known limitations"
+// lines; the generator stays honest (defaults to "Partially conformant").
+const STMT_SEV_RANK: Record<Severity, number> = { critical: 0, major: 1, minor: 2, "best-practice": 3 };
+
+function buildStatementPrefill(result: ScanResult): StatementPrefill {
+  let host = result.url;
+  try { host = new URL(result.url).host; } catch { /* keep raw url */ }
+  const byRule = new Map<string, { desc: string; sev: Severity; count: number }>();
+  for (const i of result.issues) {
+    const e = byRule.get(i.ruleId);
+    if (e) e.count++;
+    else byRule.set(i.ruleId, { desc: i.description, sev: i.severity, count: 1 });
+  }
+  const limitations = [...byRule.values()]
+    .sort((a, b) => STMT_SEV_RANK[a.sev] - STMT_SEV_RANK[b.sev] || b.count - a.count)
+    .slice(0, 6)
+    .map((r) => (r.count > 1 ? `${r.desc} (${r.count} instances)` : r.desc));
+  return {
+    siteName: host,
+    siteUrl: result.url,
+    standard: EAA_STANDARD,
+    status: "Partially conformant",
+    limitations,
+    scanDate: result.timestamp ? result.timestamp.slice(0, 10) : undefined,
+    toolVersion: "A11y Beast (axe-core + custom checks)",
+  };
+}
 
 type FilterKey = Severity | "all" | "needs-review";
 
@@ -375,6 +407,7 @@ function daysBetween(fromISO: string, toISO?: string): number {
    Results page
    ────────────────────────────────────────────────────────────── */
 export default function ResultsPage() {
+  const router = useRouter();
   const [result, setResult] = useState<ScanResult | null>(null);
   const [site, setSite] = useState<SiteScanResult | null>(null);
   const [compliance, setCompliance] = useState<ComplianceResult[]>([]);
@@ -391,6 +424,44 @@ export default function ResultsPage() {
   const [fixCache, setFixCache] = useState<Record<string, string>>({});
   const [fixLoading, setFixLoading] = useState<Record<string, boolean>>({});
   const [modal, setModal] = useState<"action" | "report" | "legal" | null>(null);
+  const [evidenceCount, setEvidenceCount] = useState(0);
+
+  // How many evidence records this browser already holds for this site (the ledger).
+  useEffect(() => {
+    if (!result?.url) return;
+    let cancelled = false;
+    import("@/lib/report/evidence-ledger").then(({ getSiteEntries }) => {
+      if (!cancelled) setEvidenceCount(getSiteEntries(result.url).length);
+    });
+    return () => { cancelled = true; };
+  }, [result?.url]);
+
+  // Hand the scan to the statement generator (EN 301 549 / EAA mode), pre-filled
+  // from these findings. See docs/evidence-ledger-spec.md.
+  const generateStatement = useCallback(() => {
+    if (!result) return;
+    try {
+      sessionStorage.setItem(PREFILL_KEY, JSON.stringify(buildStatementPrefill(result)));
+    } catch { /* sessionStorage unavailable — generator still opens blank */ }
+    router.push("/accessibility-statement-generator");
+  }, [result, router]);
+
+  // Build the dated, hashed evidence record, diff it against this site's prior
+  // ledger entry (regression proof), append it, and open the printable doc.
+  const openEvidenceFile = useCallback(async () => {
+    if (!result) return;
+    const { buildEvidenceRecord, renderEvidenceHtml } = await import("@/lib/report/evidence-file");
+    const { getSiteEntries, appendEntry, diffEntries } = await import("@/lib/report/evidence-ledger");
+    const record = await buildEvidenceRecord(result, compliance);
+    const prior = getSiteEntries(result.url)[0];
+    const diff = prior && prior.contentHash !== record.contentHash ? diffEntries(prior, record) : undefined;
+    appendEntry(record);
+    setEvidenceCount(getSiteEntries(result.url).length);
+    const blob = new Blob([renderEvidenceHtml(record, diff)], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  }, [result, compliance]);
   const rowsInited = useRef(false);
 
   useEffect(() => {
@@ -689,6 +760,12 @@ export default function ResultsPage() {
               <button type="button" className="btn" onClick={() => setModal("report")}>
                 <Download size={13} /> Download report
               </button>
+              <button type="button" className="btn" onClick={generateStatement}>
+                <FileText size={13} /> EN 301 549 statement
+              </button>
+              <button type="button" className="btn" onClick={openEvidenceFile}>
+                <FileText size={13} /> Evidence file
+              </button>
               <button type="button" className="btn" onClick={() => setModal("action")}>
                 <Code2 size={13} /> CI / CLI
               </button>
@@ -698,6 +775,11 @@ export default function ResultsPage() {
                 </button>
               )}
             </div>
+            {evidenceCount > 0 && (
+              <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                <FileText size={11} /> {evidenceCount} evidence record{evidenceCount === 1 ? "" : "s"} on file for this site — each Evidence file adds a dated, timestamped entry and shows what changed since the last one.
+              </p>
+            )}
           </div>
 
           <motion.p
