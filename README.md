@@ -27,7 +27,7 @@ Most accessibility tools tell you "you fail WCAG 1.1.1." A11y Beast tells you "t
 ## Features
 
 ### Scanning Engine
-- **105+ axe-core rules** — industry standard, zero false positives
+- **105+ axe-core rules** — industry standard, minimal false positives
 - **20 custom checks** axe-core doesn't cover:
   - Generic link text ("click here", "read more")
   - Missing skip navigation links
