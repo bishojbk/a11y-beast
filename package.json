@@ -11,7 +11,7 @@
     "README.md"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20.9.0"
   },
   "scripts": {
     "dev": "next dev",
@@ -44,6 +44,8 @@
     "commander": "^14.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
+    "lighthouse": "^13.4.0",
+    "pa11y": "^9.1.1",
     "tailwindcss": "^4",
     "tsup": "^8.5.1",
     "typescript": "^5"

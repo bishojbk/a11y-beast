@@ -69,8 +69,32 @@ export default function AboutPage() {
           severity, and deadline exposure.
         </p>
         <p style={body}>
-          We&rsquo;ve benchmarked the engine against <strong>axe-core, Lighthouse and Pa11y</strong> and
-          aligned the methodology with the W3C&rsquo;s{" "}
+          We benchmark the engine against <strong>axe-core, Lighthouse and Pa11y</strong> on a fixed
+          set of real-world sites — the{" "}
+          <a
+            href="https://github.com/bishojbk/a11y-beast/blob/main/docs/benchmark/benchmark.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "var(--accent-text)" }}
+          >
+            full comparison is public and reproducible
+          </a>{" "}
+          (run it yourself with{" "}
+          <code
+            style={{
+              fontFamily: "var(--font-mono), ui-monospace, monospace",
+              fontSize: 13,
+              padding: "1px 6px",
+              borderRadius: 4,
+              background: "var(--accent-wash)",
+              border: "1px solid var(--accent-line)",
+              color: "var(--accent-text)",
+            }}
+          >
+            a11y-beast benchmark
+          </code>
+          ) — and align
+          the methodology with the W3C&rsquo;s{" "}
           <a
             href="https://www.w3.org/WAI/test-evaluate/conformance/wcag-em/"
             target="_blank"
