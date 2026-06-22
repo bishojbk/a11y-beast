@@ -45,10 +45,14 @@ function EaaBody() {
       <h2 className="font-display" style={h2}>What standard does the EAA actually require?</h2>
       <p style={p}>
         The EAA itself sets functional requirements; the technical yardstick is the European standard{" "}
-        <strong>EN 301 549</strong>, which incorporates <strong>WCAG 2.1 Level AA</strong>. That&rsquo;s
-        the practical bar to aim for today. (A future revision of EN 301 549 is expected to move the
-        reference toward WCAG 2.2 — worth watching, but 2.1 AA is what applies now.) The version is set
-        by the legal citation, not by &ldquo;whatever the latest WCAG is.&rdquo;
+        <strong>EN 301 549</strong>, which incorporates <strong>WCAG 2.1 Level AA</strong> — but is
+        broader than it. EN 301 549 adds requirements WCAG doesn&rsquo;t cover (real-time text, two-way
+        voice communication, synchronised media, and accessible documentation and support). So WCAG 2.1 AA
+        is the core of the bar, not the whole of it: passing automated WCAG checks is necessary but{" "}
+        <em>not sufficient</em> for full EN 301 549 conformance — some clauses need manual review. (A
+        future revision of EN 301 549 is expected to move the WCAG reference toward 2.2 — worth watching,
+        but 2.1 AA is what applies now.) The version is set by the legal citation, not by
+        &ldquo;whatever the latest WCAG is.&rdquo;
       </p>
 
       <h2 className="font-display" style={h2}>Who is in scope?</h2>

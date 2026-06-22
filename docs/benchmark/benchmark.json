@@ -1,0 +1,1045 @@
+{
+  "timestamp": "2026-06-22T02:18:46.823Z",
+  "urls": [
+    "https://shopify.com",
+    "https://stripe.com",
+    "https://hermes.com",
+    "https://ticketmaster.com",
+    "https://github.com",
+    "https://www.usa.gov",
+    "https://news.ycombinator.com"
+  ],
+  "tools": [
+    "beast",
+    "axe-raw",
+    "pa11y",
+    "lighthouse"
+  ],
+  "runs": [
+    {
+      "tool": "beast",
+      "url": "https://shopify.com",
+      "ok": false,
+      "error": "Navigation timeout of 25000 ms exceeded",
+      "durationMs": 26436,
+      "issues": [],
+      "uniqueRuleCount": 0,
+      "legalMapping": true
+    },
+    {
+      "tool": "axe-raw",
+      "url": "https://shopify.com",
+      "ok": false,
+      "error": "Navigation timeout of 45000 ms exceeded",
+      "durationMs": 46489,
+      "issues": [],
+      "uniqueRuleCount": 0,
+      "legalMapping": false
+    },
+    {
+      "tool": "pa11y",
+      "url": "https://shopify.com",
+      "ok": false,
+      "error": "Navigation timeout of 45000 ms exceeded",
+      "durationMs": 45484,
+      "issues": [],
+      "uniqueRuleCount": 0,
+      "legalMapping": false
+    },
+    {
+      "tool": "lighthouse",
+      "url": "https://shopify.com",
+      "ok": true,
+      "durationMs": 10872,
+      "issues": [
+        {
+          "ruleId": "aria-command-name",
+          "severity": "major",
+          "message": "`button`, `link`, and `menuitem` elements do not have accessible names.",
+          "selector": "div.relative > header.bk-header > nav.flex > label.flex",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "aria-prohibited-attr",
+          "severity": "major",
+          "message": "Elements use prohibited ARIA attributes",
+          "selector": "section.grid > div.container > div.flex > div#ab-section-content-2",
+          "occurrences": 5
+        },
+        {
+          "ruleId": "label-content-name-mismatch",
+          "severity": "major",
+          "message": "Elements with visible text labels do not have matching accessible names.",
+          "selector": "footer.py-20 > div.flex > div.relative > button.bg-transparent",
+          "occurrences": 1
+        }
+      ],
+      "uniqueRuleCount": 3,
+      "legalMapping": false
+    },
+    {
+      "tool": "beast",
+      "url": "https://stripe.com",
+      "ok": true,
+      "durationMs": 8309,
+      "issues": [
+        {
+          "ruleId": "empty-heading",
+          "severity": "info",
+          "message": "Ensure headings have discernible text",
+          "selector": ".book-of-the-week__book-title",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "color-contrast",
+          "severity": "major",
+          "message": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "wcagCriterion": "1.4.3",
+          "wcagLevel": "AA",
+          "selector": "button[data-active=\"\"]",
+          "occurrences": 113
+        },
+        {
+          "ruleId": "link-in-text-block",
+          "severity": "major",
+          "message": "Ensure links are distinguished from surrounding text in a way that does not rely on color",
+          "wcagCriterion": "1.4.1",
+          "wcagLevel": "A",
+          "selector": ".stats-menu__stat-description__link",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "alt-too-long",
+          "severity": "minor",
+          "message": "Alt text is 143 characters. Consider using aria-describedby for detailed descriptions.",
+          "selector": "img",
+          "occurrences": 3
+        },
+        {
+          "ruleId": "link-text-generic",
+          "severity": "major",
+          "message": "Link purpose should be determinable from the link text alone (WCAG 2.4.4).",
+          "wcagCriterion": "2.4.4",
+          "wcagLevel": "A",
+          "selector": "a.hds-button.hds-button--secondary",
+          "occurrences": 3
+        },
+        {
+          "ruleId": "skip-link-missing",
+          "severity": "major",
+          "message": "Add a skip link as the first focusable element to let keyboard users bypass repeated content (WCAG 2.4.1).",
+          "wcagCriterion": "2.4.1",
+          "wcagLevel": "A",
+          "selector": "body",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "multiple-h1",
+          "severity": "minor",
+          "message": "Multiple h1 elements confuse screen reader users about the page structure.",
+          "selector": "h1.hds-heading.hero-section__title",
+          "occurrences": 2
+        },
+        {
+          "ruleId": "text-too-small",
+          "severity": "minor",
+          "message": "Very small text is difficult to read for users with low vision (WCAG 1.4.4).",
+          "wcagCriterion": "1.4.4",
+          "wcagLevel": "AA",
+          "selector": "div.payments-graphic__terminal-pay-label",
+          "occurrences": 5
+        },
+        {
+          "ruleId": "line-height-too-tight",
+          "severity": "minor",
+          "message": "Tight line spacing impairs readability, especially for users with cognitive disabilities (WCAG 1.4.12).",
+          "wcagCriterion": "1.4.12",
+          "wcagLevel": "AA",
+          "selector": "p.hds-heading.modular-solutions-section__description",
+          "occurrences": 5
+        }
+      ],
+      "uniqueRuleCount": 9,
+      "legalMapping": true
+    },
+    {
+      "tool": "axe-raw",
+      "url": "https://stripe.com",
+      "ok": true,
+      "durationMs": 8000,
+      "issues": [
+        {
+          "ruleId": "empty-heading",
+          "severity": "info",
+          "message": "Ensure headings have discernible text",
+          "selector": ".book-of-the-week__book-title",
+          "occurrences": 1
+        }
+      ],
+      "uniqueRuleCount": 1,
+      "legalMapping": false
+    },
+    {
+      "tool": "pa11y",
+      "url": "https://stripe.com",
+      "ok": true,
+      "durationMs": 4872,
+      "issues": [
+        {
+          "ruleId": "Fail",
+          "severity": "major",
+          "message": "This element has insufficient contrast at this conformance level. Expected a contrast ratio of at least 3:1, but text in this element has a contrast ratio of 2.39:1. Recommendation:  change text colour to #6da406.",
+          "wcagCriterion": "1.4.3",
+          "wcagLevel": "AA",
+          "selector": "#main-content > section:nth-child(1) > div:nth-child(1) > div > h1:nth-child(2) > span",
+          "occurrences": 15
+        },
+        {
+          "ruleId": "NoContent",
+          "severity": "major",
+          "message": "Anchor element found with a valid href attribute, but no link content has been supplied.",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "AA",
+          "selector": "#main-content > section:nth-child(1) > div:nth-child(3) > div > div > ul > li:nth-child(1) > a",
+          "occurrences": 28
+        },
+        {
+          "ruleId": "2",
+          "severity": "major",
+          "message": "Heading tag found with no content. Text that is not intended as a heading should not be marked up with heading tags.",
+          "wcagCriterion": "1.3.1",
+          "wcagLevel": "AA",
+          "selector": "#main-content > section:nth-child(7) > div > div > div:nth-child(3) > div:nth-child(2) > div > div:nth-child(2) > div > div:nth-child(1) > h4",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "1",
+          "severity": "major",
+          "message": "Iframe element requires a non-empty title attribute that identifies the frame.",
+          "wcagCriterion": "2.4.1",
+          "wcagLevel": "AA",
+          "selector": "#​ > body > iframe:nth-child(3)",
+          "occurrences": 2
+        }
+      ],
+      "uniqueRuleCount": 4,
+      "legalMapping": false
+    },
+    {
+      "tool": "lighthouse",
+      "url": "https://stripe.com",
+      "ok": true,
+      "durationMs": 12134,
+      "issues": [
+        {
+          "ruleId": "label-content-name-mismatch",
+          "severity": "major",
+          "message": "Elements with visible text labels do not have matching accessible names.",
+          "selector": "div.modular-solutions-bento > div.modular-solutions-bento__content > div.modular-solutions-bento__layout > button.modular-solutions-bento-card",
+          "occurrences": 6
+        }
+      ],
+      "uniqueRuleCount": 1,
+      "legalMapping": false
+    },
+    {
+      "tool": "beast",
+      "url": "https://hermes.com",
+      "ok": true,
+      "durationMs": 5129,
+      "issues": [
+        {
+          "ruleId": "landmark-one-main",
+          "severity": "minor",
+          "message": "Ensure the document has a main landmark",
+          "selector": "html",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "page-has-heading-one",
+          "severity": "minor",
+          "message": "Ensure that the page, or at least one of its frames contains a level-one heading",
+          "selector": "html",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "frame-tested",
+          "severity": "critical",
+          "message": "Ensure <iframe> and <frame> elements contain the axe-core script",
+          "selector": "iframe",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "skip-link-missing",
+          "severity": "major",
+          "message": "Add a skip link as the first focusable element to let keyboard users bypass repeated content (WCAG 2.4.1).",
+          "wcagCriterion": "2.4.1",
+          "wcagLevel": "A",
+          "selector": "body",
+          "occurrences": 1
+        }
+      ],
+      "uniqueRuleCount": 4,
+      "legalMapping": true
+    },
+    {
+      "tool": "axe-raw",
+      "url": "https://hermes.com",
+      "ok": true,
+      "durationMs": 5084,
+      "issues": [
+        {
+          "ruleId": "landmark-one-main",
+          "severity": "minor",
+          "message": "Ensure the document has a main landmark",
+          "selector": "html",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "page-has-heading-one",
+          "severity": "minor",
+          "message": "Ensure that the page, or at least one of its frames contains a level-one heading",
+          "selector": "html",
+          "occurrences": 1
+        }
+      ],
+      "uniqueRuleCount": 2,
+      "legalMapping": false
+    },
+    {
+      "tool": "pa11y",
+      "url": "https://hermes.com",
+      "ok": true,
+      "durationMs": 2438,
+      "issues": [],
+      "uniqueRuleCount": 0,
+      "legalMapping": false
+    },
+    {
+      "tool": "lighthouse",
+      "url": "https://hermes.com",
+      "ok": true,
+      "durationMs": 40871,
+      "issues": [
+        {
+          "ruleId": "aria-prohibited-attr",
+          "severity": "major",
+          "message": "Elements use prohibited ARIA attributes",
+          "selector": "div.media-container > h-video.fill-mode > div.video-button > div#vjs_video_3",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "label-content-name-mismatch",
+          "severity": "major",
+          "message": "Elements with visible text labels do not have matching accessible names.",
+          "selector": "div.block-media > ul.block-category-line > li.block-category-image-wrapper > a.block-category-cta",
+          "occurrences": 12
+        }
+      ],
+      "uniqueRuleCount": 2,
+      "legalMapping": false
+    },
+    {
+      "tool": "beast",
+      "url": "https://ticketmaster.com",
+      "ok": true,
+      "durationMs": 8942,
+      "issues": [
+        {
+          "ruleId": "region",
+          "severity": "minor",
+          "message": "Ensure all page content is contained by landmarks",
+          "selector": ".sc-7f6df46b-0",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "scrollable-region-focusable",
+          "severity": "major",
+          "message": "Ensure elements that have scrollable content are accessible by keyboard in Safari",
+          "wcagCriterion": "2.1.1",
+          "wcagLevel": "A",
+          "selector": "#\\:r1\\:",
+          "occurrences": 7
+        },
+        {
+          "ruleId": "aria-valid-attr-value",
+          "severity": "critical",
+          "message": "Ensure all ARIA attributes have valid values",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "A",
+          "selector": "#\\:Ramp7amH1\\:",
+          "occurrences": 4
+        },
+        {
+          "ruleId": "color-contrast",
+          "severity": "major",
+          "message": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "wcagCriterion": "1.4.3",
+          "wcagLevel": "AA",
+          "selector": "li:nth-child(1) > .sc-cb5fc43f-2.eSmEpV > .sc-cb5fc43f-4.dfyigX > .sc-cb5fc43f-9.jqSNPC > .Badge__LabelWrapper-sc-yqcrvp-0.fLvUHd.sc-cb5fc43f-8 > .Badge__Label-sc-yqcrvp-1.TcWOE",
+          "occurrences": 19
+        },
+        {
+          "ruleId": "link-text-generic",
+          "severity": "major",
+          "message": "Link purpose should be determinable from the link text alone (WCAG 2.4.4).",
+          "wcagCriterion": "2.4.4",
+          "wcagLevel": "A",
+          "selector": "a",
+          "occurrences": 2
+        },
+        {
+          "ruleId": "text-too-small",
+          "severity": "minor",
+          "message": "Very small text is difficult to read for users with low vision (WCAG 1.4.4).",
+          "wcagCriterion": "1.4.4",
+          "wcagLevel": "AA",
+          "selector": "div.Badge__LabelWrapper-sc-yqcrvp-0.fLvUHd",
+          "occurrences": 4
+        },
+        {
+          "ruleId": "line-height-too-tight",
+          "severity": "minor",
+          "message": "Tight line spacing impairs readability, especially for users with cognitive disabilities (WCAG 1.4.12).",
+          "wcagCriterion": "1.4.12",
+          "wcagLevel": "AA",
+          "selector": "li.sc-1fbd0e2a-1.iWLNiF",
+          "occurrences": 5
+        },
+        {
+          "ruleId": "aria-reference-broken",
+          "severity": "major",
+          "message": "ARIA attributes reference IDs that don't exist on the page. Screen readers get no information.",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "A",
+          "selector": "button.sc-833b4846-3.jfzGOy",
+          "occurrences": 5
+        },
+        {
+          "ruleId": "title-redundant",
+          "severity": "info",
+          "message": "Redundant title attributes cause screen readers to announce the text twice.",
+          "selector": "button.sc-6d9563f-2.bpYPWY",
+          "occurrences": 2
+        }
+      ],
+      "uniqueRuleCount": 9,
+      "legalMapping": true
+    },
+    {
+      "tool": "axe-raw",
+      "url": "https://ticketmaster.com",
+      "ok": true,
+      "durationMs": 6814,
+      "issues": [
+        {
+          "ruleId": "aria-valid-attr-value",
+          "severity": "critical",
+          "message": "Ensure all ARIA attributes have valid values",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "A",
+          "selector": ".eCacqX",
+          "occurrences": 2
+        },
+        {
+          "ruleId": "region",
+          "severity": "minor",
+          "message": "Ensure all page content is contained by landmarks",
+          "selector": ".sc-7f6df46b-0",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "scrollable-region-focusable",
+          "severity": "major",
+          "message": "Ensure elements that have scrollable content are accessible by keyboard in Safari",
+          "wcagCriterion": "2.1.1",
+          "wcagLevel": "A",
+          "selector": "#\\:r1\\:",
+          "occurrences": 8
+        }
+      ],
+      "uniqueRuleCount": 3,
+      "legalMapping": false
+    },
+    {
+      "tool": "pa11y",
+      "url": "https://ticketmaster.com",
+      "ok": true,
+      "durationMs": 5915,
+      "issues": [
+        {
+          "ruleId": "EmptyNoId",
+          "severity": "major",
+          "message": "Anchor element found with no link content and no name and/or ID attribute.",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "AA",
+          "selector": "#main-column > div:nth-child(1) > div > ul > li:nth-child(1) > a",
+          "occurrences": 4
+        },
+        {
+          "ruleId": "1",
+          "severity": "major",
+          "message": "Iframe element requires a non-empty title attribute that identifies the frame.",
+          "wcagCriterion": "2.4.1",
+          "wcagLevel": "AA",
+          "selector": "#GTMN49MH3G-pnio",
+          "occurrences": 2
+        },
+        {
+          "ruleId": "Name",
+          "severity": "major",
+          "message": "This textarea element does not have a name available to an accessibility API. Valid names are: label element, title , aria-label , aria-labelledby .",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "AA",
+          "selector": "#g-recaptcha-response-100000",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "F68",
+          "severity": "major",
+          "message": "This form field should be labelled in some way. Use the label element (either with a \"for\" attribute or wrapped around the form field), or \"title\", \"aria-label\" or \"aria-labelledby\" attributes as appropriate.",
+          "wcagCriterion": "1.3.1",
+          "wcagLevel": "AA",
+          "selector": "#g-recaptcha-response-100000",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "F92,ARIA4",
+          "severity": "major",
+          "message": "This element's role is \"presentation\" but contains child elements with semantic meaning.",
+          "wcagCriterion": "1.3.1",
+          "wcagLevel": "AA",
+          "selector": "#ot-pc-content > div:nth-child(2) > div:nth-child(1) > ul > li:nth-child(1)",
+          "occurrences": 5
+        }
+      ],
+      "uniqueRuleCount": 5,
+      "legalMapping": false
+    },
+    {
+      "tool": "lighthouse",
+      "url": "https://ticketmaster.com",
+      "ok": true,
+      "durationMs": 31532,
+      "issues": [],
+      "uniqueRuleCount": 0,
+      "legalMapping": false
+    },
+    {
+      "tool": "beast",
+      "url": "https://github.com",
+      "ok": true,
+      "durationMs": 2604,
+      "issues": [
+        {
+          "ruleId": "landmark-unique",
+          "severity": "minor",
+          "message": "Ensure landmarks are unique",
+          "selector": ".lp-IntroHero > .CtaForm > form[aria-label=\"Sign up for GitHub\"][action=\"/signup\"][method=\"get\"]",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "color-contrast",
+          "severity": "major",
+          "message": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "wcagCriterion": "1.4.3",
+          "wcagLevel": "AA",
+          "selector": "li:nth-child(1) > .NavDropdown-module__container__l2YeI.js-header-menu-item.js-details-container > .NavDropdown-module__button__PEHWX.js-details-target[type=\"button\"]",
+          "occurrences": 29
+        },
+        {
+          "ruleId": "video-caption",
+          "severity": "critical",
+          "message": "Ensure <video> elements have captions",
+          "wcagCriterion": "1.2.2",
+          "wcagLevel": "A",
+          "selector": "video[aria-describedby=\"visual-code-0-desc\"]",
+          "occurrences": 2
+        },
+        {
+          "ruleId": "alt-too-long",
+          "severity": "minor",
+          "message": "Alt text is 142 characters. Consider using aria-describedby for detailed descriptions.",
+          "selector": "img.Primer_Brand__Image-module__Image___FgVuK.lp-SectionHero-visual-media",
+          "occurrences": 3
+        },
+        {
+          "ruleId": "multiple-h1",
+          "severity": "minor",
+          "message": "Multiple h1 elements confuse screen reader users about the page structure.",
+          "selector": "#search-suggestions-dialog-header",
+          "occurrences": 4
+        },
+        {
+          "ruleId": "line-height-too-tight",
+          "severity": "minor",
+          "message": "Tight line spacing impairs readability, especially for users with cognitive disabilities (WCAG 1.4.12).",
+          "wcagCriterion": "1.4.12",
+          "wcagLevel": "AA",
+          "selector": "p.Primer_Brand__Text-module__Text___pecHN.Primer_Brand__Text-module__Text-font--mona-sans___GpzSG",
+          "occurrences": 5
+        },
+        {
+          "ruleId": "aria-reference-broken",
+          "severity": "major",
+          "message": "ARIA attributes reference IDs that don't exist on the page. Screen readers get no information.",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "A",
+          "selector": "#feedback-dialog",
+          "occurrences": 1
+        }
+      ],
+      "uniqueRuleCount": 7,
+      "legalMapping": true
+    },
+    {
+      "tool": "axe-raw",
+      "url": "https://github.com",
+      "ok": true,
+      "durationMs": 3151,
+      "issues": [
+        {
+          "ruleId": "landmark-unique",
+          "severity": "minor",
+          "message": "Ensure landmarks are unique",
+          "selector": ".lp-IntroHero > .CtaForm > form[aria-label=\"Sign up for GitHub\"][action=\"/signup\"][method=\"get\"]",
+          "occurrences": 1
+        }
+      ],
+      "uniqueRuleCount": 1,
+      "legalMapping": false
+    },
+    {
+      "tool": "pa11y",
+      "url": "https://github.com",
+      "ok": true,
+      "durationMs": 2788,
+      "issues": [
+        {
+          "ruleId": "2",
+          "severity": "major",
+          "message": "This form does not contain a submit button, which creates issues for those who cannot submit the form using the keyboard. Submit buttons are INPUT elements with type attribute \"submit\" or \"image\", or BUTTON elements with type \"submit\" or omitted/invalid.",
+          "wcagCriterion": "3.2.2",
+          "wcagLevel": "AA",
+          "selector": "#query-builder-test-form",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "Name",
+          "severity": "major",
+          "message": "This textarea element does not have a name available to an accessibility API. Valid names are: label element, title , aria-label , aria-labelledby .",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "AA",
+          "selector": "#feedback",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "F68",
+          "severity": "major",
+          "message": "This form field should be labelled in some way. Use the label element (either with a \"for\" attribute or wrapped around the form field), or \"title\", \"aria-label\" or \"aria-labelledby\" attributes as appropriate.",
+          "wcagCriterion": "1.3.1",
+          "wcagLevel": "AA",
+          "selector": "#feedback",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "F77",
+          "severity": "major",
+          "message": "Duplicate id attribute value \"__PRIMER_DATA__R_0___\" found on the web page.",
+          "wcagCriterion": "4.1.1",
+          "wcagLevel": "AA",
+          "selector": "#__PRIMER_DATA__R_0___",
+          "occurrences": 2
+        },
+        {
+          "ruleId": "F92,ARIA4",
+          "severity": "major",
+          "message": "This element's role is \"presentation\" but contains child elements with semantic meaning.",
+          "wcagCriterion": "1.3.1",
+          "wcagLevel": "AA",
+          "selector": "#hero > div:nth-child(1) > div:nth-child(7) > div:nth-child(3) > button > svg",
+          "occurrences": 4
+        }
+      ],
+      "uniqueRuleCount": 5,
+      "legalMapping": false
+    },
+    {
+      "tool": "lighthouse",
+      "url": "https://github.com",
+      "ok": true,
+      "durationMs": 31540,
+      "issues": [],
+      "uniqueRuleCount": 0,
+      "legalMapping": false
+    },
+    {
+      "tool": "beast",
+      "url": "https://www.usa.gov",
+      "ok": true,
+      "durationMs": 3381,
+      "issues": [
+        {
+          "ruleId": "landmark-banner-is-top-level",
+          "severity": "minor",
+          "message": "Ensure the banner landmark is at top level",
+          "selector": ".usa-banner__header",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "landmark-no-duplicate-banner",
+          "severity": "minor",
+          "message": "Ensure the document has at most one banner landmark",
+          "selector": "#header",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "landmark-unique",
+          "severity": "minor",
+          "message": "Ensure landmarks are unique",
+          "selector": "#header",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "color-contrast",
+          "severity": "major",
+          "message": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "wcagCriterion": "1.4.3",
+          "wcagLevel": "AA",
+          "selector": "#back-to-top",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "line-height-too-tight",
+          "severity": "minor",
+          "message": "Tight line spacing impairs readability, especially for users with cognitive disabilities (WCAG 1.4.12).",
+          "wcagCriterion": "1.4.12",
+          "wcagLevel": "AA",
+          "selector": "p.usa-banner__header-text",
+          "occurrences": 5
+        }
+      ],
+      "uniqueRuleCount": 5,
+      "legalMapping": true
+    },
+    {
+      "tool": "axe-raw",
+      "url": "https://www.usa.gov",
+      "ok": true,
+      "durationMs": 3910,
+      "issues": [
+        {
+          "ruleId": "landmark-banner-is-top-level",
+          "severity": "minor",
+          "message": "Ensure the banner landmark is at top level",
+          "selector": ".usa-banner__header",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "landmark-no-duplicate-banner",
+          "severity": "minor",
+          "message": "Ensure the document has at most one banner landmark",
+          "selector": "#header",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "landmark-unique",
+          "severity": "minor",
+          "message": "Ensure landmarks are unique",
+          "selector": "#header",
+          "occurrences": 1
+        }
+      ],
+      "uniqueRuleCount": 3,
+      "legalMapping": false
+    },
+    {
+      "tool": "pa11y",
+      "url": "https://www.usa.gov",
+      "ok": true,
+      "durationMs": 3135,
+      "issues": [],
+      "uniqueRuleCount": 0,
+      "legalMapping": false
+    },
+    {
+      "tool": "lighthouse",
+      "url": "https://www.usa.gov",
+      "ok": true,
+      "durationMs": 31522,
+      "issues": [],
+      "uniqueRuleCount": 0,
+      "legalMapping": false
+    },
+    {
+      "tool": "beast",
+      "url": "https://news.ycombinator.com",
+      "ok": true,
+      "durationMs": 2845,
+      "issues": [
+        {
+          "ruleId": "color-contrast",
+          "severity": "major",
+          "message": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "wcagCriterion": "1.4.3",
+          "wcagLevel": "AA",
+          "selector": "#\\34 8622778 > .title[align=\"right\"][valign=\"top\"] > .rank",
+          "occurrences": 238
+        },
+        {
+          "ruleId": "image-alt",
+          "severity": "critical",
+          "message": "Ensure <img> elements have alternative text or a role of none or presentation",
+          "wcagCriterion": "1.1.1",
+          "wcagLevel": "A",
+          "selector": "img[src$=\"y18.svg\"]",
+          "occurrences": 3
+        },
+        {
+          "ruleId": "label",
+          "severity": "critical",
+          "message": "Ensure every form element has a label",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "A",
+          "selector": "input",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "landmark-one-main",
+          "severity": "minor",
+          "message": "Ensure the document has a main landmark",
+          "selector": "html",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "link-name",
+          "severity": "major",
+          "message": "Ensure links have discernible text",
+          "wcagCriterion": "2.4.4",
+          "wcagLevel": "A",
+          "selector": "a[href$=\"news.ycombinator.com\"]",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "page-has-heading-one",
+          "severity": "minor",
+          "message": "Ensure that the page, or at least one of its frames contains a level-one heading",
+          "selector": "html",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "region",
+          "severity": "minor",
+          "message": "Ensure all page content is contained by landmarks",
+          "selector": "body > center",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "bypass",
+          "severity": "major",
+          "message": "Ensure each page has at least one mechanism for a user to bypass navigation and jump straight to the content",
+          "wcagCriterion": "2.4.1",
+          "wcagLevel": "A",
+          "selector": "html",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "link-text-generic",
+          "severity": "major",
+          "message": "Link purpose should be determinable from the link text alone (WCAG 2.4.4).",
+          "wcagCriterion": "2.4.4",
+          "wcagLevel": "A",
+          "selector": "a",
+          "occurrences": 2
+        },
+        {
+          "ruleId": "skip-link-missing",
+          "severity": "major",
+          "message": "Add a skip link as the first focusable element to let keyboard users bypass repeated content (WCAG 2.4.1).",
+          "wcagCriterion": "2.4.1",
+          "wcagLevel": "A",
+          "selector": "body",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "text-too-small",
+          "severity": "minor",
+          "message": "Very small text is difficult to read for users with low vision (WCAG 1.4.4).",
+          "wcagCriterion": "1.4.4",
+          "wcagLevel": "AA",
+          "selector": "span.sitebit.comhead",
+          "occurrences": 5
+        },
+        {
+          "ruleId": "line-height-too-tight",
+          "severity": "minor",
+          "message": "Tight line spacing impairs readability, especially for users with cognitive disabilities (WCAG 1.4.12).",
+          "wcagCriterion": "1.4.12",
+          "wcagLevel": "AA",
+          "selector": "td",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "deprecated-html",
+          "severity": "minor",
+          "message": "Deprecated elements may not be accessible. Use modern CSS and semantic HTML instead.",
+          "wcagCriterion": "4.1.1",
+          "wcagLevel": "A",
+          "selector": "center",
+          "occurrences": 5
+        },
+        {
+          "ruleId": "landmark-nav-missing",
+          "severity": "minor",
+          "message": "Navigation regions should be wrapped in <nav> elements (WCAG 1.3.1).",
+          "wcagCriterion": "1.3.1",
+          "wcagLevel": "A",
+          "selector": "body",
+          "occurrences": 1
+        }
+      ],
+      "uniqueRuleCount": 14,
+      "legalMapping": true
+    },
+    {
+      "tool": "axe-raw",
+      "url": "https://news.ycombinator.com",
+      "ok": true,
+      "durationMs": 3542,
+      "issues": [
+        {
+          "ruleId": "color-contrast",
+          "severity": "major",
+          "message": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "wcagCriterion": "1.4.3",
+          "wcagLevel": "AA",
+          "selector": "#\\34 8622778 > .title[align=\"right\"][valign=\"top\"] > .rank",
+          "occurrences": 238
+        },
+        {
+          "ruleId": "image-alt",
+          "severity": "critical",
+          "message": "Ensure <img> elements have alternative text or a role of none or presentation",
+          "wcagCriterion": "1.1.1",
+          "wcagLevel": "A",
+          "selector": "img[src$=\"y18.svg\"]",
+          "occurrences": 3
+        },
+        {
+          "ruleId": "label",
+          "severity": "critical",
+          "message": "Ensure every form element has a label",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "A",
+          "selector": "input",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "landmark-one-main",
+          "severity": "minor",
+          "message": "Ensure the document has a main landmark",
+          "selector": "html",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "link-name",
+          "severity": "major",
+          "message": "Ensure links have discernible text",
+          "wcagCriterion": "2.4.4",
+          "wcagLevel": "A",
+          "selector": "a[href$=\"news.ycombinator.com\"]",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "page-has-heading-one",
+          "severity": "minor",
+          "message": "Ensure that the page, or at least one of its frames contains a level-one heading",
+          "selector": "html",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "region",
+          "severity": "minor",
+          "message": "Ensure all page content is contained by landmarks",
+          "selector": "body > center",
+          "occurrences": 1
+        }
+      ],
+      "uniqueRuleCount": 7,
+      "legalMapping": false
+    },
+    {
+      "tool": "pa11y",
+      "url": "https://news.ycombinator.com",
+      "ok": true,
+      "durationMs": 2414,
+      "issues": [
+        {
+          "ruleId": "2",
+          "severity": "major",
+          "message": "Img element is the only content of the link, but is missing alt text. The alt text should describe the purpose of the link.",
+          "wcagCriterion": "1.1.1",
+          "wcagLevel": "AA",
+          "selector": "#hnmain > tbody > tr:nth-child(1) > td > table > tbody > tr > td:nth-child(1) > a",
+          "occurrences": 2
+        },
+        {
+          "ruleId": "Fail",
+          "severity": "major",
+          "message": "This element has insufficient contrast at this conformance level. Expected a contrast ratio of at least 4.5:1, but text in this element has a contrast ratio of 3.54:1. Recommendation:  change text colour to #090909.",
+          "wcagCriterion": "1.4.3",
+          "wcagLevel": "AA",
+          "selector": "#48622778 > td:nth-child(1) > span",
+          "occurrences": 269
+        },
+        {
+          "ruleId": "NoContent",
+          "severity": "major",
+          "message": "Anchor element found with a valid href attribute, but no link content has been supplied.",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "AA",
+          "selector": "#up_48622778",
+          "occurrences": 29
+        },
+        {
+          "ruleId": "H37",
+          "severity": "major",
+          "message": "Img element missing an alt attribute. Use the alt attribute to specify a short text alternative.",
+          "wcagCriterion": "1.1.1",
+          "wcagLevel": "AA",
+          "selector": "#48620504 > td:nth-child(2) > img",
+          "occurrences": 2
+        },
+        {
+          "ruleId": "Name",
+          "severity": "major",
+          "message": "This textinput element does not have a name available to an accessibility API. Valid names are: label element, title , aria-label , aria-labelledby .",
+          "wcagCriterion": "4.1.2",
+          "wcagLevel": "AA",
+          "selector": "#hnmain > tbody > tr:nth-child(4) > td > center > form > input",
+          "occurrences": 1
+        },
+        {
+          "ruleId": "F68",
+          "severity": "major",
+          "message": "This form field should be labelled in some way. Use the label element (either with a \"for\" attribute or wrapped around the form field), or \"title\", \"aria-label\" or \"aria-labelledby\" attributes as appropriate.",
+          "wcagCriterion": "1.3.1",
+          "wcagLevel": "AA",
+          "selector": "#hnmain > tbody > tr:nth-child(4) > td > center > form > input",
+          "occurrences": 1
+        }
+      ],
+      "uniqueRuleCount": 6,
+      "legalMapping": false
+    },
+    {
+      "tool": "lighthouse",
+      "url": "https://news.ycombinator.com",
+      "ok": true,
+      "durationMs": 31515,
+      "issues": [],
+      "uniqueRuleCount": 0,
+      "legalMapping": false
+    }
+  ]
+}

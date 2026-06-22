@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Build artifacts and vendored/non-source files — not ours to lint.
+    // These accounted for the bulk of the pre-existing lint "baseline".
+    "dist/**",
+    "public/axe-core/**",
+    "design_handoff_a11y_beast/**",
   ]),
 ]);
 
