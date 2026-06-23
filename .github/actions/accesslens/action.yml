@@ -1,5 +1,5 @@
 name: 'AccessLens Accessibility Scan'
-description: 'Scan a URL for accessibility issues using 125+ WCAG rules and 16 legal frameworks'
+description: 'Scan a URL for accessibility issues using 110+ checks and 16 legal frameworks'
 branding:
   icon: 'eye'
   color: 'orange'

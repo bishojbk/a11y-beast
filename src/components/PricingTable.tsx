@@ -26,7 +26,7 @@ const TIERS: Tier[] = [
     tagline: "See where you stand. One scan, sixteen legal verdicts — the full diagnosis, no record, no signup.",
     features: [
       "Single-page scan · unlimited",
-      "125+ checks · real-browser rendering",
+      "110+ checks · real-browser rendering",
       "All 16 legal frameworks + risk score",
       "Per-criterion WCAG conformance view",
       "View & copy results in-browser",

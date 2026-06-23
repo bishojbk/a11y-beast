@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>The ultimate free web accessibility checker.</strong><br/>
-  125+ rules. 20 custom checks. 16 global legal frameworks. Real browser rendering.
+  110+ checks. 20 custom checks. 16 global legal frameworks. Real browser rendering.
 </p>
 
 <p align="center">

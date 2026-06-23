@@ -6,7 +6,7 @@ _Paste this into a fresh Claude (or any reviewer) to verify the blog posts. It's
 
 ## 1. What the product is (so you understand the voice)
 
-**A11y Beast** (product also called AccessLens) is a **free, anti-overlay web-accessibility legal-risk scanner**. It renders a page in a real browser, runs 125+ checks (axe-core + custom), and maps each WCAG violation to **16 legal frameworks** (ADA, EAA, Section 508, California Unruh, UK Equality Act, AODA, etc.), with an honest 0–100 "automated-coverage" score.
+**A11y Beast** (product also called AccessLens) is a **free, anti-overlay web-accessibility legal-risk scanner**. It renders a page in a real browser, runs 110+ checks (axe-core + custom), and maps each WCAG violation to **16 legal frameworks** (ADA, EAA, Section 508, California Unruh, UK Equality Act, AODA, etc.), with an honest 0–100 "automated-coverage" score.
 
 **Positioning & voice:**
 - **Legal-risk intelligence, not "another WCAG checker."** The hook: "Most tools say you fail WCAG 1.1.1. We say you're breaking 16 laws."

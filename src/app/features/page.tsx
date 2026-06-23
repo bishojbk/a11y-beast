@@ -9,48 +9,10 @@ export const metadata: Metadata = {
   alternates: { canonical: "/features" },
 };
 
-// Match the forensic-editorial system used across the content pages (see /about, /cli).
-const kicker: React.CSSProperties = {
-  fontSize: 11,
-  letterSpacing: "0.16em",
-  textTransform: "uppercase",
-  color: "var(--text-tertiary)",
-};
-const body: React.CSSProperties = {
-  color: "var(--text-secondary)",
-  fontSize: 16,
-  lineHeight: 1.65,
-  marginBottom: 16,
-};
-
 type Tier = "Free" | "Pro" | "Agency";
 
 function TierPill({ tier }: { tier: Tier }) {
-  const map: Record<Tier, React.CSSProperties> = {
-    Free: { color: "var(--pass)", borderColor: "var(--pass)", background: "transparent" },
-    Pro: { color: "var(--accent-text)", borderColor: "var(--accent-line)", background: "var(--accent-wash)" },
-    Agency: { color: "var(--text-primary)", borderColor: "var(--border-strong)", background: "var(--bg-raised)" },
-  };
-  const s = map[tier];
-  return (
-    <span
-      className="mono"
-      style={{
-        flexShrink: 0,
-        fontSize: 10,
-        letterSpacing: "0.1em",
-        textTransform: "uppercase",
-        color: s.color,
-        background: s.background,
-        border: `1px solid ${s.borderColor}`,
-        borderRadius: 3,
-        padding: "2px 7px",
-        lineHeight: 1.4,
-      }}
-    >
-      {tier}
-    </span>
-  );
+  return <span className={`tier-pill ${tier.toLowerCase()}`}>{tier}</span>;
 }
 
 interface Feature {
@@ -60,6 +22,7 @@ interface Feature {
 }
 
 interface Group {
+  num: string;
   kicker: string;
   title: string;
   intro: string;
@@ -68,7 +31,8 @@ interface Group {
 
 const GROUPS: Group[] = [
   {
-    kicker: "01 · the diagnosis",
+    num: "01",
+    kicker: "the diagnosis",
     title: "See where you stand",
     intro:
       "Free, no signup. The full picture of what's wrong and which laws it implicates — we never hide the diagnosis.",
@@ -79,9 +43,9 @@ const GROUPS: Group[] = [
         desc: "Every scan runs a real Chromium browser via Puppeteer, so we see what users see — single-page apps, JS-gated content, computed styles and focus order — not a static-HTML approximation.",
       },
       {
-        name: "125+ accessibility checks",
+        name: "110+ accessibility checks",
         tier: "Free",
-        desc: "axe-core's 105 rules plus 20 custom checks it doesn't catch — heading gaps, suspiciously generic alt text, text that's too small, zoom-lock and more.",
+        desc: "axe-core's 96 rules plus 20 custom checks it doesn't catch — heading gaps, suspiciously generic alt text, text that's too small, zoom-lock and more.",
       },
       {
         name: "16 legal frameworks, mapped",
@@ -111,7 +75,8 @@ const GROUPS: Group[] = [
     ],
   },
   {
-    kicker: "02 · the outcome",
+    num: "02",
+    kicker: "the outcome",
     title: "Prove it, over time",
     intro:
       "The part a free scanner can't give you: a dated, defensible trail of effort you can hand to a client, a regulator, or a court.",
@@ -154,7 +119,8 @@ const GROUPS: Group[] = [
     ],
   },
   {
-    kicker: "03 · for agencies",
+    num: "03",
+    kicker: "for agencies",
     title: "Scale it for clients",
     intro: "Higher-value B2B: audit many client sites and hand over a deliverable you can put your name on.",
     features: [
@@ -175,76 +141,56 @@ const GROUPS: Group[] = [
 export default function FeaturesPage() {
   return (
     <PageContainer>
-        <div style={{ ...kicker, marginBottom: 12 }}>Features · what you actually get</div>
-        <h1
-          className="font-display"
-          style={{ fontSize: "clamp(34px, 5vw, 52px)", lineHeight: 1.05, marginBottom: 20 }}
-        >
-          Everything A11y Beast does.
-        </h1>
-        <p style={{ ...body, fontSize: 18 }}>
-          The guiding line: <strong>free answers &ldquo;am I at risk, and what&rsquo;s wrong?&rdquo;</strong> — the
-          full diagnosis. <strong>Paid answers &ldquo;prove it, fix it across my whole site, and keep me safe over
-          time.&rdquo;</strong> We never gate the diagnosis; we charge for the proof.
-        </p>
+      <div className="doc-eyebrow">Features · what you actually get</div>
+      <h1 className="doc-title">Everything A11y Beast does.</h1>
+      <p className="doc-lead">
+        The guiding line: <strong>free answers “am I at risk, and what’s wrong?”</strong> — the full diagnosis.{" "}
+        <strong>Paid answers “prove it, fix it across my whole site, and keep me safe over time.”</strong> We never
+        gate the diagnosis; we charge for the proof.
+      </p>
 
-        <div
-          style={{
-            fontSize: 13.5,
-            lineHeight: 1.55,
-            color: "var(--text-secondary)",
-            background: "var(--bg-raised)",
-            border: "1px solid var(--border-default)",
-            borderRadius: 8,
-            padding: "12px 16px",
-            margin: "8px 0 8px",
-          }}
-        >
-          Free features are live today. <strong style={{ color: "var(--text-primary)" }}>Pro</strong> and{" "}
-          <strong style={{ color: "var(--text-primary)" }}>Agency</strong> features are in founding access.
-        </div>
+      <div className="callout">
+        Free features are live today. <strong>Pro</strong> and <strong>Agency</strong> features are in founding access.
+      </div>
 
-        {GROUPS.map((g) => (
-          <section key={g.title} aria-labelledby={`g-${g.title}`} style={{ marginTop: 52 }}>
-            <div style={{ ...kicker, marginBottom: 8 }}>{g.kicker}</div>
-            <h2 id={`g-${g.title}`} className="font-display" style={{ fontSize: "clamp(22px, 3vw, 30px)", lineHeight: 1.15, marginBottom: 10 }}>
+      {GROUPS.map((g) => (
+        <section key={g.title} className="doc-section" aria-labelledby={`g-${g.num}`}>
+          <div className="doc-eyebrow">{g.kicker}</div>
+          <div className="doc-section-head">
+            <span className="doc-num">{g.num}</span>
+            <h2 id={`g-${g.num}`} className="doc-h2">
               {g.title}
             </h2>
-            <p style={{ ...body, marginBottom: 24 }}>{g.intro}</p>
+          </div>
+          <p className="doc-p">{g.intro}</p>
 
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 1, background: "var(--border-faint)", border: "1px solid var(--border-faint)", borderRadius: 10, overflow: "hidden" }}>
-              {g.features.map((f) => (
-                <li key={f.name} style={{ background: "var(--bg-base)", padding: "16px 18px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 15.5, fontWeight: 600, color: "var(--text-primary)" }}>{f.name}</span>
-                    <TierPill tier={f.tier} />
-                  </div>
-                  <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.55, margin: 0 }}>{f.desc}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+          <ul className="spec-list">
+            {g.features.map((f) => (
+              <li key={f.name} className="spec-row">
+                <div className="spec-head">
+                  <span className="spec-name">{f.name}</span>
+                  <TierPill tier={f.tier} />
+                </div>
+                <p className="spec-desc">{f.desc}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
 
-        <p style={{ ...body, fontSize: 14, marginTop: 44, color: "var(--text-tertiary)" }}>
-          Whatever the tier, A11y Beast reports an automated indicator mapped to legal risk — not a compliance verdict.
-          Automated testing catches ~30&ndash;40% of WCAG success criteria; pair it with a manual audit for the rest.
-        </p>
+      <p className="doc-note">
+        Whatever the tier, A11y Beast reports an automated indicator mapped to legal risk — not a compliance verdict.
+        Automated testing catches ~30–40% of WCAG success criteria; pair it with a manual audit for the rest.
+      </p>
 
-        <div
-          style={{
-            marginTop: 40,
-            paddingTop: 32,
-            borderTop: "1px solid var(--border-faint)",
-            display: "flex",
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <Link href="/#scan" className="scan-btn" style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 22px", borderRadius: 6, fontSize: 14, fontWeight: 600 }}>
-            Scan your site free
-          </Link>
-        </div>
+      <div className="cta-band">
+        <Link href="/#scan" className="scan-btn btn-lg">
+          Scan your site free
+        </Link>
+        <Link href="/pricing" className="btn-lg outline">
+          See pricing
+        </Link>
+      </div>
     </PageContainer>
   );
 }

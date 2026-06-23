@@ -44,7 +44,7 @@ _A11y Beast · created 2026-06-16. Turns the keyword research into an executable
 - **Primary keyword:** free accessibility checker · **Supporting:** ada compliance checker, website accessibility checker, wcag checker
 - **`<title>` (SERP):** `Free Accessibility Checker for ADA & WCAG | A11y Beast`  ✅ _shipped_
 - **`og:title` (social):** `A11y Beast — you're not just failing WCAG. You're breaking 16 laws.`  ✅ _shipped_
-- **Meta description:** `Free accessibility checker that maps every WCAG violation to 16 laws — ADA, EAA, Section 508, California Unruh and more. 125+ checks in a real browser. Not an overlay.`  ✅ _shipped_
+- **Meta description:** `Free accessibility checker that maps every WCAG violation to 16 laws — ADA, EAA, Section 508, California Unruh and more. 110+ checks in a real browser. Not an overlay.`  ✅ _shipped_
 - **H1:** keep brand — "Most tools say you fail WCAG 1.1.1. We say you're breaking 16 laws." (no change)
 - **TODO (next):** add ONE keyword-bearing H2 near the scanner, e.g. _"A free accessibility checker that maps issues to the law"_ — gives crawlers an on-page keyword match without touching the hero. (Design-sensitive; do deliberately.)
 

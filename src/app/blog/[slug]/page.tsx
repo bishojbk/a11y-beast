@@ -63,18 +63,21 @@ export default async function BlogPostPage({
         </nav>
 
         <article className="stagger-in">
-          <div className="mono" style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 12 }}>
+          <div className="post-meta" style={{ marginBottom: 14 }}>
             <time dateTime={post.datePublished}>{post.datePublished}</time> · {post.readingMinutes} min read
           </div>
-          <h1 className="font-display" style={{ fontSize: "clamp(30px, 4.5vw, 46px)", lineHeight: 1.08, marginBottom: 20 }}>
+          <h1 className="doc-title" style={{ fontSize: "clamp(30px, 4.5vw, 46px)", lineHeight: 1.08 }}>
             {post.title}
           </h1>
           <Body />
         </article>
 
-        <div style={{ marginTop: 56, paddingTop: 32, borderTop: "1px solid var(--border-faint)" }}>
-          <Link href="/#scan" className="scan-btn" style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 22px", borderRadius: 6, fontSize: 14, fontWeight: 600 }}>
+        <div className="cta-band">
+          <Link href="/#scan" className="scan-btn btn-lg">
             Scan your site for legal risk
+          </Link>
+          <Link href="/blog" className="btn-lg outline">
+            More guides
           </Link>
         </div>
       </PageContainer>

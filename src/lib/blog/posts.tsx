@@ -649,7 +649,7 @@ function ShopifyBody() {
       </p>
       <p style={p}>
         Want to know exactly which issues your store has and which laws they implicate?{" "}
-        <a href="/#scan" style={aStyle}>Scan your Shopify URL</a> — real browser, 125+ checks, mapped to 16
+        <a href="/#scan" style={aStyle}>Scan your Shopify URL</a> — real browser, 110+ checks, mapped to 16
         frameworks.
       </p>
     </>
@@ -824,7 +824,7 @@ function WixBody() {
       </p>
       <p style={p}>
         Want to see which laws your Wix site is exposed under — beyond what the Wizard checks?{" "}
-        <a href="/#scan" style={aStyle}>Scan your URL</a> with A11y Beast: real browser, 125+ checks, mapped to 16 frameworks.
+        <a href="/#scan" style={aStyle}>Scan your URL</a> with A11y Beast: real browser, 110+ checks, mapped to 16 frameworks.
       </p>
     </>
   );
@@ -883,7 +883,7 @@ function SquarespaceBody() {
       </p>
       <p style={p}>
         Because Squarespace won&rsquo;t audit for you, <a href="/#scan" style={aStyle}>scan your URL</a> with A11y Beast —
-        real browser, 125+ checks, every finding mapped to the 16 laws it implicates, plus the code to fix it.
+        real browser, 110+ checks, every finding mapped to the 16 laws it implicates, plus the code to fix it.
       </p>
     </>
   );

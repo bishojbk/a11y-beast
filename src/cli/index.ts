@@ -11,7 +11,7 @@ const program = new Command();
 
 program
   .name("accesslens")
-  .description("Accessibility scanner — 125+ WCAG rules, 16 legal frameworks, real browser rendering")
+  .description("Accessibility scanner — 110+ WCAG rules, 16 legal frameworks, real browser rendering")
   .version("0.1.0");
 
 program

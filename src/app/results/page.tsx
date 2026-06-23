@@ -874,7 +874,7 @@ export default function ResultsPage() {
               Your current compliance: {deadlineAlert.pct}%.
             </span>
             <span style={{ marginLeft: "auto" }}>
-              <a href="#issues" style={{ color: "var(--accent-text)", fontFamily: "var(--font-outfit), system-ui, sans-serif", fontSize: 11 }}>
+              <a href="#issues" style={{ color: "var(--accent-text)", fontFamily: "var(--font-mono), ui-monospace, monospace", fontSize: 11 }}>
                 Remediation plan →
               </a>
             </span>
@@ -1045,7 +1045,7 @@ export default function ResultsPage() {
               <span
                 style={{
                   marginLeft: "auto",
-                  fontFamily: "var(--font-outfit), system-ui, sans-serif",
+                  fontFamily: "var(--font-mono), ui-monospace, monospace",
                   fontSize: 11,
                   color: "var(--text-tertiary)",
                   letterSpacing: "0.06em",

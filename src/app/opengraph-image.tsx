@@ -45,7 +45,7 @@ export default function OgImage() {
 
         {/* footer */}
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", fontFamily: "monospace", fontSize: 21, color: "#7C828C", gap: 20 }}>
-          <span>125+ checks</span>
+          <span>110+ checks</span>
           <span>·</span>
           <span>16 legal frameworks</span>
           <span>·</span>

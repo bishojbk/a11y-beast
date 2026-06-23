@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import AnalyticsInit from "@/components/AnalyticsInit";
 import AppChrome from "@/components/ui/AppChrome";
 import { Newsreader, Archivo, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-// Runs before the page is interactive (via next/script beforeInteractive), so a
-// saved theme preference is applied before paint — no light/dark flash. <html>
-// already defaults to data-theme="dark", so this only needs to override to a
-// saved non-default preference.
+// Inline no-flash theme script. Rendered as a raw <script dangerouslySetInnerHTML>
+// (NOT next/script) so React SSRs it into the initial HTML and the browser runs
+// it synchronously during parse — before AppChrome paints — applying the saved
+// theme with no light/dark flash. Using next/script beforeInteractive with inline
+// *children* triggers a React warning (script children don't execute on the
+// client), and beforeInteractive is meant for external src= scripts anyway.
+// <html> already defaults to data-theme="dark", so this only overrides to a saved
+// non-default preference.
 const THEME_INIT = `try{var t=localStorage.getItem("theme");if(t&&t!=="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
 
 // Forensic-editorial type system: Newsreader (display serif),
@@ -43,7 +46,7 @@ const SITE_URL = "https://accesslens-green.vercel.app";
 const SEO_TITLE = "Free Accessibility Checker for ADA & WCAG | A11y Beast";
 const BRAND_TITLE = "A11y Beast — you're not just failing WCAG. You're breaking 16 laws.";
 const DESCRIPTION =
-  "Free accessibility checker that maps every WCAG violation to 16 laws — ADA, EAA, Section 508, California Unruh and more. 125+ checks in a real browser. Not an overlay.";
+  "Free accessibility checker that maps every WCAG violation to 16 laws — ADA, EAA, Section 508, California Unruh and more. 110+ checks in a real browser. Not an overlay.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -85,9 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col antialiased">
-        <Script id="theme-init" strategy="beforeInteractive">
-          {THEME_INIT}
-        </Script>
+        <script id="theme-init" dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         <AppChrome>{children}</AppChrome>
         <footer style={{ textAlign: "center", padding: "16px", fontSize: "13px", opacity: 0.6 }}>
           Made by <a href="https://github.com/bishojbk" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>EJR</a>

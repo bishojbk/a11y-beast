@@ -50,9 +50,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!isAiAvailable()) {
+  // AI fixes are a Pro feature backed by a paid Anthropic call. Gate behind an
+  // explicit flag (default OFF) so a public spike / abuse can't run up an
+  // unbounded bill before billing + a durable rate limiter exist. Returning 501
+  // makes the results page degrade gracefully (it probes this route and hides
+  // AI fixes on 501) — no broken UI, no Claude calls. Flip ENABLE_AI_FIX=true
+  // once requests are entitlement-gated.
+  if (process.env.ENABLE_AI_FIX !== "true" || !isAiAvailable()) {
     return Response.json(
-      { error: { code: "AI_UNAVAILABLE", message: "Set ANTHROPIC_API_KEY to enable AI fixes" } },
+      { error: { code: "AI_UNAVAILABLE", message: "AI fixes are a Pro feature (founding access)." } },
       { status: 501, headers }
     );
   }
@@ -71,6 +77,15 @@ export async function POST(request: NextRequest) {
       return Response.json(
         { error: { code: "INVALID_INPUT", message: "pageMeta with url is required" } },
         { status: 400, headers }
+      );
+    }
+
+    // Cap the attacker-controllable payload before it reaches the LLM, so an
+    // oversized element snippet can't balloon input tokens (and cost) per call.
+    if (JSON.stringify(issue).length > 24_000) {
+      return Response.json(
+        { error: { code: "INPUT_TOO_LARGE", message: "issue payload too large" } },
+        { status: 413, headers }
       );
     }
 

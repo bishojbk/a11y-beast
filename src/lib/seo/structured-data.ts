@@ -43,7 +43,7 @@ export const softwareApplicationLd = {
   operatingSystem: "Web",
   url: SITE_URL,
   description:
-    "Free forensic accessibility scanner. 125+ checks in a real browser, every violation mapped to 16 legal frameworks — ADA, EAA, Section 508, California Unruh and more. One scan, sixteen verdicts. Not an overlay.",
+    "Free forensic accessibility scanner. 110+ checks in a real browser, every violation mapped to 16 legal frameworks — ADA, EAA, Section 508, California Unruh and more. One scan, sixteen verdicts. Not an overlay.",
   publisher: { "@id": `${SITE_URL}/#organization` },
   offers: {
     "@type": "Offer",
@@ -52,7 +52,7 @@ export const softwareApplicationLd = {
     description: "Single-page scans with the full 16-framework legal mapping, free forever — no signup.",
   },
   featureList: [
-    "125+ accessibility checks (axe-core 105 rules + 20 custom checks)",
+    "110+ accessibility checks (axe-core 96 rules + 20 custom checks)",
     "Maps every violation to 16 legal frameworks (ADA, EAA, Section 508, Unruh, AODA and more)",
     "Real-browser rendering via Puppeteer",
     "CLI and GitHub Action for CI",
@@ -66,7 +66,7 @@ export const howToLd = {
   "@type": "HowTo",
   name: "How A11y Beast scans a page for accessibility legal risk",
   description:
-    "How A11y Beast renders a page, runs 125+ accessibility checks, and maps every finding to 16 legal frameworks.",
+    "How A11y Beast renders a page, runs 110+ accessibility checks, and maps every finding to 16 legal frameworks.",
   step: [
     {
       "@type": "HowToStep",
@@ -83,8 +83,8 @@ export const howToLd = {
     {
       "@type": "HowToStep",
       position: 3,
-      name: "Run 125+ rules",
-      text: "axe-core's 105 rules plus 20 custom checks axe-core doesn't catch: heading gaps, small text, suspicious alt, zoom-lock.",
+      name: "Run 110+ rules",
+      text: "axe-core's 96 rules plus 20 custom checks axe-core doesn't catch: heading gaps, small text, suspicious alt, zoom-lock.",
     },
     {
       "@type": "HowToStep",

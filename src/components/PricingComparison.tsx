@@ -15,7 +15,7 @@ const GROUPS: Group[] = [
     title: "Scanning",
     rows: [
       ["Single-page scans", "Unlimited", "Unlimited", "Unlimited", "Unlimited"],
-      ["125+ checks · real-browser rendering", true, true, true, true],
+      ["110+ checks · real-browser rendering", true, true, true, true],
       ["Severity + WCAG 2.1 criterion breakdown", true, true, true, true],
       ["All 16 legal frameworks mapped", true, true, true, true],
       ["Multi-page site crawls", false, true, "Deeper", "Custom"],

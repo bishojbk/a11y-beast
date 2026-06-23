@@ -14,7 +14,7 @@ const STAGES: ReadonlyArray<{
 }> = [
   { key: "fetching", label: "Fetching document", sub: "Puppeteer · Chromium 143 · SSRF-guarded" },
   { key: "rendering", label: "Rendering the DOM", sub: "JavaScript executed · accessibility tree built" },
-  { key: "analyzing", label: "Running 125+ rules", sub: "axe-core 4.11.2 · 20 custom checks" },
+  { key: "analyzing", label: "Running 110+ rules", sub: "axe-core 4.11.2 · 20 custom checks" },
   { key: "scoring", label: "Mapping to 16 legal frameworks", sub: "WCAG basis · severity multipliers · deadlines" },
 ];
 
@@ -30,7 +30,7 @@ const LOG_LINES_BY_STAGE: Record<Exclude<ScanStage, "idle" | "done" | "error">, 
     { tag: "ok", msg: "Injecting axe-core 4.11.2" },
   ],
   analyzing: [
-    { tag: "ok", msg: "105 axe rules queued" },
+    { tag: "ok", msg: "96 axe rules queued" },
     { tag: "warn", msg: "Running color-contrast, image-alt, label…" },
     { tag: "ok", msg: "Custom checks — heading gaps, skip link, zoom lock" },
   ],
@@ -124,11 +124,11 @@ export default function ScanningCard({
         <div className="scanning-target">
           Scanning <b className="mono">{target || "your page"}</b>
         </div>
-        <h2 className="scanning-title">
+        <h1 className="scanning-title">
           {idxForUI < STAGES.length
             ? "This takes a moment. We do it properly."
             : "Scan complete. Preparing verdicts…"}
-        </h2>
+        </h1>
 
         <div className="stages">
           {STAGES.map((s, i) => {

@@ -51,6 +51,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Site-wide crawl is a Pro feature (docs/tier-gating-spec.md). There is no
+  // billing/auth yet, so the public endpoint is gated OFF by default — otherwise
+  // the headline paid feature (and the most expensive endpoint: up to 12
+  // Puppeteer renders/request) is free to anyone who curls it. Flip
+  // ENABLE_SITE_CRAWL=true only once an entitlement check is in front of it.
+  if (process.env.ENABLE_SITE_CRAWL !== "true") {
+    return Response.json(
+      {
+        error: {
+          code: "PRO_FEATURE",
+          message: "Site-wide crawl is a Pro feature (founding access). Single-page scans are free at /api/v1/scan.",
+        },
+      },
+      { status: 402, headers }
+    );
+  }
+
   try {
     const body = await request.json();
     const { url, maxPages } = body as { url?: string; maxPages?: number };

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Code2, GitCompare, Globe, Trash2, Upload, XCircle } from "lucide-react";
+import { ArrowRight, Code2, GitCompare, Globe, Lock, Trash2, Upload, XCircle } from "lucide-react";
 import { loadHistory, clearHistory, type ScanHistoryEntry } from "@/lib/history";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { useAxeAnalysis } from "@/hooks/useAxeAnalysis";
@@ -58,8 +58,8 @@ const HOW_STEPS = [
   {
     idx: "03",
     tag: "Analyse",
-    title: "Run 125+ rules",
-    desc: "axe-core's 105 rules plus 20 custom checks axe-core doesn't catch: heading gaps, small text, suspicious alt, zoom-lock.",
+    title: "Run 110+ rules",
+    desc: "axe-core's 96 rules plus 20 custom checks axe-core doesn't catch: heading gaps, small text, suspicious alt, zoom-lock.",
   },
   {
     idx: "04",
@@ -76,9 +76,11 @@ const SAMPLES = ["shopify.com", "hermes.com", "ticketmaster.com", "stripe.com"];
    ═══════════════════════════════════════════════════════════════ */
 function flagFor(fw: FrameworkWithTags): string {
   const r = fw.region.toLowerCase();
-  if (r.includes("california")) return "CA";
-  if (r.includes("usa") || r.includes("federal")) return "US";
+  // Canada (AODA = Ontario, ACA = "Canada Federal") MUST be checked before the
+  // USA rule — otherwise "Canada Federal" matches `federal` and mis-flags as US.
   if (r.includes("ontario") || r.includes("canada")) return "CA";
+  // California is a US jurisdiction; flag it US (its name/region still say California).
+  if (r.includes("usa") || r.includes("california") || r.includes("federal")) return "US";
   if (r.includes("eu")) return "EU";
   if (r.includes("united kingdom") || r.includes("uk")) return "UK";
   if (r.includes("australia")) return "AU";
@@ -132,15 +134,15 @@ function formatDeadline(iso?: string): string | null {
    ═══════════════════════════════════════════════════════════════ */
 type Tab = "url" | "paste" | "upload";
 
-const PAGE_OPTIONS = [3, 5, 8, 12] as const;
-
 function Scanner({
   onScanUrl,
-  onCrawlUrl,
   onAnalyzeHtml,
   isScanning,
 }: {
   onScanUrl: (url: string) => void;
+  // Site-wide crawl is a Pro feature (see docs/tier-gating-spec.md §PRO). Until
+  // billing/auth lands we don't run it for free — the homepage offers single-page
+  // scans and upsells the crawl. onCrawlUrl stays threaded for the entitled path.
   onCrawlUrl: (url: string, maxPages: number) => void;
   onAnalyzeHtml: (html: string, name: string, method: "paste" | "upload") => void;
   isScanning: boolean;
@@ -148,8 +150,6 @@ function Scanner({
   const [tab, setTab] = useState<Tab>("url");
   const [url, setUrl] = useState("");
   const [html, setHtml] = useState("");
-  const [crawl, setCrawl] = useState(false);
-  const [maxPages, setMaxPages] = useState<number>(5);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const submit = useCallback(
@@ -157,10 +157,9 @@ function Scanner({
       const trimmed = raw.trim();
       if (!trimmed) return;
       const normalized = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-      if (crawl) onCrawlUrl(normalized, maxPages);
-      else onScanUrl(normalized);
+      onScanUrl(normalized);
     },
-    [onScanUrl, onCrawlUrl, crawl, maxPages]
+    [onScanUrl]
   );
 
   return (
@@ -232,50 +231,17 @@ function Scanner({
                   />
                 </div>
                 <button type="submit" className="btn-scan" disabled={isScanning || !url.trim()}>
-                  {crawl ? "Scan whole site" : "Scan for legal risk"} <ArrowRight size={14} aria-hidden="true" />
+                  Scan for legal risk <ArrowRight size={14} aria-hidden="true" />
                 </button>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  marginTop: 12,
-                  flexWrap: "wrap",
-                }}
-              >
-                <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-secondary)", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={crawl}
-                    onChange={(e) => setCrawl(e.target.checked)}
-                    disabled={isScanning}
-                  />
-                  Scan the whole site (crawl)
-                </label>
-                {crawl && (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                    <label htmlFor="max-pages" className="mono" style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
-                      Up to
-                    </label>
-                    <select
-                      id="max-pages"
-                      value={maxPages}
-                      onChange={(e) => setMaxPages(Number(e.target.value))}
-                      disabled={isScanning}
-                      className="mono"
-                      style={{ background: "var(--bg-input)", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "3px 6px", color: "var(--text-primary)", fontSize: 12 }}
-                    >
-                      {PAGE_OPTIONS.map((n) => (
-                        <option key={n} value={n}>{n} pages</option>
-                      ))}
-                    </select>
-                    <span className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                      · same-origin, robots-aware
-                    </span>
-                  </span>
-                )}
-              </div>
+              <Link href="/pricing" className="crawl-upsell">
+                <Lock size={12} aria-hidden="true" />
+                <span>Scan your <b>whole site</b></span>
+                <span className="tier-pill pro">Pro</span>
+                <span className="crawl-upsell-cta">
+                  Founding access <ArrowRight size={12} aria-hidden="true" />
+                </span>
+              </Link>
             </form>
             <div className="sample-row">
               <span className="label">Try:</span>
@@ -391,7 +357,7 @@ function Scanner({
       </div>
 
       <div className="scanner-meta" aria-hidden="true">
-        <span><span className="check">●</span> 105 axe-core rules</span>
+        <span><span className="check">●</span> 96 axe-core rules</span>
         <span><span className="check">●</span> 20 custom checks</span>
         <span><span className="check">●</span> 16 legal frameworks</span>
         <span><span className="check">●</span> No data stored</span>
@@ -488,7 +454,7 @@ function Hero({
   isScanning: boolean;
 }) {
   return (
-    <section className="hero" id="main-content">
+    <section className="hero">
       <motion.div
         className="hero-inner"
         variants={stagger}
@@ -507,7 +473,7 @@ function Hero({
           </motion.h1>
           <motion.p variants={fadeUp} className="hero-lede">
             Know exactly which of <b>16 laws</b> your site is exposed under — and the code to fix each issue.
-            We render your page in a real browser and run 125+ checks against every framework. Real findings,{" "}
+            We render your page in a real browser and run 110+ checks against every framework. Real findings,{" "}
             <b>not an overlay widget</b>.
           </motion.p>
         </div>
@@ -552,7 +518,7 @@ function Stats() {
   const s = [
     { num: "3,117", sub: "", label: "Federal web accessibility lawsuits in 2025", extra: "Up 27% YoY — Seyfarth Shaw" },
     { num: "1,416", sub: "", label: "2025 lawsuits hit sites running an a11y widget", extra: "Overlays don't stop lawsuits — UsableNet" },
-    { num: "$4,000", sub: "/visit", label: "California Unruh minimum damages", extra: "Per violation, per visitor" },
+    { num: "$4,000", sub: "min", label: "California Unruh statutory damages", extra: "Per offense — courts vary on stacking" },
     { num: "16", sub: "laws", label: "Frameworks we map your scan to", extra: "1 scan, 16 verdicts" },
   ];
   return (
@@ -617,7 +583,7 @@ function Frameworks() {
             return (
               <motion.article
                 key={f.id}
-                className={`fw-cell ${i === 1 ? "active" : ""}`}
+                className={`fw-cell ${f.id === "ada-title-iii" ? "active" : ""}`}
                 role="button"
                 tabIndex={0}
                 aria-label={`${f.name}, ${f.region}, ${risk} risk — view details`}
@@ -808,7 +774,7 @@ function HowItWorks() {
    ═══════════════════════════════════════════════════════════════ */
 const TRUST_SIGNALS = [
   "Real-browser rendering",
-  "125+ checks · axe-core + 20 custom",
+  "110+ checks · axe-core + 20 custom",
   "Benchmarked vs axe-core, Lighthouse & Pa11y",
   "WCAG-EM aligned methodology",
   "No overlay — code-level findings",
@@ -1088,11 +1054,13 @@ export default function Home() {
       <JsonLd data={[organizationLd, softwareApplicationLd, howToLd]} />
 
       {isScanning ? (
-        <ScanningCard
-          target={scanTarget}
-          stage={stage}
-          onCancel={() => window.location.reload()}
-        />
+        <main id="main-content" role="main" style={{ flex: 1 }}>
+          <ScanningCard
+            target={scanTarget}
+            stage={stage}
+            onCancel={() => window.location.reload()}
+          />
+        </main>
       ) : (
         <main id="main-content" role="main" style={{ flex: 1 }}>
           <Hero onScanUrl={handleScanUrl} onCrawlUrl={handleCrawlUrl} onAnalyzeHtml={handleAnalyzeHtml} isScanning={isScanning} />

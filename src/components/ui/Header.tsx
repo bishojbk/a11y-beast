@@ -25,7 +25,7 @@ function getThemeServerSnapshot() {
 const NAV_ITEMS = [
   { href: "/features", label: "Features", desc: "Everything it does, by tier" },
   { href: "/#frameworks", label: "Frameworks", desc: "16 legal frameworks we map to" },
-  { href: "/#how", label: "How it works", desc: "Puppeteer · axe-core · 125+ rules" },
+  { href: "/#how", label: "How it works", desc: "Puppeteer · axe-core · 110+ rules" },
   { href: "/pricing", label: "Pricing", desc: "Free · Pro · Agency" },
   { href: "/results?sample=1", label: "Sample report", desc: "See a live results dashboard" },
   { href: "/blog", label: "Blog", desc: "Accessibility law, in plain English" },

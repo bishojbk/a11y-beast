@@ -200,7 +200,7 @@ export default function Footer() {
           borderTop: "1px solid var(--border-default)",
           display: "flex",
           justifyContent: "space-between",
-          fontFamily: "var(--font-outfit), system-ui, sans-serif",
+          fontFamily: "var(--font-mono), ui-monospace, monospace",
           fontSize: 11,
           color: "var(--text-tertiary)",
           letterSpacing: "0.06em",

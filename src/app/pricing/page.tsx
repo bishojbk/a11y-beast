@@ -21,18 +21,18 @@ export default function PricingPage() {
     <>
       <JsonLd data={buildFaqPageLd()} />
       <main id="main-content" className="stagger-in"role="main" style={{ flex: 1, maxWidth: 1180, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}>
-        <div style={{ textAlign: "center", marginBottom: 12 }}>
-          <div className="mono" style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
-            Pricing · forensic accessibility
-          </div>
+        <div className="doc-eyebrow" style={{ justifyContent: "center" }}>
+          Pricing · forensic accessibility
         </div>
-        <h1 className="font-display" style={{ fontSize: "clamp(34px, 5vw, 56px)", textAlign: "center", lineHeight: 1.05, marginBottom: 16 }}>
-          Start free. Pay when you<br />need it across your <span style={{ fontStyle: "italic", color: "var(--accent-text)" }}>whole site</span>.
+        <h1 className="doc-title" style={{ textAlign: "center", marginBottom: 16 }}>
+          Start free. Pay when you
+          <br />
+          need it across your <span className="ember" style={{ fontStyle: "italic" }}>whole site</span>.
         </h1>
-        <p style={{ textAlign: "center", color: "var(--text-secondary)", maxWidth: "62ch", margin: "0 auto 48px", fontSize: 17, lineHeight: 1.5 }}>
-          Scanning a page and mapping it to 16 laws is free, forever. We don&rsquo;t sell an overlay widget — we show
-          you exactly which laws you&rsquo;re exposed under and the code to fix each issue. Paid tiers add crawls, bulk
-          scanning, and reports your legal team will accept.
+        <p className="doc-lead" style={{ textAlign: "center", maxWidth: "62ch", margin: "0 auto 48px" }}>
+          Scanning a page and mapping it to 16 laws is free, forever. We don’t sell an overlay widget — we show you
+          exactly which laws you’re exposed under and the code to fix each issue. Paid tiers add crawls, bulk scanning,
+          and reports your legal team will accept.
         </p>
 
         <PricingTable />

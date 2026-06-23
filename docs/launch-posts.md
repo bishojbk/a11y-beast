@@ -90,7 +90,7 @@ _The lowest-risk, highest-intent way in. Drop this (adapted) on real threads in 
 
 ## 6. Product Hunt (optional, when you do a formal launch)
 - **Tagline:** "Free accessibility scanner that maps each issue to the law it breaks."
-- **Description:** "A11y Beast renders your page in a real browser, runs 125+ checks, and maps every accessibility issue to the 16 legal frameworks it implicates (ADA, EAA, Section 508, Unruh…) — with the code to fix each one. Honest by design: an automated-coverage indicator, not a compliance guarantee. Not an overlay."
+- **Description:** "A11y Beast renders your page in a real browser, runs 110+ checks, and maps every accessibility issue to the 16 legal frameworks it implicates (ADA, EAA, Section 508, Unruh…) — with the code to fix each one. Honest by design: an automated-coverage indicator, not a compliance guarantee. Not an overlay."
 
 ---
 
