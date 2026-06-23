@@ -154,7 +154,7 @@ export default function AboutPage() {
             flexWrap: "wrap",
           }}
         >
-          <Link href="/" className="scan-btn" style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 22px", borderRadius: 6, fontSize: 14, fontWeight: 600 }}>
+          <Link href="/#scan" className="scan-btn" style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 22px", borderRadius: 6, fontSize: 14, fontWeight: 600 }}>
             Scan your site
           </Link>
           <Link

@@ -41,7 +41,7 @@ export default function StatementGeneratorPage() {
             A statement says you care — it doesn&rsquo;t make your site accessible. To know your actual
             conformance status (and which laws each issue implicates) before you publish one:
           </p>
-          <Link href="/" className="scan-btn" style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 22px", borderRadius: 6, fontSize: 14, fontWeight: 600 }}>
+          <Link href="/#scan" className="scan-btn" style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 22px", borderRadius: 6, fontSize: 14, fontWeight: 600 }}>
             Scan your site free
           </Link>
         </div>

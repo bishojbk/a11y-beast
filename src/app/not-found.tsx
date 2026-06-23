@@ -22,7 +22,7 @@ export default function NotFound() {
               been removed in a silent deploy. We can&rsquo;t scan the void — try one of these instead.
             </p>
             <div className="err-actions">
-              <Link href="/" className="btn primary">
+              <Link href="/#scan" className="btn primary">
                 <ArrowRight size={13} /> Back to scanner
               </Link>
               <Link href="/results" className="btn">

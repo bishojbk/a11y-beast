@@ -518,7 +518,7 @@ function Hero({
           <Indictment />
         </motion.aside>
 
-        <motion.div variants={fadeUp} className="hero-scanner">
+        <motion.div variants={fadeUp} className="hero-scanner" id="scan" style={{ scrollMarginTop: 90 }}>
           <Scanner onScanUrl={onScanUrl} onCrawlUrl={onCrawlUrl} onAnalyzeHtml={onAnalyzeHtml} isScanning={isScanning} />
         </motion.div>
       </motion.div>

@@ -200,11 +200,8 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
                   className="pt-2"
                 >
                   <Link
-                    href="/"
-                    onClick={() => {
-                      setMobileOpen(false);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
+                    href="/#scan"
+                    onClick={() => setMobileOpen(false)}
                     className="scan-btn flex items-center justify-center gap-2 w-full h-12 rounded-xl text-sm font-semibold"
                   >
                     Scan Your Site

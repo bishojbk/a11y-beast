@@ -1,19 +1,20 @@
 import type { ScanResult } from "@/lib/types/scan-result";
 
 /**
- * Baked sample scan (a real scan of the canonical WCAG "before" demo page,
- * trimmed to <=3 occurrences per rule and relabelled to a neutral demo URL).
- * Powers the "See a sample report" CTA so first-time visitors see the payoff
- * before committing to a scan.
+ * Baked sample scan — a real scan of the W3C's own "Before" accessibility demo
+ * (the CityLights "Before and After Demonstration"), trimmed to <=3 occurrences
+ * per rule. The URL is genuine and public, so visitors can re-scan it themselves
+ * and verify these numbers. Powers the "See a sample report" CTA so first-time
+ * visitors see the payoff before committing to a scan.
  */
 export const SAMPLE_RESULT: ScanResult = {
   "id": "sample-report",
-  "url": "https://demo.example-store.com",
+  "url": "https://www.w3.org/WAI/demos/bad/before/home.html",
   "inputMethod": "url",
   "timestamp": "2026-06-15T12:00:00.000Z",
   "scanDurationMs": 2715,
   "pageMeta": {
-    "url": "https://demo.example-store.com",
+    "url": "https://www.w3.org/WAI/demos/bad/before/home.html",
     "title": "Welcome to CityLights! [Inaccessible Home Page]",
     "lang": "(not set)",
     "hasH1": true,

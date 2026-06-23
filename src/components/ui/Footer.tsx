@@ -54,26 +54,49 @@ export default function Footer() {
             Product
           </h5>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-            {[
-              { label: "Web scanner", href: "/", internal: true },
-              { label: "CLI (npx accesslens)", href: "#cli", internal: false },
+            {([
+              { label: "Web scanner", href: "/#scan", internal: true },
+              { label: "CLI", href: "/cli", internal: true, badge: "Pro" },
               { label: "Sample report", href: "/results?sample=1", internal: true },
-              { label: "API", href: "#api", internal: false },
-            ].map((l) =>
-              l.internal ? (
+            ] as { label: string; href: string; internal: boolean; badge?: string }[]).map((l) => {
+              const inner = (
+                <>
+                  {l.label}
+                  {l.badge && (
+                    <span
+                      className="mono"
+                      style={{
+                        marginLeft: 7,
+                        fontSize: 9,
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                        color: "var(--accent-text)",
+                        background: "var(--accent-wash)",
+                        border: "1px solid var(--accent-line)",
+                        borderRadius: 3,
+                        padding: "1px 5px",
+                        verticalAlign: "middle",
+                      }}
+                    >
+                      {l.badge}
+                    </span>
+                  )}
+                </>
+              );
+              return l.internal ? (
                 <li key={l.label}>
                   <Link href={l.href} style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-                    {l.label}
+                    {inner}
                   </Link>
                 </li>
               ) : (
                 <li key={l.label}>
-                  <a href={l.href} style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-                    {l.label}
+                  <a href={l.href} target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+                    {inner}
                   </a>
                 </li>
-              )
-            )}
+              );
+            })}
           </ul>
         </div>
 
@@ -154,7 +177,12 @@ export default function Footer() {
               </a>
             </li>
             <li>
-              <a href="#oss" style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+              <a
+                href="https://github.com/bishojbk/a11y-beast"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--text-secondary)", fontSize: 14 }}
+              >
                 Open-source (AGPL-3.0)
               </a>
             </li>

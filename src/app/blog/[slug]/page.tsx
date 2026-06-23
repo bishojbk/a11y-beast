@@ -80,7 +80,7 @@ export default async function BlogPostPage({
         </article>
 
         <div style={{ marginTop: 56, paddingTop: 32, borderTop: "1px solid var(--border-faint)" }}>
-          <Link href="/" className="scan-btn" style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 22px", borderRadius: 6, fontSize: 14, fontWeight: 600 }}>
+          <Link href="/#scan" className="scan-btn" style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 22px", borderRadius: 6, fontSize: 14, fontWeight: 600 }}>
             Scan your site for legal risk
           </Link>
         </div>

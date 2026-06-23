@@ -452,7 +452,7 @@ export default function ResultsPage() {
     if (!result) return;
     const { buildEvidenceRecord, renderEvidenceHtml } = await import("@/lib/report/evidence-file");
     const { getSiteEntries, appendEntry, diffEntries } = await import("@/lib/report/evidence-ledger");
-    const record = await buildEvidenceRecord(result, compliance);
+    const record = await buildEvidenceRecord(result);
     const prior = getSiteEntries(result.url)[0];
     const diff = prior && prior.contentHash !== record.contentHash ? diffEntries(prior, record) : undefined;
     appendEntry(record);
@@ -461,7 +461,7 @@ export default function ResultsPage() {
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank", "noopener");
     setTimeout(() => URL.revokeObjectURL(url), 30_000);
-  }, [result, compliance]);
+  }, [result]);
   const rowsInited = useRef(false);
 
   useEffect(() => {
@@ -712,7 +712,7 @@ export default function ResultsPage() {
           <p style={{ color: "var(--text-secondary)", marginBottom: 24, maxWidth: "48ch" }}>
             Run a scan from the homepage. Results stay in your browser session — we never save them server-side.
           </p>
-          <Link href="/" className="btn primary">
+          <Link href="/#scan" className="btn primary">
             <ArrowLeft size={14} /> Back to scanner
           </Link>
         </main>
@@ -729,6 +729,37 @@ export default function ResultsPage() {
       <a href="#main-content" className="skip-link">Skip to content</a>
       <Header />
       <main id="main-content" role="main" className="dash" style={{ flex: 1 }}>
+        {result === SAMPLE_RESULT && (
+          <div
+            className="mono"
+            style={{
+              maxWidth: 1440,
+              margin: "0 auto",
+              padding: "10px 32px",
+              fontSize: 12.5,
+              color: "var(--text-secondary)",
+              background: "var(--accent-wash)",
+              borderBottom: "1px solid var(--accent-line)",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 6,
+            }}
+          >
+            <span>
+              <strong style={{ color: "var(--accent-text)" }}>Sample report.</strong> A real scan of the W3C&rsquo;s
+              official inaccessible demo —{" "}
+              <a
+                href="https://www.w3.org/WAI/demos/bad/before/home.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--accent-text)", textDecoration: "underline" }}
+              >
+                visit it
+              </a>{" "}
+              and re-scan to verify these numbers yourself.
+            </span>
+          </div>
+        )}
         {/* ─── Top header strip ─── */}
         <div className="dash-top">
           <div className="dash-head">
@@ -751,7 +782,7 @@ export default function ResultsPage() {
               </div>
             </div>
             <div className="dash-actions">
-              <Link href="/" className="btn">
+              <Link href="/#scan" className="btn">
                 <RefreshCw size={13} /> Re-scan
               </Link>
               <button type="button" className="btn" onClick={() => window.print()}>
