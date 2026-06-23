@@ -724,7 +724,7 @@ export default function ResultsPage() {
           <div
             className="mono"
             style={{
-              maxWidth: 1440,
+              maxWidth: "var(--dash-max)",
               margin: "0 auto",
               padding: "10px 32px",
               fontSize: 12.5,
