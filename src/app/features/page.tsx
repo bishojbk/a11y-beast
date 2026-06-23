@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Header from "@/components/ui/Header";
+import PageContainer from "@/components/ui/PageContainer";
 
 export const metadata: Metadata = {
   title: "Features",
@@ -174,15 +174,7 @@ const GROUPS: Group[] = [
 
 export default function FeaturesPage() {
   return (
-    <>
-      <a href="#main-content" className="skip-link">Skip to content</a>
-      <Header />
-      <main
-        id="main-content"
-        className="stagger-in"
-        role="main"
-        style={{ flex: 1, maxWidth: 820, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}
-      >
+    <PageContainer>
         <div style={{ ...kicker, marginBottom: 12 }}>Features · what you actually get</div>
         <h1
           className="font-display"
@@ -253,7 +245,6 @@ export default function FeaturesPage() {
             Scan your site free
           </Link>
         </div>
-      </main>
-    </>
+    </PageContainer>
   );
 }

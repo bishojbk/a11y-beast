@@ -1,13 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, ExternalLink } from "lucide-react";
-import Header from "@/components/ui/Header";
-import Footer from "@/components/ui/Footer";
 
 export default function NotFound() {
   return (
-    <>
-      <a href="#main-content" className="skip-link">Skip to content</a>
-      <Header />
       <main id="main-content" role="main" style={{ flex: 1 }}>
         <div className="err-wrap">
           <div className="err-inner">
@@ -81,7 +76,5 @@ export default function NotFound() {
           </div>
         </div>
       </main>
-      <Footer />
-    </>
   );
 }

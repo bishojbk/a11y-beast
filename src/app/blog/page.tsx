@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Header from "@/components/ui/Header";
+import PageContainer from "@/components/ui/PageContainer";
 import { getAllPosts } from "@/lib/blog/posts";
 
 export const metadata: Metadata = {
@@ -13,15 +13,7 @@ export const metadata: Metadata = {
 export default function BlogIndex() {
   const posts = getAllPosts();
   return (
-    <>
-      <a href="#main-content" className="skip-link">Skip to content</a>
-      <Header />
-      <main
-        id="main-content"
-        className="stagger-in"
-        role="main"
-        style={{ flex: 1, maxWidth: 760, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}
-      >
+    <PageContainer>
         <div style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-tertiary)", marginBottom: 12 }} className="mono">
           Blog · accessibility &amp; the law
         </div>
@@ -58,7 +50,6 @@ export default function BlogIndex() {
             </li>
           ))}
         </ul>
-      </main>
-    </>
+    </PageContainer>
   );
 }

@@ -20,8 +20,6 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import Header from "@/components/ui/Header";
-import Footer from "@/components/ui/Footer";
 import Gauge from "@/components/results/Gauge";
 import Flag, { flagForRegion } from "@/components/results/Flag";
 import { GithubActionDialog, DownloadReportDialog, LegalReportDialog } from "@/components/results/ExportDialogs";
@@ -687,9 +685,6 @@ export default function ResultsPage() {
 
   if (!result) {
     return (
-      <>
-        <a href="#main-content" className="skip-link">Skip to content</a>
-        <Header />
         <main
           id="main-content"
           role="main"
@@ -716,8 +711,6 @@ export default function ResultsPage() {
             <ArrowLeft size={14} /> Back to scanner
           </Link>
         </main>
-        <Footer />
-      </>
     );
   }
 
@@ -726,8 +719,6 @@ export default function ResultsPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <a href="#main-content" className="skip-link">Skip to content</a>
-      <Header />
       <main id="main-content" role="main" className="dash" style={{ flex: 1 }}>
         {result === SAMPLE_RESULT && (
           <div
@@ -1173,7 +1164,6 @@ export default function ResultsPage() {
           </p>
         </div>
       </main>
-      <Footer />
 
       <GithubActionDialog
         open={modal === "action"}

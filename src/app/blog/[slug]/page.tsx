@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Header from "@/components/ui/Header";
+import PageContainer from "@/components/ui/PageContainer";
 import JsonLd from "@/components/JsonLd";
 import { getAllPosts, getPost } from "@/lib/blog/posts";
 import { buildBlogPostingLd, buildBreadcrumbLd } from "@/lib/seo/structured-data";
@@ -55,14 +55,7 @@ export default async function BlogPostPage({
           ]),
         ]}
       />
-      <a href="#main-content" className="skip-link">Skip to content</a>
-      <Header />
-      <main
-        id="main-content"
-        className="stagger-in"
-        role="main"
-        style={{ flex: 1, maxWidth: 720, margin: "0 auto", padding: "56px 24px 96px", width: "100%" }}
-      >
+      <PageContainer>
         <nav aria-label="Breadcrumb" style={{ marginBottom: 24 }}>
           <Link href="/blog" className="mono" style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
             ← Blog
@@ -84,7 +77,7 @@ export default async function BlogPostPage({
             Scan your site for legal risk
           </Link>
         </div>
-      </main>
+      </PageContainer>
     </>
   );
 }

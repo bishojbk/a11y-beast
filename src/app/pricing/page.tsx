@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Header from "@/components/ui/Header";
 import PricingTable from "@/components/PricingTable";
 import PricingComparison from "@/components/PricingComparison";
 import PricingFaq from "@/components/PricingFaq";
@@ -21,8 +20,6 @@ export default function PricingPage() {
   return (
     <>
       <JsonLd data={buildFaqPageLd()} />
-      <a href="#main-content" className="skip-link">Skip to content</a>
-      <Header />
       <main id="main-content" className="stagger-in"role="main" style={{ flex: 1, maxWidth: 1180, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: 12 }}>
           <div className="mono" style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>

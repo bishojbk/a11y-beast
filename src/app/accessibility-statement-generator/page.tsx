@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Header from "@/components/ui/Header";
 import StatementGenerator from "@/components/StatementGenerator";
 
 export const metadata: Metadata = {
@@ -12,9 +11,6 @@ export const metadata: Metadata = {
 
 export default function StatementGeneratorPage() {
   return (
-    <>
-      <a href="#main-content" className="skip-link">Skip to content</a>
-      <Header />
       <main
         id="main-content"
         className="stagger-in"
@@ -46,6 +42,5 @@ export default function StatementGeneratorPage() {
           </Link>
         </div>
       </main>
-    </>
   );
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Header from "@/components/ui/Header";
+import PageContainer from "@/components/ui/PageContainer";
 
 export const metadata: Metadata = {
   title: "CLI",
@@ -85,15 +85,7 @@ function Options({ rows }: { rows: Opt[] }) {
 
 export default function CliPage() {
   return (
-    <>
-      <a href="#main-content" className="skip-link">Skip to content</a>
-      <Header />
-      <main
-        id="main-content"
-        className="stagger-in"
-        role="main"
-        style={{ flex: 1, maxWidth: 760, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}
-      >
+    <PageContainer>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
           <span style={kicker}>CLI · scan from your terminal</span>
           <span
@@ -228,7 +220,6 @@ npx accesslens benchmark --urls-file sites.txt --tools all`}</CodeBlock>
             Get founding access
           </Link>
         </div>
-      </main>
-    </>
+    </PageContainer>
   );
 }

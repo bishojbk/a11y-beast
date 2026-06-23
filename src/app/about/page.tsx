@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Header from "@/components/ui/Header";
+import PageContainer from "@/components/ui/PageContainer";
 import JsonLd from "@/components/JsonLd";
 import { organizationLd } from "@/lib/seo/structured-data";
 
@@ -35,14 +35,7 @@ export default function AboutPage() {
   return (
     <>
       <JsonLd data={organizationLd} />
-      <a href="#main-content" className="skip-link">Skip to content</a>
-      <Header />
-      <main
-        id="main-content"
-        className="stagger-in"
-        role="main"
-        style={{ flex: 1, maxWidth: 760, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}
-      >
+      <PageContainer>
         <div style={{ ...kicker, marginBottom: 12 }}>About · forensic accessibility</div>
         <h1
           className="font-display"
@@ -164,7 +157,7 @@ export default function AboutPage() {
             See pricing
           </Link>
         </div>
-      </main>
+      </PageContainer>
     </>
   );
 }

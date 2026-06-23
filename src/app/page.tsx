@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Code2, GitCompare, Globe, Trash2, Upload, XCircle } from "lucide-react";
 import { loadHistory, clearHistory, type ScanHistoryEntry } from "@/lib/history";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
-import Header from "@/components/ui/Header";
-import Footer from "@/components/ui/Footer";
 import { useAxeAnalysis } from "@/hooks/useAxeAnalysis";
 import { FRAMEWORKS, getFrameworkDescription, type FrameworkWithTags } from "@/lib/compliance/frameworks";
 import { computeConformance } from "@/lib/compliance/wcag-criteria";
@@ -1088,11 +1086,6 @@ export default function Home() {
   return (
     <MotionConfig reducedMotion="user">
       <JsonLd data={[organizationLd, softwareApplicationLd, howToLd]} />
-      <a href="#main-content" className="skip-link">
-        Skip to content
-      </a>
-
-      <Header />
 
       {isScanning ? (
         <ScanningCard
@@ -1132,8 +1125,6 @@ export default function Home() {
           )}
         </main>
       )}
-
-      <Footer />
     </MotionConfig>
   );
 }

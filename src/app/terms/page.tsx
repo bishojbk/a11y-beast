@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Header from "@/components/ui/Header";
+import PageContainer from "@/components/ui/PageContainer";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -19,10 +19,7 @@ const link: React.CSSProperties = { color: "var(--accent-text)" };
 
 export default function TermsPage() {
   return (
-    <>
-      <a href="#main-content" className="skip-link">Skip to content</a>
-      <Header />
-      <main id="main-content" className="stagger-in" role="main" style={{ flex: 1, maxWidth: 760, margin: "0 auto", padding: "64px 24px 96px", width: "100%" }}>
+    <PageContainer>
         <div style={kicker} className="mono">Legal · terms</div>
         <h1 className="font-display" style={{ fontSize: "clamp(32px, 5vw, 48px)", lineHeight: 1.05, marginBottom: 8 }}>
           Terms of Service
@@ -72,7 +69,6 @@ export default function TermsPage() {
         <p style={{ ...body, marginTop: 24 }}>
           Questions? <a href="mailto:hello@a11ybeast.com" style={link}>hello@a11ybeast.com</a>
         </p>
-      </main>
-    </>
+    </PageContainer>
   );
 }
