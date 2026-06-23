@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { assertHonest } from "@/lib/report/honest-language";
 
 // Fields modeled on the W3C/WAI Accessibility Statement Generator structure
 // (w3.org/WAI/planning/statements/). Honest by design: default status is
@@ -82,7 +83,9 @@ export default function StatementGenerator({ prefill }: { prefill?: StatementPre
 
   // Pre-fill from a scan: a prop wins; otherwise hydrate once from sessionStorage
   // (set by the results page before routing here), then clear it so a refresh
-  // doesn't silently re-apply stale findings.
+  // doesn't silently re-apply stale findings. The batched setState is a one-time
+  // mount hydration from an external store — intentional, not a cascade.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     let data: StatementPrefill | undefined = prefill;
     if (!data && typeof window !== "undefined") {
@@ -105,6 +108,7 @@ export default function StatementGenerator({ prefill }: { prefill?: StatementPre
     if (data.scanDate) setDate(data.scanDate);
     if (data.toolVersion) setToolVersion(data.toolVersion);
   }, [prefill]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const statement = useMemo(() => {
     const name = siteName.trim() || "[your website]";
@@ -163,7 +167,9 @@ export default function StatementGenerator({ prefill }: { prefill?: StatementPre
         : "[If you are not satisfied with our response, you can escalate to the competent enforcement body in your EU member state. Add the relevant authority and contact details here.]");
       lines.push("");
       lines.push(`This statement was prepared on ${date}.`);
-      return lines.join("\n");
+      const out = lines.join("\n");
+    assertHonest("statement", out);
+    return out;
     }
 
     // ── W3C/WAI generic mode (unchanged) ──
@@ -180,8 +186,10 @@ export default function StatementGenerator({ prefill }: { prefill?: StatementPre
     lines.push(`${orgName} assessed the accessibility of ${name} by the following approach: ${assessment}.`);
     lines.push("");
     lines.push(`This statement was created on ${date}.`);
-    return lines.join("\n");
-  }, [org, siteName, siteUrl, standard, level, status, email, phone, measures, limitations, assessment, enforcement, toolVersion, isEaa, date]);
+    const out = lines.join("\n");
+    assertHonest("statement", out);
+    return out;
+  }, [org, siteName, standard, level, status, email, phone, measures, limitations, assessment, enforcement, toolVersion, isEaa, date]);
 
   const copy = async () => {
     try {
@@ -244,6 +252,12 @@ export default function StatementGenerator({ prefill }: { prefill?: StatementPre
             <option>Not assessed</option>
           </select>
           <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{STATUS_SENTENCE[status]}</span>
+          {status === "Fully conformant" && (
+            <span style={{ fontSize: 12, color: "var(--severity-critical, #dc2626)", lineHeight: 1.5 }}>
+              ⚠ An automated scan cannot establish full conformance. Only claim this if a manual audit
+              supports it — overstating conformance carries legal risk.
+            </span>
+          )}
         </div>
         <fieldset style={{ ...field, border: "none", padding: 0, margin: "0 0 16px" }}>
           <legend style={{ ...labelStyle, marginBottom: 6 }}>Measures you take</legend>
