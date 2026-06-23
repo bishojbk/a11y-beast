@@ -23,6 +23,7 @@ function getThemeServerSnapshot() {
 }
 
 const NAV_ITEMS = [
+  { href: "/features", label: "Features", desc: "Everything it does, by tier" },
   { href: "/#frameworks", label: "Frameworks", desc: "16 legal frameworks we map to" },
   { href: "/#how", label: "How it works", desc: "Puppeteer · axe-core · 125+ rules" },
   { href: "/pricing", label: "Pricing", desc: "Free · Pro · Agency" },

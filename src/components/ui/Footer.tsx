@@ -56,6 +56,7 @@ export default function Footer() {
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
             {([
               { label: "Web scanner", href: "/#scan", internal: true },
+              { label: "Features", href: "/features", internal: true },
               { label: "CLI", href: "/cli", internal: true, badge: "Pro" },
               { label: "Sample report", href: "/results?sample=1", internal: true },
             ] as { label: string; href: string; internal: boolean; badge?: string }[]).map((l) => {
