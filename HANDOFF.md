@@ -1,6 +1,6 @@
 # AccessLens / A11y Beast — Session Handoff
 
-_Last updated: 2026-06-23. This is a working handoff for the next Claude session. For deep product/architecture history, see the user's auto-memory note `project_accesslens.md`._
+_Last updated: 2026-06-23 (continuation session — QA hardening + viability/validation decision). This is a working handoff for the next Claude session. **Start with the "🎯 Strategic decision" section below — the call is: validate with real buyers before building more.** For deep product/architecture history, see the user's auto-memory notes._
 
 ## What this is
 A11y Beast (repo: `a11y-beast`, product dir `~/Personal/accesslens`) — a Next.js 16 + TypeScript web **accessibility legal-risk scanner**. Puppeteer + axe-core renders a page, runs 110+ checks, maps each WCAG violation to **16 legal frameworks** (ADA, EAA, Section 508, …) with an honest "automated-coverage" score. Positioning: **legal intelligence + anti-overlay**, NOT "another WCAG checker" and never "guaranteed compliance" (the FTC fined an overlay vendor $1M for that claim — stay clear of it).
@@ -35,8 +35,27 @@ Committed to `main`. The theme: name the wedge, fix the pricing to sell it, kill
 6. **Scanner navigation fix** — the hero scanner had no anchor, so every "scan" CTA dumped users at page top (or no-op'd). Added `id="scan"`; repointed all scan CTAs app-wide (`/` → `/#scan`): footer, header (incl. mobile), about, blog, statement-gen, pricing, results, 404.
 7. **Sample report now uses a real, verifiable URL** — was the fake `demo.example-store.com`; now the W3C's own public "Before" demo (`w3.org/WAI/demos/bad/before/home.html`), with a banner inviting visitors to re-scan and verify. Avoids publicly shaming a real business.
 
+## Done in the 06-23 continuation (QA hardening + the viability reckoning)
+Committed to `main` (`3ad538c`) + this doc commit. Theme: stop drift, harden honesty/security, then face whether this is even viable.
+1. **Design system centralized** — added an "Ink & Ember" content-page CSS vocabulary to `globals.css` (`doc-eyebrow/title/lead`, numbered `doc-section`s, `spec-list`, `tier-pill`, `callout`, `doc-code`, `opt-table`, `cta-band`, `prose`, blog cards) and refactored every secondary page (features, cli, about, privacy, terms, blog, statement-gen, pricing header) off inline one-offs onto it. Home/results were already polished — left alone.
+2. **Honest engine numbers** — "125+/105 axe rules" → **"110+/96"** everywhere (axe-core 4.11.2 runs **96** rules + 20 custom = 116; "110+" is defensible, "125+" overshot).
+3. **P0 correctness/legal fixes** (surfaced by a 4-dimension QA audit — data/claims, links, a11y, security):
+   - **ADA Title II deadlines** were stale/expired → updated to the extended **Apr 26 2027 / Apr 26 2028** (DOJ interim final rule, verified vs the **Federal Register**). The blog already had the right dates; `frameworks.ts` was the stale one.
+   - **California Unruh "$4,000 per visit"** → "statutory minimum per offense (courts vary on stacking)" — stopped asserting per-visit stacking our own blog debunks.
+   - **Jurisdiction flag bug** — ACA ("Canada Federal") mis-flagged as **US** (matched the `federal` rule first); fixed (Canada checked before federal; California flags US since it *is* US).
+   - **Self-accessibility** — removed a duplicate `id="main-content"`; the scanning state now renders inside `<main>` with an `<h1>` (we sell a11y — must pass our own bar).
+4. **Cost/abuse gating (no billing yet → default OFF)** — `/api/v1/crawl` gated behind `ENABLE_SITE_CRAWL` (402); `/api/v1/fix` (Anthropic) gated behind `ENABLE_AI_FIX` (501, UI degrades gracefully) + a 24 KB input cap. Homepage crawl checkbox → a "Pro" upsell pill. Flags documented in a now-tracked `.env.example` (added a `!.env.example` gitignore exception — the template had never actually been tracked).
+5. **Bug fixes** — replaced `next/script` `beforeInteractive` inline theme script with a raw `<script dangerouslySetInnerHTML>` (fixes a React 19 warning; no-flash preserved); removed the dead `--font-outfit` CSS var (Footer + results) → `--font-mono`.
+
+## 🎯 Strategic decision (2026-06-23): VALIDATE before building more
+The harder finding this session, and the call that should govern the next one:
+- **`access-lens.com` ("Access·Lens") is a near-clone AND a name collision** — free axe-core scan → WCAG + EAA + EN 301 549 + a *"dated, machine-verifiable report"*, Pro **€19–39 per YEAR**. It owns our exact EN-301-549-evidence wedge, cheaply. It's **EU-EAA only (no ADA / no US litigation framing)** — so **US litigation breadth + 16 frameworks is our one remaining defensible lane**.
+- **Naming** — "AccessLens" is **OUT** (direct collision). `a11ybeast.com` is **available** (RDAP 404), but the word mark **"A11Y" is USPTO-registered (Reg. 4824150) by Bureau of Internet Accessibility** in this exact field → needs a TM attorney's clearance, not a guess. "A11y Beast" is usable but weak (crowded `a11y*` namespace; "Beast" clashes tonally with selling legal evidence).
+- **Pricing reality** — the app's **$49/mo solo Pro is NOT justified** (Equally AI is $45/mo and broader; access-lens €39/yr; axe/Pa11y/WAVE free). **Agency $249 IS defensible** (vs $1.25k–25k manual audits; white-label competitors $399–999). The money is the **agency/white-label deliverable anchored to audit cost** — not a monthly solo sub. See the updated `accesslens-pricing-research-2026.md` memory.
+- **THE DECISION — stop building/polishing; run a 2-week validation sprint.** Hand-sell the dated evidence record to **~10 US web/design agencies** (they have recurring need and *resell*). Lead with a **free, hand-made evidence record**; probe willingness-to-pay **anchored to the $1.25k–25k audit, never to "a scanner."** **Kill criterion: <2–3 "yes I'd pay $X" / LOI → stop.** The name, the (acknowledged) AI-generated look, the pricing page, and remaining P1/P2 bugs are **ON HOLD** until a real buyer says yes. The product is already good enough to test.
+
 ## Pricing decisions (context for future edits)
-- Current numbers: Free $0 · Pro **$49** · Agency **$249** · Enterprise custom. Chosen against competitor research (overlay SMB anchor ≈ $49/mo; scanner tools $25–400) + the principle that agencies pay more because they resell our output.
+- Current numbers: Free $0 · Pro **$49** · Agency **$249** · Enterprise custom. ⚠️ **Superseded — see the 🎯 Strategic decision above:** the 06-23 competitor research found **$49/mo solo Pro is not justified** (Equally AI $45/mo broader; access-lens €39/yr; free scanners everywhere). Agency $249 holds. Reprice around the agency/deliverable anchor after validation.
 - **Load-bearing call: never gate the diagnosis.** The full 16-framework breakdown stays free — it's the marketing hook and the "one scan, sixteen verdicts" tagline. Gate the *outcome* (proof/export/scale/CI), not the framework count. See POSITIONING.md + tier-gating-spec.md.
 - **Usage gates (1/3/25 sites, page caps) are stated INTENT only** — nothing enforces them yet (no auth, no metering). Paid tiers are waitlist-only.
 - **CLI is open-core**: engine source is AGPL-3.0 (buildable by anyone), but the published CLI + CI gate are Pro.
@@ -51,9 +70,12 @@ Committed to `main`. The theme: name the wedge, fix the pricing to sell it, kill
 - **Styled PDF** — legal report export is **Markdown** today, not styled PDF.
 
 ## Open action items for the user
-- **Post the launch drafts** — `docs/launch-posts.md` is written and FTC-safe but nothing has been posted yet. GTM plan is Reddit-first.
-- **Custom domain** — still on the `accesslens-green.vercel.app` URL; no production domain attached. Decide + add before brand spend.
-- **USPTO trademark clearance** on "A11y Beast" / "AccessLens" before brand spend (optional but advised pre-launch).
+- **🎯 #1 — Run the validation sprint (the only thing that matters next).** ~10 US web/design agencies, free hand-made evidence record, ask "would you white-label this and charge it into your audits, at what price?" 2 weeks, kill at <2–3 yes. Everything below is ON HOLD until this lands.
+- **DO NOT launch yet** — `docs/launch-posts.md` is written and FTC-safe, but holding. Spending the one public launch (HN/PH/Reddit) on an unvalidated, contested wedge wastes it. Launch *after* validation succeeds + the pricing-page/AI-look fixes.
+- **Name + trademark** — "AccessLens" is out (access-lens.com collision). If proceeding with "A11y Beast": grab `a11ybeast.com` (available) and get **USPTO clearance** vs the existing "A11Y" mark (Reg. 4824150, Bureau of Internet Accessibility) before any brand spend.
+- **Reprice before launch** — $49/mo solo Pro is above the field; re-model around the agency/deliverable anchor (validation will inform the number).
+- **Site "looks AI-generated"** (user-flagged) — address before public launch; does NOT block the concierge validation sprint (you lead with a tailored report, not the homepage).
+- **Custom domain** — still on `accesslens-green.vercel.app`; attach the chosen brand domain before launch.
 - Confirm the **monitor/waitlist leads** are actually arriving at the `WAITLIST_WEBHOOK_URL` sink (send a test opt-in), and that **Mixpanel + Vercel Analytics** funnels are populating from production traffic.
 - **Wire up the real monitoring loop** when ready (cron re-scan + change-diff email) — until then the opt-in is concierge/manual. See `docs/monitoring-feature-spec.md`.
 

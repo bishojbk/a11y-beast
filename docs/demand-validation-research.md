@@ -100,3 +100,21 @@ These were fetched as real sources (titles are self-evident demand) but their sp
 2. Re-confirm **UsableNet 2025** "e-commerce ~70% / 64% under $25M" (supports the SMB beachhead; it abstained here but matches earlier research).
 3. Mine **Shopify/WP forums + Quora + competitor reviews (G2/Trustpilot)** for more dated, quoted buyer-intent and switch-intent.
 4. Add **UK/CA/AU** jurisdiction demand (untouched this pass).
+
+---
+
+## ⚠️ Update 2026-06-23 — temper the EAA optimism + run the actual sprint
+
+Two findings since this pass revise its headline ("EU/EAA is the freshest opportunity"):
+
+1. **EAA enforcement is dormant** — a year in, no meaningful documented fines materialised. The "legally-forced net-new market" is real on paper but not yet *pricing pressure* buyers feel. (See the `accesslens-market-reality-2026` memory.)
+2. **`access-lens.com` ("Access·Lens") already serves the EU/EAA-evidence buyer at €19–39/yr** — a near-clone (axe-core → WCAG+EAA+EN 301 549 → "dated, machine-verifiable report"). The EU beachhead this doc favored is now occupied and cheap.
+
+**Revised beachhead: lead US web/design AGENCIES, not EU/EAA SMBs.** The marketplace will-pay evidence in §1 (agencies/freelancers billing $20–250/hr for "audit + a report that proves AA") is still the strongest signal — and agencies *resell*, anchor to $1.25k–25k audits, and aren't touched by the €39/yr EU tool.
+
+**The validation sprint (do this, don't research further):**
+- **Who:** ~10 small US web/design/dev agencies (Clutch, LinkedIn, communities). Secondary: businesses recently named in ADA web suits (public dockets).
+- **Offer:** run a **free, hand-made dated evidence record** on one of their client sites; show the output.
+- **The question:** *"Would you white-label this and charge it into your audits? At what price?"*
+- **Pricing framing:** anchor to the **$1.25k–25k audit / $5–75k settlement**, NEVER to "a scanner" (that's where any number looks laughable).
+- **Timebox / kill criterion:** 2 weeks, ~10 conversations → **≥2–3 "yes I'd pay $X" / LOI** to continue; below that, **stop** — the wedge or price is wrong, and the build is already done so nothing more is owed to it.

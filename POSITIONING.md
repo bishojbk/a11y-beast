@@ -90,3 +90,35 @@ far dormant (zero documented fines a year in), and we have no willingness-to-pay
 data. These tiers are a **hypothesis**, not a finding. The real numbers come from
 selling the evidence record by hand to 3–5 real buyers — not from this file.
 Treat the prices below as the opening bid we test, then correct.
+
+---
+
+## ⚠️ Update 2026-06-23 — competitor shock + a lane shift
+
+A live competitor changes the read above. **`access-lens.com` ("Access·Lens")**
+is a near-clone: free axe-core scan → WCAG + EAA + **EN 301 549** + a *"dated,
+machine-verifiable report,"* Pro at **€19–39 per YEAR**. It owns the exact
+EN-301-549-evidence wedge this file is built around — and undercuts any
+subscription we'd run. So two corrections to the positioning:
+
+1. **The EN 301 549 / EAA evidence record can't be the headline anymore** — it's
+   occupied and cheap, and EAA enforcement is dormant. Make it *a feature*, not
+   the spine. **The defensible spine is US litigation-risk breadth: ADA Title II/III,
+   California Unruh, Section 508, AODA + 16 frameworks** — the part Access·Lens
+   does NOT touch (it's EU-only). Lead there.
+2. **Buyer priority is now agencies, hard.** Agencies (§"who it's for" #1) are the
+   only lane with repeatable money and resale value, and they're not served by a
+   €39/yr EU tool. EU SMEs (#2) now have a cheap incumbent — deprioritise.
+
+**Pricing reality:** the app's **$49/mo solo Pro is not justified** (Equally AI
+$45/mo and broader; access-lens €39/yr). Agency $249 holds (vs $1.25k–25k audits).
+Sell the **agency/white-label deliverable anchored to audit cost**, not a monthly
+solo sub. (Full detail in the `accesslens-pricing-research-2026` memory.)
+
+**Name:** "AccessLens" is **out** (collision with access-lens.com). `a11ybeast.com`
+is available; "A11y Beast" is usable but weak, and the word mark "A11Y" is
+trademarked in this field — get clearance before brand spend.
+
+**The next move is not more product — it's validation.** Hand-sell the evidence
+record to ~10 US agencies; **<2–3 will-pay/LOI in 2 weeks → stop.** This file's
+tiers stay a hypothesis until that returns a yes.
