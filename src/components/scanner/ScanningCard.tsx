@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import type { ScanStage } from "@/hooks/useAxeAnalysis";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -11,12 +11,11 @@ const STAGES: ReadonlyArray<{
   key: ScanStage;
   label: string;
   sub: string;
-  count: string;
 }> = [
-  { key: "fetching", label: "Fetching document", sub: "Puppeteer · Chromium 143 · SSRF-guarded", count: "queued" },
-  { key: "rendering", label: "Rendering the DOM", sub: "JavaScript executed · accessibility tree built", count: "queued" },
-  { key: "analyzing", label: "Running 125+ rules", sub: "axe-core 4.11.2 · 20 custom checks", count: "queued" },
-  { key: "scoring", label: "Mapping to 16 legal frameworks", sub: "WCAG basis · severity multipliers · deadlines", count: "queued" },
+  { key: "fetching", label: "Fetching document", sub: "Puppeteer · Chromium 143 · SSRF-guarded" },
+  { key: "rendering", label: "Rendering the DOM", sub: "JavaScript executed · accessibility tree built" },
+  { key: "analyzing", label: "Running 125+ rules", sub: "axe-core 4.11.2 · 20 custom checks" },
+  { key: "scoring", label: "Mapping to 16 legal frameworks", sub: "WCAG basis · severity multipliers · deadlines" },
 ];
 
 const LOG_LINES_BY_STAGE: Record<Exclude<ScanStage, "idle" | "done" | "error">, ReadonlyArray<{ tag: "ok" | "warn" | "err"; msg: string }>> = {
@@ -100,18 +99,16 @@ export default function ScanningCard({
   // step so the stepper shows mid-progress rather than jumping to complete.
   const effectiveStage: ScanStage = stage === "crawling" ? "analyzing" : stage;
   const activeIdx = STAGES.findIndex((s) => s.key === effectiveStage);
-  const counts: Record<ScanStage, string> = {
-    idle: "",
-    fetching: "in progress",
-    rendering: "parsing…",
-    crawling: "crawling…",
-    analyzing: activeIdx >= 2 ? "125 rules" : "queued",
-    scoring: activeIdx >= 3 ? "16 / 16" : "queued",
-    done: "done",
-    error: "error",
-  };
-
   const idxForUI = activeIdx === -1 ? STAGES.length : activeIdx;
+
+  // The activity verb shown only on the *active* row. Done rows read "done" and
+  // not-yet-started rows read "queued", so the status always matches the icon.
+  const ACTIVE_LABEL: Partial<Record<ScanStage, string>> = {
+    fetching: "fetching…",
+    rendering: "parsing…",
+    analyzing: "running…",
+    scoring: "mapping…",
+  };
 
   return (
     <div className="scanning-wrap">
@@ -135,17 +132,31 @@ export default function ScanningCard({
 
         <div className="stages">
           {STAGES.map((s, i) => {
-            const state = i < idxForUI ? "done" : i === idxForUI ? "active" : "";
+            const state = i < idxForUI ? "done" : i === idxForUI ? "active" : "queued";
+            const status =
+              state === "done"
+                ? "done"
+                : state === "active"
+                  ? stage === "crawling"
+                    ? "crawling…"
+                    : ACTIVE_LABEL[s.key] ?? "working…"
+                  : "queued";
             return (
               <div key={s.key} className={`stage ${state}`}>
                 <div className="stage-icon" aria-hidden="true">
-                  {state === "done" ? <Check size={12} /> : String(i + 1).padStart(2, "0")}
+                  {state === "done" ? (
+                    <Check size={12} />
+                  ) : state === "active" ? (
+                    <Loader2 size={13} className="stage-spin" />
+                  ) : (
+                    String(i + 1).padStart(2, "0")
+                  )}
                 </div>
                 <div className="stage-label">
                   {s.label}
                   <span className="sub">{s.sub}</span>
                 </div>
-                <div className="stage-count mono">{counts[s.key]}</div>
+                <div className={`stage-count mono ${state}`}>{status}</div>
               </div>
             );
           })}
@@ -169,6 +180,7 @@ export default function ScanningCard({
               </motion.span>
             ))}
           </AnimatePresence>
+          <span className="log-cursor" aria-hidden="true">▋</span>
         </div>
 
         <div className="scanning-footer">
