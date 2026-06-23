@@ -747,7 +747,7 @@ function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onC
               )}
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", paddingTop: 4 }}>
                 <a href={fw.url} target="_blank" rel="noopener noreferrer" className="btn">Read the law ↗</a>
-                <button type="button" className="btn primary" onClick={() => { onClose(); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                <button type="button" className="btn primary" onClick={() => { onClose(); document.getElementById("scan")?.scrollIntoView({ behavior: "smooth" }); }}>
                   Scan for exposure →
                 </button>
               </div>

@@ -81,7 +81,7 @@ function EaaBody() {
       </p>
       <p style={p}>
         That&rsquo;s the gap A11y Beast is built for:{" "}
-        <a href="/" style={aStyle}>scan your page</a> in a real browser, see which findings map to the
+        <a href="/#scan" style={aStyle}>scan your page</a> in a real browser, see which findings map to the
         EAA (and 15 other frameworks), and get the code to fix each one — reported as an automated
         indicator, not a compliance guarantee.
       </p>
@@ -132,7 +132,7 @@ function AdaBody() {
       </p>
       <p style={p}>
         A11y Beast does the first three steps in one pass:{" "}
-        <a href="/" style={aStyle}>scan your page</a> in a real browser, see exactly which findings
+        <a href="/#scan" style={aStyle}>scan your page</a> in a real browser, see exactly which findings
         implicate ADA Title III (and 15 other frameworks), and get the code to fix each — without anyone
         pretending a scan equals legal compliance.
       </p>
@@ -192,7 +192,7 @@ function OverlaysBody() {
       </p>
       <p style={p}>
         The honest path is the unglamorous one: find the real issues in your source and fix them.
-        That&rsquo;s what A11y Beast is for — <a href="/" style={aStyle}>scan your page</a> in a real
+        That&rsquo;s what A11y Beast is for — <a href="/#scan" style={aStyle}>scan your page</a> in a real
         browser, see which laws each finding implicates, and get the code to fix it. No widget, no
         compliance guarantee.
       </p>
@@ -252,7 +252,7 @@ function Section508Body() {
       </p>
       <p style={p}>
         A11y Beast maps every finding to Section 508&rsquo;s WCAG 2.0 AA scope alongside 15 other
-        frameworks — so you can see federal exposure specifically. <a href="/" style={aStyle}>Scan a
+        frameworks — so you can see federal exposure specifically. <a href="/#scan" style={aStyle}>Scan a
         page</a> to start.
       </p>
     </>
@@ -319,7 +319,7 @@ function WcagVersionBody() {
         the exception, sitting at 2.0 AA, which 2.1 is a superset of). A11y Beast pins each of its 16
         frameworks to the exact WCAG version that framework&rsquo;s law cites — so a
         &ldquo;coverage&rdquo; number means something specific, not a generic score.{" "}
-        <a href="/" style={aStyle}>Scan your site</a> to see it per framework.
+        <a href="/#scan" style={aStyle}>Scan your site</a> to see it per framework.
       </p>
     </>
   );
@@ -408,7 +408,7 @@ function LawsuitTrendsBody() {
         The cheapest case to defend is the one you prevent — and remediation is the one cost you&rsquo;d
         pay regardless of outcome, so do it first. Find and fix real issues in your source, keep checking
         as you ship, and don&rsquo;t rely on a widget to make the risk disappear. A11y Beast gives you the
-        legal-risk view in one pass — <a href="/" style={aStyle}>scan your page</a> and see exactly which
+        legal-risk view in one pass — <a href="/#scan" style={aStyle}>scan your page</a> and see exactly which
         of 16 frameworks each finding implicates.
       </p>
     </>
@@ -464,7 +464,7 @@ function UnruhBody() {
       <p style={p}>
         If you serve California customers, the Unruh exposure is worth taking seriously. A11y Beast
         flags which findings implicate California&rsquo;s Unruh Act specifically —{" "}
-        <a href="/" style={aStyle}>scan your page</a> to see where you stand.
+        <a href="/#scan" style={aStyle}>scan your page</a> to see where you stand.
       </p>
     </>
   );
@@ -524,7 +524,7 @@ function AutomatedLimitsBody() {
         not a compliance verdict.</strong> We catch what automation catches well, map it to the laws
         it implicates, and tell you plainly where manual review is still needed. Any tool that promises
         a one-click &ldquo;compliant&rdquo; stamp is making the kind of claim that just cost an overlay
-        vendor a $1M FTC settlement. <a href="/" style={aStyle}>Scan a page</a> and see the honest version.
+        vendor a $1M FTC settlement. <a href="/#scan" style={aStyle}>Scan a page</a> and see the honest version.
       </p>
     </>
   );
@@ -581,7 +581,7 @@ function DeadlineBody() {
       </ul>
       <p style={p}>
         Don&rsquo;t panic over a date that may not be yours — but don&rsquo;t mistake &ldquo;no
-        deadline&rdquo; for &ldquo;no risk.&rdquo; <a href="/" style={aStyle}>Scan your site</a> to see
+        deadline&rdquo; for &ldquo;no risk.&rdquo; <a href="/#scan" style={aStyle}>Scan your site</a> to see
         which of these frameworks your pages are actually exposed under.
       </p>
     </>
@@ -649,7 +649,7 @@ function ShopifyBody() {
       </p>
       <p style={p}>
         Want to know exactly which issues your store has and which laws they implicate?{" "}
-        <a href="/" style={aStyle}>Scan your Shopify URL</a> — real browser, 125+ checks, mapped to 16
+        <a href="/#scan" style={aStyle}>Scan your Shopify URL</a> — real browser, 125+ checks, mapped to 16
         frameworks.
       </p>
     </>
@@ -706,7 +706,7 @@ function WordPressBody() {
       </p>
       <p style={p}>
         Automated tools (including ours) catch a portion of issues; manual and screen-reader testing
-        cover the rest. <a href="/" style={aStyle}>Scan your WordPress URL</a> to see which findings map
+        cover the rest. <a href="/#scan" style={aStyle}>Scan your WordPress URL</a> to see which findings map
         to which of 16 laws — then fix them in your theme and content, not with a widget.
       </p>
     </>
@@ -764,7 +764,7 @@ function ChecklistBody() {
       <p style={p}>
         Notice how many items are <strong>[manual]</strong>: that&rsquo;s why an automated pass is the
         start, not the finish. The fastest way to clear the <strong>[auto]</strong> half of this list is
-        to <a href="/" style={aStyle}>scan your page</a> — you&rsquo;ll get each finding mapped to the law
+        to <a href="/#scan" style={aStyle}>scan your page</a> — you&rsquo;ll get each finding mapped to the law
         it implicates and the code to fix it, plus a clear view of what still needs a human.
       </p>
     </>
@@ -824,7 +824,7 @@ function WixBody() {
       </p>
       <p style={p}>
         Want to see which laws your Wix site is exposed under — beyond what the Wizard checks?{" "}
-        <a href="/" style={aStyle}>Scan your URL</a> with A11y Beast: real browser, 125+ checks, mapped to 16 frameworks.
+        <a href="/#scan" style={aStyle}>Scan your URL</a> with A11y Beast: real browser, 125+ checks, mapped to 16 frameworks.
       </p>
     </>
   );
@@ -882,7 +882,7 @@ function SquarespaceBody() {
         Fix the content and markup instead.
       </p>
       <p style={p}>
-        Because Squarespace won&rsquo;t audit for you, <a href="/" style={aStyle}>scan your URL</a> with A11y Beast —
+        Because Squarespace won&rsquo;t audit for you, <a href="/#scan" style={aStyle}>scan your URL</a> with A11y Beast —
         real browser, 125+ checks, every finding mapped to the 16 laws it implicates, plus the code to fix it.
       </p>
     </>
