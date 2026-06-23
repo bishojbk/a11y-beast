@@ -209,8 +209,7 @@ export default function FeaturesPage() {
           }}
         >
           Free features are live today. <strong style={{ color: "var(--text-primary)" }}>Pro</strong> and{" "}
-          <strong style={{ color: "var(--text-primary)" }}>Agency</strong> features ship with founding access —{" "}
-          <Link href="/pricing" style={{ color: "var(--accent-text)" }}>see pricing</Link>.
+          <strong style={{ color: "var(--text-primary)" }}>Agency</strong> features are in founding access.
         </div>
 
         {GROUPS.map((g) => (
@@ -252,12 +251,6 @@ export default function FeaturesPage() {
         >
           <Link href="/#scan" className="scan-btn" style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 22px", borderRadius: 6, fontSize: 14, fontWeight: 600 }}>
             Scan your site free
-          </Link>
-          <Link
-            href="/pricing"
-            style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 22px", borderRadius: 6, fontSize: 14, fontWeight: 600, border: "1px solid var(--border-default)", color: "var(--text-primary)" }}
-          >
-            See pricing
           </Link>
         </div>
       </main>
