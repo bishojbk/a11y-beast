@@ -1,6 +1,8 @@
 # A11y Beast — Tier & Gating Spec (plain-English)
 
-_Created 2026-06-17. This decides what's **free** vs **paid**, and why. Written to be readable without SaaS background — jargon is defined inline. Nothing here needs to be enforced until the paid product is built; the point is to decide the lines now so the free tool doesn't accidentally become the whole product._
+_Created 2026-06-17. Updated 2026-06-23 to match the shipped pricing page: prices are now Pro ~$49 / Agency ~$249 (was ~$39/~$99), the dated EN 301 549 evidence record + ledger is named as the core paid wedge, and the CLI/CI moved to Pro (open-core — the source is AGPL, the published CLI is paid). The load-bearing call held: **the full 16-framework diagnosis stays free** (it's the hook). See POSITIONING.md for the one-page summary._
+
+_This decides what's **free** vs **paid**, and why. Written to be readable without SaaS background — jargon is defined inline. Nothing here needs to be enforced until the paid product is built; the point is to decide the lines now so the free tool doesn't accidentally become the whole product._
 
 ---
 
@@ -31,8 +33,9 @@ The job of this layer is **reach and trust**, not revenue. Be generous here.
 - The **full 16-framework legal breakdown** + risk score — this is your differentiator *and* your curiosity hook ("you're breaking 16 laws"); keeping it free is what makes people click and share
 - The issue list: what's wrong, severity, and which law each issue implicates
 - Per-criterion (WCAG) conformance view — part of the diagnosis
-- Basic CLI / GitHub Action (developers love free dev tools; it builds goodwill and word-of-mouth)
 - A *preview* of fixes (show the problem + a hint of the fix, not the full copy-paste remediation for every issue)
+
+_(The CLI/GitHub Action was originally slated for free here. It moved to Pro under an open-core model: the engine source is AGPL-3.0 so developers can still build it, but the published CLI and the build-failing CI gate are paid.)_
 
 ### 2. EMAIL-GATED — still free, but you capture an email _(the lead magnet)_
 The job here is **turn an anonymous scan into a contact you can talk to.** This is the layer you're missing today, and it's cheap to build (you already have email-capture infra). "Free, just give us your email" converts far better than "join a waitlist for a paid product."
@@ -41,15 +44,17 @@ The job here is **turn an anonymous scan into a contact you can talk to.** This 
 - **Free monitoring on ONE page** — we re-scan weekly and email you if new issues appear _(this is the single highest-value add: it captures the email, gives an ongoing reason to come back, AND validates the monitoring feature you'll later charge for)_
 - Cloud-saved scan history (instead of just this-browser)
 
-### 3. PRO — paid (~$39/mo) _(the outcome, for a single business)_
+### 3. PRO — paid (~$49/mo) _(the outcome, for a single business)_
 The job here is **recurring revenue from an owner who has a real, multi-page site.**
+- **Dated, tamper-evident EN 301 549 evidence record + ledger** — the core paid wedge: proof of effort over time that a free scan can't produce (see evidence-ledger-spec.md)
+- **CLI + GitHub Action (CI gating)** — published CLI + build-failing gate (open-core; see free-tier note above)
 - **Multi-page / site-wide crawl** — the big one: real businesses have many pages, and free only does one. This alone is a strong reason to pay.
 - **Scheduled monitoring + alerts across many pages** — the recurring value (fights churn: they keep paying to stay watched)
 - History & compare over time (track whether you're improving)
 - **Polished, counsel-ready / VPAT-style legal report** — a proof artifact with real value for procurement and EAA documentation (people pay for *proof*, not just findings)
 - Higher AI-fix limits, more frequent re-scans
 
-### 4. AGENCY — paid (~$99/mo) _(scale + resale, for people who serve many clients)_
+### 4. AGENCY — paid (~$249/mo) _(scale + resale, for people who serve many clients)_
 The job here is **higher-value B2B revenue from people who bring their own clients** — per the research, the segment where paying for a *product* is already proven.
 - **White-label** — their logo on the reports/dashboard, so they can resell it to clients as their own
 - Multiple client sites / bulk scanning

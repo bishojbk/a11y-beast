@@ -1,6 +1,6 @@
 # AccessLens / A11y Beast — Session Handoff
 
-_Last updated: 2026-06-19. This is a working handoff for the next Claude session. For deep product/architecture history, see the user's auto-memory note `project_accesslens.md`._
+_Last updated: 2026-06-23. This is a working handoff for the next Claude session. For deep product/architecture history, see the user's auto-memory note `project_accesslens.md`._
 
 ## What this is
 A11y Beast (repo: `a11y-beast`, product dir `~/Personal/accesslens`) — a Next.js 16 + TypeScript web **accessibility legal-risk scanner**. Puppeteer + axe-core renders a page, runs 125+ checks, maps each WCAG violation to **16 legal frameworks** (ADA, EAA, Section 508, …) with an honest "automated-coverage" score. Positioning: **legal intelligence + anti-overlay**, NOT "another WCAG checker" and never "guaranteed compliance" (the FTC fined an overlay vendor $1M for that claim — stay clear of it).
@@ -25,10 +25,22 @@ Git is **clean**; everything below is committed to `main`. In rough order:
 6. **SEO/content** — blog fact-check brief + 12/12-pass consistency tightenings (`6b18f93`, `49068cb`), Wix + Squarespace guides, homepage keyword H2 (`37b8f78`), FTC phrasing tightened in posts (`f84e2db`).
 7. **Launch-post drafts** (`952b83e`) — `docs/launch-posts.md`: Show HN, Reddit, IH, LinkedIn/EAA, Product Hunt; credibility-first, FTC-safe. **Not yet posted.**
 
+## Done since 06-19 (the 06-23 session)
+Committed to `main`. The theme: name the wedge, fix the pricing to sell it, kill dead UI.
+1. **Evidence-ledger feature** (the defensible non-commodity wedge): EN 301 549 statement mode in `StatementGenerator.tsx`; dated, SHA-256-hashed **evidence record** (`src/lib/report/evidence-file.ts`); per-site **ledger + regression diff** (`src/lib/report/evidence-ledger.ts`, localStorage v0); **honest-language guard** (`src/lib/report/honest-language.ts`) that flags banned overclaims in generated docs. Results page gained "EN 301 549 statement" + "Evidence file" buttons. Spec: `docs/evidence-ledger-spec.md`. **Persistence is localStorage-only (demo-grade); no auth/server store yet.**
+2. **POSITIONING.md** (new) — the one-page source of truth. Motto: *"Anyone can scan. We give you the dated, defensible proof you tried."* Scan = commodity/funnel; evidence ledger = product.
+3. **Pricing realignment** to match the positioning — Pro **$39→$49**, Agency **$99→$249**, evidence ledger is now the headline paid value. **Free deliberately keeps the full 16-framework diagnosis** (it's the hook / the "sixteen verdicts" tagline); the *outcome* is gated: report export, evidence record, multi-page, CLI/CI. `tier-gating-spec.md` updated to match (an earlier draft of this session wrongly gated free to 4 frameworks — reverted because it broke the tagline).
+4. **Footer dead links fixed** (`Footer.tsx`) — removed vaporware "API", `#cli`/`#oss` dead anchors → real targets; CLI now → `/cli` with a "Pro" pill.
+5. **`/cli` page** (new, `src/app/cli/page.tsx`) — documents the real `scan`/`benchmark` commands + flags; honest "Pro / open-core / not-on-npm-yet" framing.
+6. **Scanner navigation fix** — the hero scanner had no anchor, so every "scan" CTA dumped users at page top (or no-op'd). Added `id="scan"`; repointed all scan CTAs app-wide (`/` → `/#scan`): footer, header (incl. mobile), about, blog, statement-gen, pricing, results, 404.
+7. **Sample report now uses a real, verifiable URL** — was the fake `demo.example-store.com`; now the W3C's own public "Before" demo (`w3.org/WAI/demos/bad/before/home.html`), with a banner inviting visitors to re-scan and verify. Avoids publicly shaming a real business.
+
 ## Pricing decisions (context for future edits)
-- Tier numbers were chosen against competitor research: overlay SMB anchor ≈ $49/mo; scanner tools $25–400; 3-tier + Enterprise is the proven structure. Pro $39 sits just under the overlay anchor as a wedge.
-- **Usage gates (1/3/10 sites, page caps) are stated INTENT only** — nothing enforces them yet (no auth, no metering). Paid tiers are waitlist-only.
-- Agency is intentionally thin on near-term features (mostly higher limits + bulk + priority). If asked to differentiate it pre-launch, pull one near-term capability up into it.
+- Current numbers: Free $0 · Pro **$49** · Agency **$249** · Enterprise custom. Chosen against competitor research (overlay SMB anchor ≈ $49/mo; scanner tools $25–400) + the principle that agencies pay more because they resell our output.
+- **Load-bearing call: never gate the diagnosis.** The full 16-framework breakdown stays free — it's the marketing hook and the "one scan, sixteen verdicts" tagline. Gate the *outcome* (proof/export/scale/CI), not the framework count. See POSITIONING.md + tier-gating-spec.md.
+- **Usage gates (1/3/25 sites, page caps) are stated INTENT only** — nothing enforces them yet (no auth, no metering). Paid tiers are waitlist-only.
+- **CLI is open-core**: engine source is AGPL-3.0 (buildable by anyone), but the published CLI + CI gate are Pro.
+- Agency is intentionally thin on near-term features (mostly higher limits + bulk + priority + brandable evidence records). If asked to differentiate it pre-launch, pull one near-term capability up into it.
 
 ## What's NOT built yet (the real gaps)
 - **Auth / accounts / teams** — none. No login anywhere.

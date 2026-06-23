@@ -15,26 +15,34 @@ const GROUPS: Group[] = [
     title: "Scanning",
     rows: [
       ["Single-page scans", "Unlimited", "Unlimited", "Unlimited", "Unlimited"],
-      ["Multi-page site crawls", false, true, "Deeper", "Custom"],
-      ["Sites (multi-page)", false, "3", "10", "Unlimited"],
       ["125+ checks · real-browser rendering", true, true, true, true],
+      ["Severity + WCAG 2.1 criterion breakdown", true, true, true, true],
       ["All 16 legal frameworks mapped", true, true, true, true],
-      ["Per-success-criterion conformance", true, true, true, true],
+      ["Multi-page site crawls", false, true, "Deeper", "Custom"],
+      ["Sites (multi-page)", false, "3", "25", "Unlimited"],
+    ],
+  },
+  {
+    title: "Evidence & proof",
+    rows: [
+      ["Dated EN 301 549 evidence record", false, true, true, true],
+      ["Tamper-evident content hash", false, true, true, true],
+      ["Evidence ledger — progress over time", false, true, true, true],
+      ["Client-ready, brandable records", false, false, true, true],
     ],
   },
   {
     title: "Reporting",
     rows: [
-      ["Markdown & JSON export", true, true, true, true],
-      ["Per-jurisdiction legal report", false, true, true, true],
+      ["View & copy results in-browser", true, true, true, true],
+      ["Markdown, JSON & evidence export", false, true, true, true],
       ["AI fix suggestions", false, true, true, true],
-      ["Scan history & compare", false, true, true, true],
     ],
   },
   {
     title: "Scale & integrations",
     rows: [
-      ["CLI + GitHub Action", true, true, true, true],
+      ["CLI + GitHub Action (CI)", false, true, true, true],
       ["Bulk multi-client scanning", false, false, true, true],
       ["SSO & team management", false, false, false, true],
       ["Custom frameworks & jurisdictions", false, false, false, true],

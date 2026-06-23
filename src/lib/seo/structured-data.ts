@@ -49,7 +49,7 @@ export const softwareApplicationLd = {
     "@type": "Offer",
     price: "0",
     priceCurrency: "USD",
-    description: "Single-page scans with full 16-framework legal mapping, free forever — no signup.",
+    description: "Single-page scans with the full 16-framework legal mapping, free forever — no signup.",
   },
   featureList: [
     "125+ accessibility checks (axe-core 105 rules + 20 custom checks)",

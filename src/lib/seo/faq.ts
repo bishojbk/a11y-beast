@@ -31,6 +31,6 @@ export const PRICING_FAQ: FaqItem[] = [
   },
   {
     q: "Can I run it in CI?",
-    a: "Yes, on every tier including Free — the CLI and GitHub Action let you fail a build on new violations.",
+    a: "Yes — the CLI and GitHub Action let you fail a build on new violations. They're included from the Pro tier up.",
   },
 ];
