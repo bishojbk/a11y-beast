@@ -46,7 +46,7 @@ const GROUPS: Group[] = [
       ["Bulk multi-client scanning", false, false, true, true],
       ["SSO & team management", false, false, false, true],
       ["Custom frameworks & jurisdictions", false, false, false, true],
-      ["Expert manual review + VPAT", false, false, false, true],
+      ["Manual audit + VPAT (via certified partners)", false, false, false, true],
     ],
   },
   {

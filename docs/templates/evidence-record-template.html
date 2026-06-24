@@ -1,0 +1,275 @@
+<style>
+  :root {
+    --paper: #faf8f4;
+    --ink: #1b1714;
+    --ink-soft: #4a443d;
+    --ink-faint: #726b61;
+    --line: rgba(27,23,20,0.14);
+    --line-soft: rgba(27,23,20,0.08);
+    --crimson: #b4283a;
+    --amber: #b5650f;
+    --green: #1c7d4d;
+    --grey: #726b61;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { background: #ece8e1; margin: 0; font-family: var(--sans); color: var(--ink); line-height: 1.5; }
+
+  /* ── Screen-only helper (hidden in print) ── */
+  .tpl-banner {
+    max-width: 820px; margin: 22px auto 0; background: #fff7e6; border: 1px solid #e3c97a;
+    border-radius: 8px; padding: 14px 18px; font-size: 13px; color: #5b4a1a; line-height: 1.55;
+  }
+  .tpl-banner b { color: #3d3208; }
+  .tpl-banner code { font-family: var(--mono); background: #fff; border: 1px solid #e3c97a; border-radius: 3px; padding: 1px 5px; font-size: 12px; }
+  .print-bar { max-width: 820px; margin: 14px auto 0; text-align: right; }
+  .print-bar button {
+    font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer;
+    background: var(--crimson); color: #fff; border: none; border-radius: 6px; padding: 9px 18px;
+  }
+
+  /* ── The document ── */
+  .doc {
+    max-width: 820px; margin: 22px auto 60px; background: var(--paper); color: var(--ink);
+    padding: 0 56px 48px; box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+  }
+  .doc-toprule { height: 5px; background: var(--crimson); margin: 0 -56px 0; }
+
+  .doc-head {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;
+    padding: 26px 0 22px; border-bottom: 1px solid var(--line);
+  }
+  .logo-slot {
+    border: 1px dashed var(--line); border-radius: 4px; padding: 12px 16px; font-family: var(--mono);
+    font-size: 11px; letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 8px; display: inline-block;
+  }
+  .brand .by { font-size: 13px; color: var(--ink-soft); }
+  .brand .by b { color: var(--ink); }
+  .doc-kind { text-align: right; flex-shrink: 0; }
+  .kind-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--crimson); }
+  .rec-id { font-family: var(--mono); font-size: 12px; color: var(--ink-faint); margin-top: 6px; }
+
+  .doc-title { font-family: var(--serif); font-size: 30px; font-weight: 600; letter-spacing: -0.01em; margin: 30px 0 6px; }
+  .doc-sub { font-size: 16px; color: var(--ink-soft); margin: 0 0 22px; }
+  .doc-sub b { color: var(--ink); }
+
+  .meta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin: 0 0 24px; }
+  .meta div { padding: 11px 14px; border-top: 1px solid var(--line-soft); border-right: 1px solid var(--line-soft); }
+  .meta div:nth-child(-n+2) { border-top: none; }
+  .meta div:nth-child(even) { border-right: none; }
+  .meta dt { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 4px; }
+  .meta dd { margin: 0; font-size: 13.5px; }
+  .meta .hashval { font-family: var(--mono); font-size: 11.5px; word-break: break-all; color: var(--ink-soft); }
+
+  .honest {
+    border: 1px solid var(--line); border-left: 3px solid var(--crimson); border-radius: 4px;
+    background: rgba(180,40,58,0.04); padding: 14px 18px; font-size: 13px; color: var(--ink-soft);
+    line-height: 1.6; margin: 0 0 30px;
+  }
+  .honest b { color: var(--ink); }
+
+  h2.sec { font-family: var(--serif); font-size: 20px; font-weight: 600; margin: 34px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .sec-num { font-family: var(--mono); font-size: 13px; color: var(--crimson); margin-right: 10px; }
+
+  /* summary */
+  .summary { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+  .score-box { text-align: center; border: 1px solid var(--line); border-radius: 8px; padding: 16px 22px; }
+  .score-num { font-family: var(--serif); font-size: 46px; font-weight: 700; line-height: 1; color: var(--crimson); }
+  .score-den { font-family: var(--mono); font-size: 13px; color: var(--ink-faint); }
+  .score-grade { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 6px; color: var(--crimson); }
+  .counts { display: flex; gap: 22px; flex-wrap: wrap; }
+  .count .n { font-family: var(--serif); font-size: 26px; font-weight: 700; }
+  .count .l { font-size: 12px; color: var(--ink-soft); }
+  .count.crit .n { color: var(--crimson); } .count.serious .n { color: var(--amber); } .count.mod .n { color: var(--grey); }
+
+  /* tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  td { padding: 10px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  .risk { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; font-weight: 600; white-space: nowrap; }
+  .risk.high { color: var(--crimson); background: rgba(180,40,58,0.1); }
+  .risk.med { color: var(--amber); background: rgba(181,101,15,0.1); }
+  .risk.low { color: var(--grey); background: rgba(114,107,97,0.1); }
+
+  /* findings */
+  .finding { border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; margin-bottom: 12px; page-break-inside: avoid; }
+  .finding-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .finding-title { font-size: 15px; font-weight: 600; }
+  .sev { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; font-weight: 600; }
+  .sev.critical { color: #fff; background: var(--crimson); }
+  .sev.serious { color: #fff; background: var(--amber); }
+  .sev.moderate { color: #fff; background: var(--grey); }
+  .wcag { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); margin-left: auto; }
+  .laws { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+  .law-chip { font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; padding: 2px 7px; border: 1px solid var(--line); border-radius: 3px; color: var(--ink-soft); }
+  .finding .loc { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); background: rgba(27,23,20,0.04); border-radius: 3px; padding: 4px 8px; display: inline-block; margin: 4px 0; }
+  .finding .fix { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+  .finding .fix b { color: var(--ink); }
+
+  .method { font-size: 13px; color: var(--ink-soft); line-height: 1.65; }
+  .method b { color: var(--ink); }
+
+  .doc-foot { margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--ink-faint); line-height: 1.6; }
+  .doc-foot .wl { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+  @media print {
+    .tpl-banner, .print-bar { display: none !important; }
+    body { background: #fff; }
+    .doc { box-shadow: none; margin: 0 auto; max-width: none; }
+    @page { margin: 16mm; }
+  }
+  @media (max-width: 700px) {
+    .doc { padding: 0 22px 36px; } .doc-toprule { margin: 0 -22px 0; }
+    .meta { grid-template-columns: 1fr; }
+  }
+</style>
+
+<!-- ════════ SCREEN-ONLY: how to use this template (hidden when printed) ════════ -->
+<div class="tpl-banner">
+  <b>This is a fill-in template — the concierge deliverable for the validation sprint.</b> It is shown pre-filled with a worked
+  example (“Northwind Outfitters”). To produce one for a real prospect: run A11y Beast on one of their client sites, then replace the
+  bracketed fields — <code>[Your Agency Name]</code>, the logo slot, the subject URL, date, record ID, the integrity hash, the score/counts,
+  and the findings — with the real scan output. Then <b>Print → Save as PDF</b> and send it. Keep the honesty notice and disclaimer intact —
+  that is the whole point of the product.
+</div>
+<div class="print-bar"><button onclick="window.print()">Print / Save as PDF</button></div>
+
+<!-- ════════ THE DOCUMENT ════════ -->
+<article class="doc">
+  <div class="doc-toprule"></div>
+
+  <header class="doc-head">
+    <div class="brand">
+      <div class="logo-slot">[ YOUR AGENCY LOGO ]</div>
+      <div class="by">Prepared by <b>[Your Agency Name]</b></div>
+    </div>
+    <div class="doc-kind">
+      <div class="kind-label">Accessibility Evidence Record</div>
+      <div class="rec-id">Record ALB-20260624-NW01</div>
+    </div>
+  </header>
+
+  <h1 class="doc-title">Accessibility Evidence Record</h1>
+  <p class="doc-sub">Automated legal-risk assessment of <b>Northwind Outfitters</b> — home page</p>
+
+  <dl class="meta">
+    <div><dt>Subject</dt><dd>https://www.northwind-outfitters.com</dd></div>
+    <div><dt>Scan date (UTC)</dt><dd>24 June 2026, 14:08</dd></div>
+    <div><dt>Record ID</dt><dd>ALB-20260624-NW01</dd></div>
+    <div><dt>Engine</dt><dd>A11y Beast · axe-core 4.11.2 + 20 custom (116 checks)</dd></div>
+    <div style="grid-column: 1 / -1;"><dt>Integrity hash (SHA-256)</dt><dd class="hashval">9f2c1ad7b4e83a6c0d51e2f4a98b7c33d6e0fb12a45c889e7301b6df42a9c5e8</dd></div>
+  </dl>
+
+  <div class="honest">
+    <b>What this is — and what it isn’t.</b> This is a <b>documented automated assessment</b> of accessibility barriers and the legal
+    frameworks they implicate, captured at a fixed date with a tamper-evident content hash. Automated testing detects roughly
+    <b>30–40% of WCAG 2.1 success criteria</b>; the remainder require manual and assistive-technology review. This record is
+    <b>evidence of effort and a prioritisation tool — not a certification, not a guarantee of compliance with any law, and not legal advice.</b>
+  </div>
+
+  <!-- 1. Summary -->
+  <h2 class="sec"><span class="sec-num">01</span>Summary</h2>
+  <div class="summary">
+    <div class="score-box">
+      <div class="score-num">62</div>
+      <div class="score-den">/ 100</div>
+      <div class="score-grade">Significant exposure</div>
+    </div>
+    <div class="counts">
+      <div class="count crit"><div class="n">3</div><div class="l">Critical</div></div>
+      <div class="count serious"><div class="n">6</div><div class="l">Serious</div></div>
+      <div class="count mod"><div class="n">5</div><div class="l">Moderate</div></div>
+      <div class="count"><div class="n">14</div><div class="l">Total findings</div></div>
+    </div>
+    <p style="font-size:13px;color:var(--ink-soft);max-width:34ch;margin:0;">An automated-coverage indicator, weighted by severity and per-framework scope. Lower = higher legal exposure. Not a conformance score.</p>
+  </div>
+
+  <!-- 2. Legal exposure -->
+  <h2 class="sec"><span class="sec-num">02</span>Legal exposure — one scan, sixteen verdicts</h2>
+  <table>
+    <thead><tr><th>Framework</th><th>Jurisdiction</th><th>Risk</th><th>Why it’s implicated</th></tr></thead>
+    <tbody>
+      <tr><td><b>ADA Title III</b></td><td>USA</td><td><span class="risk high">High</span></td><td>Highest US web-litigation volume (3,117 federal suits in 2025); detected barriers map to actionable WCAG failures.</td></tr>
+      <tr><td><b>California Unruh Act</b></td><td>California, USA</td><td><span class="risk high">High</span></td><td>$4,000 statutory minimum per offence; e-commerce is the primary target.</td></tr>
+      <tr><td><b>EAA / EN 301 549</b></td><td>EU (27 states)</td><td><span class="risk med">Med</span></td><td>In force since 28 Jun 2025; conformance assessed against EN 301 549 v3.2.1 (WCAG 2.1 AA basis).</td></tr>
+      <tr><td><b>Section 508</b></td><td>USA Federal</td><td><span class="risk med">Med</span></td><td>Procurement gate for federal vendors; references WCAG 2.0 AA.</td></tr>
+      <tr><td><b>UK Equality Act 2010</b></td><td>United Kingdom</td><td><span class="risk med">Med</span></td><td>EHRC enforcement; reasonable-adjustment duty applies to digital services.</td></tr>
+      <tr><td><b>AODA</b></td><td>Ontario, Canada</td><td><span class="risk low">Low</span></td><td>Regulatory standard (WCAG 2.0 AA); enforcement to date is light.</td></tr>
+      <tr><td colspan="4" style="font-family:var(--mono);font-size:11px;color:var(--ink-faint);">+ 10 further frameworks mapped in the full record (Section 508 state mirrors, ACA, DDA, JIS X 8341-3, RPD Act, Korea, NZ, Israel, EU WAD, ADA Title II).</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 3. Findings -->
+  <h2 class="sec"><span class="sec-num">03</span>Priority findings</h2>
+
+  <div class="finding">
+    <div class="finding-head"><span class="sev critical">Critical</span><span class="finding-title">Images missing alt text</span><span class="wcag">WCAG 1.1.1</span></div>
+    <div class="laws"><span class="law-chip">ADA III</span><span class="law-chip">Unruh</span><span class="law-chip">EAA</span><span class="law-chip">Section 508</span></div>
+    <div class="loc">img.product-card__img — 23 occurrences</div>
+    <div class="fix"><b>Fix:</b> Add a concise, descriptive <code>alt</code> attribute to each product image (e.g. the product name + key visual detail). Mark purely decorative images <code>alt=""</code>.</div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-head"><span class="sev critical">Critical</span><span class="finding-title">Form input without an accessible label</span><span class="wcag">WCAG 3.3.2 / 4.1.2</span></div>
+    <div class="laws"><span class="law-chip">ADA III</span><span class="law-chip">Section 508</span><span class="law-chip">EAA</span><span class="law-chip">AODA</span></div>
+    <div class="loc">input#newsletter-email</div>
+    <div class="fix"><b>Fix:</b> Associate a visible <code>&lt;label for="newsletter-email"&gt;</code> (or an <code>aria-label</code> if visually hidden by design). Placeholder text is not a label.</div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-head"><span class="sev serious">Serious</span><span class="finding-title">Text contrast below 4.5:1</span><span class="wcag">WCAG 1.4.3</span></div>
+    <div class="laws"><span class="law-chip">ADA III</span><span class="law-chip">EAA</span><span class="law-chip">EN 301 549</span><span class="law-chip">Unruh</span></div>
+    <div class="loc">.price--muted (#9a9a9a on #ffffff ≈ 2.8:1)</div>
+    <div class="fix"><b>Fix:</b> Darken the text to at least a 4.5:1 ratio against its background (e.g. <code>#595959</code> or darker on white).</div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-head"><span class="sev serious">Serious</span><span class="finding-title">Non-descriptive link text (“click here” ×8)</span><span class="wcag">WCAG 2.4.4</span></div>
+    <div class="laws"><span class="law-chip">ADA III</span><span class="law-chip">EAA</span></div>
+    <div class="loc">a.cta — 8 occurrences</div>
+    <div class="fix"><b>Fix:</b> Make link text describe its destination (“View the summer collection”), so it’s meaningful out of context to screen-reader users.</div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-head"><span class="sev serious">Serious</span><span class="finding-title">Missing skip-navigation link</span><span class="wcag">WCAG 2.4.1</span></div>
+    <div class="laws"><span class="law-chip">ADA III</span><span class="law-chip">Section 508</span></div>
+    <div class="loc">&lt;body&gt; — no skip link before the nav</div>
+    <div class="fix"><b>Fix:</b> Add a “Skip to main content” link as the first focusable element, targeting the main landmark.</div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-head"><span class="sev moderate">Moderate</span><span class="finding-title">No &lt;main&gt; landmark</span><span class="wcag">WCAG 1.3.1</span></div>
+    <div class="laws"><span class="law-chip">ADA III</span><span class="law-chip">AODA</span></div>
+    <div class="loc">&lt;body&gt;</div>
+    <div class="fix"><b>Fix:</b> Wrap the primary page content in a <code>&lt;main&gt;</code> element so assistive tech can jump straight to it.</div>
+  </div>
+
+  <p style="font-size:12px;color:var(--ink-faint);margin-top:14px;">Showing 6 of 14 findings. The full record lists every occurrence with its selector, source snippet and fix.</p>
+
+  <!-- 4. Methodology & integrity -->
+  <h2 class="sec"><span class="sec-num">04</span>Methodology &amp; integrity</h2>
+  <p class="method">
+    The subject page was rendered in a <b>real headless Chromium browser</b> (so JavaScript-built content is evaluated as users
+    experience it), then assessed with <b>axe-core 4.11.2 (96 rules) plus 20 custom checks</b> axe-core doesn’t cover — 116 checks in
+    total. Each finding is mapped to the <b>16 legal frameworks</b> whose applicable success criteria it implicates, using a fixed
+    rule set (not AI inference, so the legal mapping cannot hallucinate). The engine is publicly benchmarked against axe-core, Pa11y
+    and Lighthouse.<br><br>
+    <b>Tamper-evidence.</b> This record’s contents are summarised by the SHA-256 hash above; any later alteration changes the hash, so
+    the document is verifiable as the original. <b>Re-scanning</b> the same site produces a dated successor record, and the difference
+    between two records is the auditable <b>proof of remediation over time</b> — the part a one-off scan cannot give you.
+  </p>
+
+  <!-- Footer -->
+  <footer class="doc-foot">
+    This Accessibility Evidence Record reflects automated testing only and is provided “as is.” Automated tools detect roughly
+    30–40% of WCAG 2.1 success criteria; full conformance requires manual and assistive-technology evaluation. Nothing here is a
+    certification of compliance, a guarantee against litigation, or legal advice. For a conformance determination, pair this record
+    with a manual audit by a qualified evaluator.
+    <div class="wl">
+      <span>Prepared by [Your Agency Name]</span>
+      <span>Assessment engine: A11y Beast</span>
+    </div>
+  </footer>
+</article>

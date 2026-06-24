@@ -73,7 +73,7 @@ const TIERS: Tier[] = [
       "Everything in Agency",
       "SSO & team management",
       "Custom frameworks & jurisdictions",
-      "Expert manual review + VPAT",
+      "Manual audit + VPAT via certified partners",
       "SLA & dedicated support",
     ],
     cta: { kind: "waitlist", label: "Contact sales" },
