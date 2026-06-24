@@ -132,3 +132,63 @@ See the competitor table in §3 below for the full map.
 - **Willingness-to-pay for *our* specific evidence deliverable** — the entire premise — is **still unvalidated by a real buyer.** That's the validation sprint's job, and no amount of desk research substitutes for it.
 
 _Sources are linked inline. Strongest neutral anchors: Seyfarth (federal counts), CBC (AODA), FTC (accessiBe), overlayfactsheet.com, HN Algolia (volume). Vendor/defense-firm figures (UsableNet, TestParty, EcomBack, Karlin) are directional and flagged ⚑/[M] throughout._
+
+---
+
+## 6. Deep dive (2026-06-24) — feature teardown, differentiation, and what buyers actually pay for
+
+_Real product pages fetched. Fills the gap the first pass missed: feature-level competition, where our white space is, and the willingness-to-pay object + buy trigger._
+
+### Feature-gap matrix (fetched 2026-06-24)
+| Competitor | Hook | Price | Monitoring | VPAT/ACR or styled PDF | White-label | Note |
+|---|---|---|---|---|---|---|
+| **WCAGSafe** | "60s scan → **legal-risk score** + fixes + **dated ADA cert** + monthly monitor", anti-overlay, free-to-start | free + paid | ✅ monthly | ✅ "ADA Audit Certificate" + PDF | — | **Near-verbatim clone of our wedge; ships the 2 things we lack** |
+| **RatedWithAI** | Anti-overlay, real-browser (Playwright), continuous score | **$29/mo flat, per-site** | ✅ scheduled | per-element report | — | **Undercuts a $49/mo solo Pro; flat per-site = our exact pricing principle** |
+| **access-lens.com** | EU EAA conformance PDF (EN 301 549 + Annex I) | **€39/YEAR** | — | ✅ styled PDF + Excel, white-label | ✅ | EU-EAA only (no US/ADA) — the clone, cheaper |
+| **AccessibilityChecker.org** | scan→AI fix→**Compliance Vault**→LiveStatement→VPAT | $69–359/mo | ✅ weekly | ✅ annual VPAT + cert | ✅ + **20% rev-share** | Most feature-complete; **issues *certificates* + its "SmartFix" injects JS at runtime = a covert overlay** |
+| **AccessiScan** | US municipal procurement VPAT + auto-fix PRs | $19–299/mo | ✅ | ✅ **white-label VPAT 2.5 @ $49** | ✅ | Self-signed TLS cert = thin solo op |
+| **GetWCAG** | Monitoring platform; cadence = the price ladder | $19–999/mo | ✅ daily→quarterly | ✅ ACR (VPAT 2.5) + PDF | — | The template for the monitoring product we lack |
+| **A11y Pulse** | Dev-native monitor, Slack/Teams alerts, **MCP + API** | $19–159/mo | ✅ daily | PDF only | — | Closest to us in *philosophy* (honest, anti-overlay, has an MCP) |
+| **TestParty** | AI **source-code fixes via GitHub PRs** + human audits | $1–5k/mo | ✅ | (fixes, not docs) | ✅ **reseller program** | **Most dangerous in the agency lane we're prioritizing** |
+| **Equally AI** | AI **overlay widget** + Flowy + services | **$38/mo (overlay)** | ✅ | ✅ (services) | top tier | ⚠️ It's an OVERLAY — a different category. _Correction: POSITIONING.md's "$45/mo & broader" is wrong; it's a $38/mo widget._ |
+| **Silktide** | Whole-site QA suite (a11y = 1 module) | quote, 12-mo | ✅ | dashboards | — | WCAG-quality-centric, not lawsuit-centric |
+| **Pope Tech** | WAVE-engine team platform + manual + training | free + $25–400 | ✅ | — | — | Sells to a11y *teams/programs*, little overlap |
+| **Deque axe DevTools/Monitor** | The incumbent; **IGT → ~80% coverage** | ~$1.2–2.5k/seat/yr | ✅ 25k+ pp | BI reports | — | **We're built ON their axe-core — downstream, not a peer** |
+
+### What we LACK that is table-stakes (recurring across ~all of them)
+1. **Scheduled monitoring + alerts** — *every* serious competitor has it; two positioning-clones (WCAGSafe, RatedWithAI) lead with it. Our diff/ledger only runs on a manual re-scan. **#1 gap.**
+2. **A portable, formal evidence document** — VPAT/ACR (GetWCAG, AccessiScan, Equally, AccessibilityChecker) or styled PDF (everyone). We emit Markdown + a localStorage hash. **Critical for the agency/procurement buyer.**
+3. **Accounts / billing / server-side persistence** — localStorage evidence can't be shared, can't survive a cleared browser, isn't credible as "proof we hand a regulator." For an *evidence* product this is near-mission-critical.
+4. (White-label/agency program — TestParty, AccessibilityChecker, AccessiScan all have one; we prioritize agencies but have none.)
+
+### What we UNIQUELY do (the only defensible ground)
+1. **Deterministic per-finding mapping to 16 legal frameworks, non-LLM, + an honest-language guard that refuses to overclaim.** Nobody else gives a 16-jurisdiction, hallucination-free legal-risk breakdown on one free scan. Competitors either list a few frameworks, deliberately avoid "which law" (Deque/Silktide), or issue **fake certificates / auto-VPATs** (the exact FTC-fined overclaim). **"The tool that won't let you lie" is genuinely unoccupied post-accessiBe-$1M.**
+2. **SHA-256 tamper-evident, dated evidence record + regression-diff ledger + a public CLI that benchmarks vs axe/Pa11y/Lighthouse.** No competitor ships a cryptographically verifiable artifact; WCAGSafe's "certificate" and Deque's "trend" aren't signed.
+
+**Honest bottom line:** on the **scan + standards coverage we are undifferentiated** (commodity; a €39/yr clone exists). Our **only** defensible ground is the **trust/evidence layer** — but that moat is undermined while we lack monitoring + a portable document + accounts, because rivals "check the evidence box" with a VPAT + vault before a buyer ever appreciates our hashing. **Most dangerous: WCAGSafe** (clone that ships what we lack). Runners-up: **RatedWithAI** (pricing/distribution), **TestParty** (agency lane).
+
+### What buyers PAY FOR — ranked by real willingness-to-pay
+Through-line: **buyers pay for documented outcomes that satisfy a third party (a procurement officer, a court, a regulator). They do NOT pay for the scan.**
+1. **VPAT / ACR document** [H] — cleanest money-maker; a deal-*blocker*, not a nicety. À la carte $350–950 (Accessible.org); audit-backed $1–5k.
+2. **Manual human audit** [H] — the premium anchor: SMB $1.25–7k, mid $7–25k.
+3. **Lawyer-ready dated evidence / immutable audit trail** [M-H] — the EAA-era money object, **closest to our thesis**. UserWay prices the *documentation* layer at **$18k/yr (Legal) / $29k/yr (Conformance)** — 30–60× the base widget. Young, opaque, sold top-down to legal.
+4. **Remediation (someone fixes the code)** [M-H] — largest spend, but lumpy consulting, not a clean SKU.
+5. **Monitoring** [M] — recurring tier, rarely the hero.
+6. Statement [M, tiny]. 7. **Raw scanning [EXPECTED FREE, ~$0 WTP].** 8. **"Compliance badge" [NEGATIVE — FTC liability].**
+
+**The structural price gap:** cheap software ($19–149/mo) → **GAP ($1–5k)** → audit+VPAT ($1.25–25k) → enterprise ($15–150k/yr). **What bridges the gap is the document/evidence, not more scanning.**
+
+### The IMPULSE / buy trigger — and the hard truth
+Only **two** triggers reliably open a wallet *immediately*, and both are "a named, dated threat to YOU" — not a news-calendar deadline:
+1. **A demand letter / lawsuit just arrived** [H] — but the first call is a **lawyer**, then audit/remediation; tooling is bought *inside the legal-defense bundle*, not standalone.
+2. **A VPAT demanded in a live deal/RFP with a deadline** [H] — revenue is blocked; buyer = founder/RevOps.
+
+Slower/weaker: DOJ Title II (budget cycles; deadline slipped to 2027/2028); **EAA "deadline" demonstrably fizzled — zero fines** (the only converting EAA variant is the German *Abmahnung* warning letter, which is a demand-letter trigger in EAA costume); board mandate = a budget *multiplier*, not a trigger; PR/brand risk = weakest (and the community is hostile to fear-marketing).
+
+**Is it an impulse buy? NO — it's a considered, multi-stakeholder B2B purchase.** [H] Instant self-serve checkout in this market exists ONLY for cheap overlay widgets (≤~$124/mo) and free dev tiers; the moment a product touches audits/VPATs/"compliance," *every* vendor switches to "contact sales / book a demo." The realistic motion = **founder-led hand-selling into the web-agency channel, fronted by a free-scanner PLG wedge, with the evidence/VPAT outcome closed by a human** (the Vanta/Drata SOC-2 pattern). Treat the demand-letter moment as demand-gen (SEO/content), not a checkout.
+
+**Free→paid conversion:** give the on-screen finding free; **gate the export/the take-away document** (so it reads "take the proof to your boss," not "we hid the answer") and the **multi-page crawl** (self-selects real sites). Monitoring is retention, not acquisition. Avoid the $200–500/mo no-man's-land.
+
+### Corrections to internal docs (from the real pages)
+- **Equally AI is a $38/mo OVERLAY widget, not "$45/mo and broader"** — re-anchor the per-site monitoring comps to RatedWithAI **$29/mo flat** and WCAGSafe (free-to-start). Both reconfirm a $49/mo solo Pro is hard to justify.
+- The **"no monitoring" gap is not a nicety** — it's the one feature 100% of serious rivals have and two clones lead with.
