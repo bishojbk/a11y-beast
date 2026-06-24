@@ -50,6 +50,54 @@ The post is a genuine "here's what surprised me learning web-accessibility law" 
 - **r/SideProject / r/indiehackers** — same learnings, but add a line of build-journey ("learning this is what made me build it") and end with "what would you have built — monitoring? a VPAT export?"
 - **r/webdev / r/web_design** (only where rules allow) — trim to 2 learnings most relevant to devs (the "16 laws, not 1" point + "overlays don't work / ~30–40% ceiling"), then the tool line. Or just drop these learnings as a helpful *comment* in an existing thread.
 
+## Audience-specific posts (different framing per group)
+The learning-journey post above is for **practitioners + makers** (r/accessibility, r/SideProject, r/webdev). The three groups below care about different things, so give each its own post. Same guardrails apply: read each sub's rules, post from a real account, disclose it's yours, never claim "compliant," lead with value not the link.
+
+### Group 1 — Shopify merchants (r/shopify, r/ecommerce) — the "internet for everyone" story
+Merchants respond to mission + the practical reality of their store, NOT legalese or fear. Open with the heart, land it on something useful.
+
+> **Title:** I've always loved the idea of an "internet for everyone" — so I dug into why so many Shopify stores lock people out, and built a free way to check yours.
+>
+> I've always been fascinated by the original promise of the web: an **internet for everyone**. The idea that anyone — someone who can't see the screen, can't use a mouse, navigates by keyboard or screen reader — should still be able to shop, read, and get around online.
+>
+> The more I looked, the more I realized how far most sites are from that, including a lot of Shopify stores. It's not malice — themes and apps quietly add things that shut people out: product images with no alt text, buttons a screen reader can't name, text too low-contrast to read, checkout fields with no labels.
+>
+> Two things I learned that might matter to you as a merchant:
+> - This is also *why* stores get those scary "ADA demand letters" — inaccessible e-commerce is the #1 target, and the letters usually ask for a few thousand to settle.
+> - The "accessibility widget/overlay" apps don't fix it — sites running them still get sued, and the FTC fined one **$1M** for claiming otherwise. The real fixes live in your theme.
+>
+> So I built a free tool that scans your store, shows what's blocking people (and which laws each issue touches), and gives the actual fix. No signup — and full disclosure, it's mine. It won't tell you you're "compliant" (no automated tool honestly can — they catch ~30–40%), but it's a real starting point: [LIVE URL]
+>
+> Mostly I wanted to share the "internet for everyone" framing, because it turned accessibility from a "legal chore" into "don't lock people out of my shop" for me. Happy to answer questions about making a Shopify store more accessible.
+
+### Group 2 — Wix / Squarespace / small-biz owners (r/squarespace, r/wix, r/smallbusiness)
+Non-technical owners. Lead with "you can check this yourself, no dev skills," be honest that some fixes are editor-level and some are platform-limited.
+
+> **Title:** Free, no-signup way to check if your Wix/Squarespace site is usable by people with disabilities — and what you can actually fix yourself.
+>
+> Small-business owner-friendly heads up: a lot of Wix/Squarespace sites accidentally lock out visitors who use a screen reader, keyboard, or need higher contrast — and that's also what's behind the "ADA compliance" demand letters going around (they mostly hit small sites, and usually ask for a few thousand to settle).
+>
+> A couple of honest things: those "accessibility widget" add-ons don't actually fix it (sites with them still get sued), and no automated tool can truthfully promise you're "compliant" — they catch maybe 30–40% of issues. But a lot of the common problems *are* things you can fix yourself in the editor: adding image alt text, fixing low-contrast text, giving links real descriptions.
+>
+> I built a free tool that checks your site in ~a minute and shows the issues + how to fix them (and which ones are editor-level vs. need more). No signup, full disclosure it's mine: [LIVE URL]. Some platform-level things you can't fully fix on Wix/Squarespace — I'm honest about that too. Happy to help if anyone wants to post their site.
+
+### Group 3 — Agencies / freelancers (r/web_design, r/Wordpress, r/freelance)
+Peer-to-peer + professional. This doubles as warming for the cold-outreach track — anyone who engages goes in the outreach tracker.
+
+> **Title:** What I learned about the accessibility laws your *clients* are actually exposed to — and a free tool that maps it (for fellow agencies/freelancers).
+>
+> If you build or maintain client sites, the accessibility-lawsuit thing is worth 2 minutes: ~5,000+ US web-accessibility suits were filed in 2025, ~70% against e-commerce, mostly companies under $25M — i.e. exactly the SMB clients a lot of us serve. A few things that surprised me digging in:
+> - "WCAG" maps to ~16 different laws (ADA, California Unruh at $4k/violation, EAA/EN 301 549, Section 508, AODA…) — clients ask "am I compliant?" and the honest answer depends on which one.
+> - Overlay widgets don't protect clients (the FTC fined accessiBe $1M; sites with overlays still get sued). Recommending one is a liability.
+> - Automated testing only covers ~30–40% — so a real audit is still a real, billable service.
+>
+> I built a free scanner that maps each finding to the specific laws, and produces a **dated evidence record** you could white-label into your audits/retainers (it's honest — "documented effort," never "certified compliant"). Full disclosure it's mine, no signup: [LIVE URL]. Genuinely after feedback from people who do client work — is the legal mapping useful, or overkill?
+
+### Where each goes + the caution
+- **r/shopify, r/ecommerce, r/squarespace, r/wix** are **strict** and merchant/owner crowds are wary of "a dev selling something." The mission/utility framing + full disclosure + leading with useful info is what makes these postable — but check each sidebar; some only allow promo on specific days or in specific threads.
+- **r/smallbusiness** — usually promo-day only; otherwise help in threads.
+- If a sub disallows a post, use the **comment template** below in existing "is my site ADA compliant / got a demand letter" threads instead.
+
 ## Comment template (for helping in threads — r/shopify, r/smallbusiness, etc.)
 Use when someone asks "is my site ADA compliant?" / "got a demand letter, help":
 > [Answer their actual question first, honestly:] Automated tools only catch ~30–40% of issues, so no scan can promise "compliant." Demand letters usually settle around $5–20k and the first move is to talk to a lawyer, not to rush-change the site. And heads up — accessibility *overlay* widgets don't stop these suits (sites running them still get sued), so avoid those.
