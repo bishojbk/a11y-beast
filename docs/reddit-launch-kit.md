@@ -26,22 +26,29 @@ Don't let it substitute for the asks; goodwill doesn't pay the hosting bill._
 | **r/webdev**, **r/web_design** | Self-promo is "rare cases only" | Prefer their showcase/Saturday threads, or just *help* in relevant threads. A standalone tool post ONLY if the rules allow it that week. |
 | **r/shopify, r/smallbusiness, r/ecommerce** | Where the *at-risk buyers* are — but DON'T launch here | Don't post a "I made a scanner." Instead *answer* genuine "is my store ADA compliant / I got a demand letter" threads helpfully, and mention the tool once. (See comment template.) |
 
-## The flagship post (r/accessibility — copy, then adapt)
-> **Title:** I built a free accessibility scanner that maps each issue to the actual laws it implicates — and refuses to say you're "compliant." Would love this community's critique.
->
-> Hey r/accessibility — I'm an indie dev. I built a free web accessibility scanner, honestly because I got tired of overlay vendors selling "instant compliance" snake oil and wanted to make something that doesn't lie. Sharing it for your feedback — **full disclosure, it's mine, there's no signup and nothing to buy to use it.**
->
-> **What it does:** renders the page in a real browser, runs axe-core + ~20 custom checks (~116 total), and — the part I actually care about — maps each finding to the specific frameworks it implicates (ADA Title III, California Unruh, EAA / EN 301 549, Section 508, AODA, and more), with the code to fix each one.
->
-> **What it deliberately does NOT do:** it's not an overlay, it injects nothing into your site, and it will never tell you you're "compliant." It states plainly that automated testing only catches ~30–40% of WCAG and the rest needs manual + assistive-tech review.
->
-> I'd genuinely value this community's critique — especially **where the legal mapping is too aggressive, or where the honesty framing still falls short.** Link: [LIVE URL]
->
-> _(Be ready: this crowd may also critique the pricing/site. That's useful — note it, don't get defensive.)_
+## The flagship post — lead with what you LEARNED, not the tool
+The post is a genuine "here's what surprised me learning web-accessibility law" share. The lesson is the value; the tool is a footnote at the end. This is what survives strict subs (it's content, not an ad), wins the practitioner crowd, and is true to your actual journey. **Keep it first-person and humble — you're sharing what you learned and inviting correction, not lecturing.**
 
-**r/SideProject / r/indiehackers adaptation:** same core, but open with the maker story ("kept seeing overlays get sites sued, so I built the honest opposite") and end with "what would you build next — monitoring, a VPAT export, something else?"
+> **Title:** I spent the last few months learning how web-accessibility *law* actually works. A few things genuinely surprised me — sharing in case it helps (and please correct me).
+>
+> I'm an indie dev, and I went down the accessibility rabbit hole — not just WCAG, but the actual laws behind it. Some of what I found wasn't what I expected:
+>
+> **1. "WCAG" isn't one law — it's the basis for ~16 of them.** ADA Title III (US), California's Unruh Act ($4,000 per violation), the EU's EAA / EN 301 549, Section 508, Ontario's AODA… they mostly point back to WCAG, but with different scopes, deadlines, and teeth. Most scanners tell you that you fail "WCAG 1.1.1" — almost none tell you *which laws* that actually exposes you under.
+>
+> **2. US enforcement is private lawsuits, not government fines.** ~5,000+ web-accessibility suits were filed in the US in 2025, ~70% against e-commerce, mostly companies under $25M revenue. The "government will fine you" angle is really an EU/EAA and Section-508 thing — not ADA.
+>
+> **3. Overlay widgets don't work — and the FTC now agrees.** Over 1,000 sites running an accessibility "overlay" were still sued; the FTC fined accessiBe $1M in 2025 for claiming its AI made sites compliant. Automated testing only catches ~30–40% of WCAG anyway, so anything promising "instant compliance" is selling snake oil.
+>
+> **4. The EAA "deadline" was quieter than the hype.** It's been in force since June 2025, but ~a year on there are basically no fines yet — enforcement so far is "guidance first."
+>
+> I ended up building a free scanner along the way that maps each finding to the specific laws it implicates — and is upfront that it *can't* make you "compliant" (it's not an overlay; it just shows you the issues + the code to fix them). Full disclosure, it's mine, no signup: [LIVE URL]. But honestly I mostly wanted to share the learnings — **would love corrections from people who know this space better than I do.**
 
-**r/webdev adaptation (only where allowed):** shorter, dev-utility framing — "free, real-browser, CLI + GitHub Action, maps findings to the laws, not an overlay — feedback welcome."
+**Why this works:** the first 90% is genuinely useful, citable content with zero ask; the tool is one honest line at the end; and "please correct me" invites the practitioners' expertise instead of lecturing them. It cannot read as a "bold ad."
+
+**Sub adaptations (keep the learning spine):**
+- **r/accessibility** — exactly as above; lean hardest into humility + "correct me." This crowd knows this cold, so invite their expertise; expect (and welcome) hard critique, including of the site/pricing.
+- **r/SideProject / r/indiehackers** — same learnings, but add a line of build-journey ("learning this is what made me build it") and end with "what would you have built — monitoring? a VPAT export?"
+- **r/webdev / r/web_design** (only where rules allow) — trim to 2 learnings most relevant to devs (the "16 laws, not 1" point + "overlays don't work / ~30–40% ceiling"), then the tool line. Or just drop these learnings as a helpful *comment* in an existing thread.
 
 ## Comment template (for helping in threads — r/shopify, r/smallbusiness, etc.)
 Use when someone asks "is my site ADA compliant?" / "got a demand letter, help":
