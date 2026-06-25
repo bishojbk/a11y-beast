@@ -1,9 +1,18 @@
 # AccessLens / A11y Beast — Session Handoff
 
-_Last updated: 2026-06-23 (continuation session — QA hardening + viability/validation decision). This is a working handoff for the next Claude session. **Start with the "🎯 Strategic decision" section below — the call is: validate with real buyers before building more.** For deep product/architecture history, see the user's auto-memory notes._
+_Last updated: 2026-06-25. Working handoff for the next Claude session. **Read "📍 Where we are right now" immediately below — short version: all prep/build is done and shipped; the only remaining move is human (talk to ~10 agencies), and the full toolkit to do it is in `docs/`.** Deep history is in the dated sections further down + the user's auto-memory notes._
 
 ## What this is
 A11y Beast (repo: `a11y-beast`, product dir `~/Personal/accesslens`) — a Next.js 16 + TypeScript web **accessibility legal-risk scanner**. Puppeteer + axe-core renders a page, runs 110+ checks, maps each WCAG violation to **16 legal frameworks** (ADA, EAA, Section 508, …) with an honest "automated-coverage" score. Positioning: **legal intelligence + anti-overlay**, NOT "another WCAG checker" and never "guaranteed compliance" (the FTC fined an overlay vendor $1M for that claim — stay clear of it).
+
+## 📍 Where we are right now (2026-06-25 — READ THIS FIRST)
+**Phase: VALIDATION. Status: all prep/build done and shipped; the next move is human and has NOT started.**
+- **Product is live, honest, and abuse-safe** at https://accesslens-green.vercel.app (everything is committed + pushed to `main`). But what exists is the **funnel (free scan) + the differentiated engine** (16-framework deterministic mapping + honesty guard + hashed evidence ledger) — **NOT the paid artifact.** The evidence record is **localStorage v0**; there is **no VPAT export, no monitoring, no accounts/billing, no white-label.**
+- **Strategy is settled** (twice-confirmed by research): the scan is a commodity (free everywhere; a €39/yr near-clone, `access-lens.com`, exists). Our only defensible ground is the **honest evidence/proof layer**, sold as a **white-label deliverable to small US web/design AGENCIES** (they resell; anchor price to the $1.25k–25k audit, never to "a scanner"). It is a **considered, human-closed B2B purchase — NOT a self-serve impulse buy.**
+- **Demand is UNVALIDATED — zero real buyers contacted. This is the bottleneck.** No more building substitutes for it.
+- **THE ONE NEXT MOVE (the user's to do, by hand):** run the 2-week validation sprint → pick 5 agencies from `docs/target-list-starter.md`, scan one of their client sites, fill `docs/templates/evidence-record-template.html` → PDF, find the founder on LinkedIn, send the message in `docs/outreach-kit.md §4`. **Gate: ≥2–3 "yes, I'd pay to white-label this" → then build the paid artifact (portable VPAT/PDF doc → accounts → monitoring, in that order). <2 → pivot or stop.**
+- **ON HOLD until a buyer says yes:** the name/trademark decision, the pricing page, the "AI-generated look" redesign, public launch (HN/PH/Reddit), and all P1/P2 bugs.
+- **The full playbook + everything we learned lives in `docs/`** — see the index under "06-24/25 session" below.
 
 ## Current state (deployed)
 - **Live on Vercel**, production deploys from the **`main`** branch (Git integration). Vercel project `accesslens` (`prj_8EAK9wGKZpyKvozHFbnpTR8EhOBp`), team `team_rAyQiYDsI6noVmDIUbLIXJ3a`. URL: https://accesslens-green.vercel.app — **no custom domain yet** (the 3 domains on the account, ipllive.*/webwisestudio.agency, are unrelated).
@@ -54,6 +63,24 @@ The harder finding this session, and the call that should govern the next one:
 - **Pricing reality** — the app's **$49/mo solo Pro is NOT justified** (Equally AI is $45/mo and broader; access-lens €39/yr; axe/Pa11y/WAVE free). **Agency $249 IS defensible** (vs $1.25k–25k manual audits; white-label competitors $399–999). The money is the **agency/white-label deliverable anchored to audit cost** — not a monthly solo sub. See the updated `accesslens-pricing-research-2026.md` memory.
 - **THE DECISION — stop building/polishing; run a 2-week validation sprint.** Hand-sell the dated evidence record to **~10 US web/design agencies** (they have recurring need and *resell*). Lead with a **free, hand-made evidence record**; probe willingness-to-pay **anchored to the $1.25k–25k audit, never to "a scanner."** **Kill criterion: <2–3 "yes I'd pay $X" / LOI → stop.** The name, the (acknowledged) AI-generated look, the pricing page, and remaining P1/P2 bugs are **ON HOLD** until a real buyer says yes. The product is already good enough to test.
 
+## Done in the 06-24/25 session — deep validation research + the execution toolkit
+Everything committed + pushed to `main`. Theme: prove (or disprove) the wedge on paper, fix the last honesty gap, and build the kit to validate with real buyers.
+1. **Deep market research** (`docs/market-research.md`) — a 5-stream primary-source pass + a feature-level teardown of 12 real competitors. Verdicts:
+   - Legal pain is **real but bounded** (~5,100 US web suits in 2025, ~70% e-commerce, ~$10–30k nuisance cost). **US enforcement = private litigation, NOT fines;** EAA fines are dormant (zero a year in); AODA's C$100k/day penalty has never been used; Section 508 is a procurement gate.
+   - **What buyers pay for (ranked):** VPAT/ACR document → manual audit → lawyer-ready evidence trail → remediation → monitoring. **The scan is expected FREE; a "compliance badge" is NEGATIVE value (FTC).** What bridges the $1–5k price gap is the *document/evidence*, not more scanning.
+   - **Trigger that opens a wallet:** a named/dated threat to the buyer — a demand letter, or a VPAT-blocked RFP/deal. The EAA "deadline" fizzled.
+   - **It's a considered, multi-stakeholder B2B purchase — not an impulse buy.** Self-serve checkout in this market is only for cheap overlay widgets. Right motion = founder-led, human-closed, into the agency channel, with the free scan as lead-gen (the Vanta/Drata SOC-2 pattern).
+   - **Feature gaps vs. the field:** we LACK (1) scheduled monitoring + alerts, (2) a portable VPAT/styled-PDF document, (3) accounts/billing — all near-universal among competitors. We UNIQUELY have deterministic 16-framework **non-LLM** legal mapping + an honest-language guard, and a SHA-256 evidence ledger + CLI. **Most dangerous competitor: WCAGSafe** (positioning clone already shipping monitoring + a dated certificate). NB: Equally AI is a **$38/mo overlay**, not "$45 & broader" (earlier doc error, corrected).
+2. **Honest inventory — "what people pay for" vs. "what we've built":** we built the funnel + engine, but the paid objects are missing or prototype — VPAT ❌, monitoring ❌, durable/server evidence ❌ (localStorage only), AI fixes = suggestions-only and gated OFF, accessibility statement ✅ (but low-value). Verified in code.
+3. **VPAT overclaim fixed** — pricing said "Expert manual review + VPAT" (Enterprise); we can deliver neither, so → **"Manual audit + VPAT via certified partners"** (honest: the formal VPAT comes from a human partner, not our scanner).
+4. **The validation toolkit — the operator/next session works from these `docs/`:**
+   - **`market-research.md`** — the evidence + verdicts above.
+   - **`go-to-market-runbook.md`** — the two-phase model (validate before launch), the sprint, the funnel math.
+   - **`outreach-kit.md`** — ICP, the sourcing recipe, per-prospect workflow, the cold-outreach **messages (§4)**, cadence, tracker, the gate.
+   - **`target-list-starter.md`** — **16 verified small US agencies** to start (portfolio hooks + founder hints; confirm email/founder on LinkedIn — none invented).
+   - **`reddit-launch-kit.md`** — the *parallel* awareness track; 4 audience posts (the learning-journey one for r/accessibility; the "internet for everyone" Shopify one; Wix/Squarespace; agencies) + anti-ban rules. Feedback/credibility, **NOT** the validation gate.
+   - **`templates/evidence-record-template.html`** — the **white-label deliverable** you hand agencies (print-to-PDF, honest framing) — the artifact whose willingness-to-pay you're testing.
+
 ## Pricing decisions (context for future edits)
 - Current numbers: Free $0 · Pro **$49** · Agency **$249** · Enterprise custom. ⚠️ **Superseded — see the 🎯 Strategic decision above:** the 06-23 competitor research found **$49/mo solo Pro is not justified** (Equally AI $45/mo broader; access-lens €39/yr; free scanners everywhere). Agency $249 holds. Reprice around the agency/deliverable anchor after validation.
 - **Load-bearing call: never gate the diagnosis.** The full 16-framework breakdown stays free — it's the marketing hook and the "one scan, sixteen verdicts" tagline. Gate the *outcome* (proof/export/scale/CI), not the framework count. See POSITIONING.md + tier-gating-spec.md.
@@ -70,7 +97,7 @@ The harder finding this session, and the call that should govern the next one:
 - **Styled PDF** — legal report export is **Markdown** today, not styled PDF.
 
 ## Open action items for the user
-- **🎯 #1 — Run the validation sprint (the only thing that matters next).** ~10 US web/design agencies, free hand-made evidence record, ask "would you white-label this and charge it into your audits, at what price?" 2 weeks, kill at <2–3 yes. Everything below is ON HOLD until this lands.
+- **🎯 #1 — Run the validation sprint (the only thing that matters next). The full kit is READY in `docs/`** (`outreach-kit.md` + `target-list-starter.md` + `templates/evidence-record-template.html`). Pick **5** agencies from the starter list, scan a client site, make the PDF, find the founder on LinkedIn, send. ~10 conversations over 2 weeks; ask "would you white-label this and charge it into your audits, at what price?"; **kill at <2–3 yes.** Everything below is ON HOLD until this lands.
 - **DO NOT launch yet** — `docs/launch-posts.md` is written and FTC-safe, but holding. Spending the one public launch (HN/PH/Reddit) on an unvalidated, contested wedge wastes it. Launch *after* validation succeeds + the pricing-page/AI-look fixes.
 - **Name + trademark** — "AccessLens" is out (access-lens.com collision). If proceeding with "A11y Beast": grab `a11ybeast.com` (available) and get **USPTO clearance** vs the existing "A11Y" mark (Reg. 4824150, Bureau of Internet Accessibility) before any brand spend.
 - **Reprice before launch** — $49/mo solo Pro is above the field; re-model around the agency/deliverable anchor (validation will inform the number).
