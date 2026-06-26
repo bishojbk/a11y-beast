@@ -95,9 +95,9 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
       role="banner"
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group" onClick={() => setMobileOpen(false)}>
+        <Link href="/" className="flex items-center gap-2.5 group" onClick={() => setMobileOpen(false)}>
           <LogoIcon size={26} />
-          <span className="mono text-foreground" style={{ fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          <span className="text-foreground" style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, letterSpacing: "-0.01em" }}>
             A11y Beast
           </span>
         </Link>
@@ -120,6 +120,16 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
           <div className="hidden md:block">
             <ThemeToggle />
           </div>
+
+          {showNav && (
+            <Link
+              href="/#scan"
+              className="hidden md:inline-flex items-center rounded-md bg-accent px-4 py-2 text-sm font-semibold text-[#F4F6F2] hover:bg-accent-hover transition-colors"
+              style={{ textDecoration: "none" }}
+            >
+              Scan a page
+            </Link>
+          )}
 
           {showNav && (
             <button
@@ -203,9 +213,9 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
                   <Link
                     href="/#scan"
                     onClick={() => setMobileOpen(false)}
-                    className="scan-btn flex items-center justify-center gap-2 w-full h-12 rounded-xl text-sm font-semibold"
+                    className="flex items-center justify-center gap-2 w-full h-12 rounded-lg text-sm font-semibold bg-accent text-[#F4F6F2] hover:bg-accent-hover transition-colors"
                   >
-                    Scan Your Site
+                    Scan a page
                   </Link>
                 </motion.div>
               </div>

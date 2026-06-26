@@ -25,18 +25,21 @@ export default function Footer() {
       >
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-            <LogoIcon size={22} />
-            <span
-              className="mono"
-              style={{ letterSpacing: "0.1em", fontSize: 13, color: "var(--text-primary)" }}
-            >
-              A11Y&nbsp;·&nbsp;BEAST
+            <LogoIcon size={24} />
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, letterSpacing: "-0.01em", color: "var(--text-primary)" }}>
+              A11y Beast
             </span>
           </div>
-          <p style={{ color: "var(--text-secondary)", fontSize: 13, maxWidth: "38ch", lineHeight: 1.55 }}>
-            Open-source. Scan data stored only in your browser session. Not legal advice — automated tools catch
-            30–40% of WCAG issues. For the rest, pair us with an audit.
+          <p style={{ color: "var(--text-secondary)", fontSize: 13.5, maxWidth: "38ch", lineHeight: 1.6 }}>
+            An honest accessibility scanner that maps every issue to the laws it touches — and writes down what you
+            tested. Not legal advice; automation catches ~30–40% of WCAG, so pair us with a human review for the rest.
           </p>
+          <span
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 16, fontSize: 12.5, color: "var(--pass)", fontWeight: 600 }}
+          >
+            <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--pass)" }} />
+            This site passes its own scan · 0 violations
+          </span>
         </div>
 
         <div>
@@ -218,7 +221,7 @@ export default function Footer() {
         <span>NOT LEGAL ADVICE · USE WITH AN AUDIT</span>
       </div>
 
-      <div style={{ textAlign: "center", padding: "16px 0 0", fontSize: 13, opacity: 0.6 }}>
+      <div style={{ textAlign: "center", padding: "16px 0 0", fontSize: 13, color: "var(--text-tertiary)" }}>
         Made by <a href="https://github.com/bishojbk" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>EJR</a>
       </div>
     </footer>
