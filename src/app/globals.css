@@ -2401,7 +2401,7 @@ details[open] > summary .faq-icon { transform: rotate(45deg); }
   margin: 0 0 22px;
   text-wrap: balance;
 }
-.doc-title .ember { color: var(--accent-text); }
+.doc-title .ember { color: inherit; font-style: italic; }
 .doc-lead {
   font-size: clamp(17px, 2vw, 19px);
   line-height: 1.6;

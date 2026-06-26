@@ -1442,23 +1442,16 @@ function Risk({
     );
   }
 
-  // Rough exposure range — heuristic only
-  const lo = breakingLaws * 5_000;
-  const hi = breakingLaws * Math.max(Math.round((100 - pct) * 1_500), 15_000);
-  const fmt = (n: number) =>
-    n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `$${Math.round(n / 1_000)}K` : `$${n}`;
-
   const extra = Math.max(0, worst.length - 6);
 
   return (
     <div className="risk-col">
       <div className="risk-lead">
-        You&rsquo;re likely breaking <span className="hot">{breakingLaws} law{breakingLaws === 1 ? "" : "s"}</span>
-        {" "}and exposed to <span className="hot">{fmt(lo)}–{fmt(hi)}</span> in potential damages.
+        You&rsquo;re likely exposed under <span className="hot">{breakingLaws} of 16 framework{breakingLaws === 1 ? "" : "s"}</span> — here&rsquo;s what to fix first.
       </div>
       <p className="risk-sub">
-        Based on your violations, jurisdictional exposure, and per-framework severity multipliers. Figures are
-        directional, not legal advice — use them to prioritise fixes, not to set reserves.
+        Ranked by your violations, jurisdictional scope, and per-framework severity, so you can resolve the riskiest
+        first. Directional, not legal advice — and automation only sees part of the picture.
       </p>
       <div className="risk-tags">
         {worst.slice(0, 6).map((c) => (
