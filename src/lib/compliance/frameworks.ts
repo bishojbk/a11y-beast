@@ -86,9 +86,9 @@ export const FRAMEWORKS: FrameworkWithTags[] = [
     wcagBasis: "WCAG 2.1 AA",
     appliesTo: "both",
     enforcementDate: "2025-06-28",
-    penalties: "Member-state dependent fines (vary by country). Enforced since June 28, 2025.",
+    penalties: "Member-state dependent fines (vary by country). In force since 28 June 2025, but enforcement has been minimal in the first year.",
     url: "https://ec.europa.eu/social/main.jsp?catId=1202",
-    deadlineAlert: "EAA is now in effect since June 28, 2025. Non-compliance may result in penalties.",
+    deadlineAlert: "EAA applies since 28 June 2025; member-state enforcement has so far been limited.",
     acceptedTags: WCAG_21,
     bonusPenalties: { missingA11yStatement: 8, severityMultiplier: 1.1 }, // A11y statement is LEGALLY REQUIRED
   },
@@ -101,7 +101,7 @@ export const FRAMEWORKS: FrameworkWithTags[] = [
     appliesTo: "both",
     penalties: "Harmonised standard for EAA/WAD compliance",
     url: "https://www.etsi.org/deliver/etsi_en/301500_301599/301549/03.02.01_60/en_301549v030201p.pdf",
-    acceptedTags: [...WCAG_21, "EN-301-549"], // Has extra EN-specific rules
+    acceptedTags: WCAG_21, // EN-beyond-WCAG clauses (real-time text, two-way voice, synced media) are NOT machine-checked
     bonusPenalties: { missingA11yStatement: 6, missingLang: 3, severityMultiplier: 1.0 },
   },
   {

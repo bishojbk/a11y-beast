@@ -38,8 +38,10 @@ function EaaBody() {
       <p style={p}>
         The European Accessibility Act (EAA) has applied since <strong>28 June 2025</strong>. If you
         sell to consumers in the EU — e-commerce, banking, e-books, ticketing, transport booking — your
-        digital products and services are expected to meet accessibility requirements, and member
-        states are now enforcing them under their own national laws.
+        digital products and services are expected to meet accessibility requirements, with
+        enforcement left to each member state under its own national law. In practice, first-year
+        enforcement has been limited — but the legal obligation is already live, so build to the
+        standard rather than waiting for a fine.
       </p>
 
       <h2 className="font-display" style={h2}>What standard does the EAA actually require?</h2>

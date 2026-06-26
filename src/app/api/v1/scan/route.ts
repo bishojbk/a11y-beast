@@ -3,6 +3,8 @@ import { puppeteerScan } from "@/lib/fetch/puppeteer-scanner";
 import { processServerResults } from "@/lib/analyzer/process-results";
 import { generateComplianceResults } from "@/lib/compliance/mapper";
 import { getEffort } from "@/lib/analyzer/effort";
+import { getClientIp } from "@/lib/getClientIp";
+import { tryAcquireRenderSlot, releaseRenderSlot } from "@/lib/scan-semaphore";
 
 // Simple in-memory rate limiting (resets on cold start)
 const rateMap = new Map<string, { count: number; resetAt: number }>();
@@ -40,7 +42,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(request);
   const rate = checkRateLimit(ip);
 
   const headers = {
@@ -79,8 +81,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Global in-flight render cap: reject past N concurrent Chrome renders so
+    // header rotation (spoofed XFF) or many distinct IPs can't spawn unbounded
+    // browsers and exhaust the instance. Fail fast with 503 + Retry-After.
+    if (!tryAcquireRenderSlot()) {
+      return Response.json(
+        { error: { code: "SERVER_BUSY", message: "Too many scans in progress. Try again shortly." } },
+        { status: 503, headers: { ...headers, "Retry-After": "5" } }
+      );
+    }
+
     // Scan
-    const raw = await puppeteerScan(url);
+    let raw;
+    try {
+      raw = await puppeteerScan(url);
+    } finally {
+      releaseRenderSlot();
+    }
 
     if (!raw.ok) {
       return Response.json(

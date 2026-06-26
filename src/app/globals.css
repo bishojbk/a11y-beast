@@ -196,6 +196,7 @@ body {
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
 }
 
 ::selection { background: var(--accent); color: #fff; }
@@ -257,7 +258,7 @@ h1, h2, h3, h4 {
 }
 
 .scan-btn {
-  background: linear-gradient(135deg, #B4283A, #D6354A, #FF6B7A, #D6354A, #B4283A);
+  background: linear-gradient(135deg, #B4283A, #D6354A, #C92F44, #D6354A, #B4283A);
   background-size: 300% 300%;
   animation: ember-shift 5s ease-in-out infinite;
   color: #FFFFFF;
@@ -617,7 +618,7 @@ h1, h2, h3, h4 {
 }
 .url-field:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-subtle);
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px var(--accent-subtle);
 }
 .url-field .scheme {
   color: var(--text-tertiary);
@@ -644,7 +645,7 @@ h1, h2, h3, h4 {
   cursor: pointer;
   padding: 0 22px;
   border-radius: 5px;
-  background: linear-gradient(180deg, #FF6B7A, #B4283A);
+  background: linear-gradient(180deg, #D6354A, #B4283A);
   color: #fff;
   font-weight: 600;
   font-size: 14px;
@@ -808,6 +809,10 @@ h1, h2, h3, h4 {
 }
 @media (prefers-reduced-motion: reduce) {
   .ticker-track { animation: none; }
+}
+.ticker:hover .ticker-track,
+.ticker:focus-within .ticker-track {
+  animation-play-state: paused;
 }
 .ticker-item {
   display: inline-flex;
@@ -1969,7 +1974,7 @@ h1, h2, h3, h4 {
   border-radius: 5px;
   padding: 18px;
 }
-.err-card h4 {
+.err-card h2 {
   font-family: var(--font-archivo), system-ui, sans-serif;
   font-size: 15px;
   margin-bottom: 6px;
@@ -2077,6 +2082,22 @@ h1, h2, h3, h4 {
   .url-row { flex-direction: column; }
   .scanning-card { padding: 28px 22px; }
   .scanning-title { font-size: 22px; }
+  .footer-inner {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 32px 24px !important;
+  }
+}
+
+@media (max-width: 460px) {
+  .footer-inner {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
+  }
+  .footer-legal {
+    gap: 8px;
+    justify-content: flex-start;
+    text-align: left;
+  }
 }
 
 /* Icon-only modal close button */

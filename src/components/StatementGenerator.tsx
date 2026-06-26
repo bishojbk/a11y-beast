@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { assertHonest } from "@/lib/report/honest-language";
+import { assertHonest, findBannedClaims } from "@/lib/report/honest-language";
 
 // Fields modeled on the W3C/WAI Accessibility Statement Generator structure
 // (w3.org/WAI/planning/statements/). Honest by design: default status is
@@ -191,6 +191,12 @@ export default function StatementGenerator({ prefill }: { prefill?: StatementPre
     return out;
   }, [org, siteName, standard, level, status, email, phone, measures, limitations, assessment, enforcement, toolVersion, isEaa, date]);
 
+  // assertHonest() above only warns the dev console (and no-ops in production),
+  // but the generator pipes free-text user fields into the statement — so we
+  // also run the guard over the FINAL output here, in every environment, and
+  // surface a visible warning. We WARN, never block: the user owns their text.
+  const bannedHits = useMemo(() => findBannedClaims(statement), [statement]);
+
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(statement);
@@ -306,12 +312,27 @@ export default function StatementGenerator({ prefill }: { prefill?: StatementPre
       {/* ── Output ── */}
       <div style={{ position: "sticky", top: 88 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <span style={labelStyle}>Your statement</span>
+          <span id="sg-statement-label" style={labelStyle}>Your statement</span>
           <button type="button" onClick={copy} className="scan-btn" style={{ height: 34, padding: "0 16px", borderRadius: 6, fontSize: 13, fontWeight: 600 }}>
             {copied ? "Copied ✓" : "Copy"}
           </button>
         </div>
-        <pre aria-live="polite" style={{
+        {bannedHits.length > 0 && (
+          <div role="alert" style={{
+            display: "flex", gap: 8, alignItems: "flex-start",
+            background: "var(--severity-critical-bg, rgba(220,38,38,0.08))",
+            border: "1px solid var(--severity-critical, #dc2626)", borderRadius: 8,
+            padding: "10px 12px", marginBottom: 10, fontSize: 12.5, lineHeight: 1.5,
+            color: "var(--severity-critical, #dc2626)",
+          }}>
+            <span aria-hidden="true" style={{ marginTop: 1 }}>⚠</span>
+            <span>
+              {bannedHits.length === 1 ? "This statement contains a phrase" : "This statement contains phrases"} the FTC has treated as
+              an overclaim: {bannedHits.map((h) => `“${h.match}”`).join(", ")}. Consider rewording.
+            </span>
+          </div>
+        )}
+        <pre role="region" aria-labelledby="sg-statement-label" tabIndex={0} style={{
           whiteSpace: "pre-wrap", wordBreak: "break-word", background: "var(--bg-wash, rgba(127,127,127,0.06))",
           border: "1px solid var(--border-faint)", borderRadius: 8, padding: "18px 20px", fontSize: 13,
           lineHeight: 1.6, color: "var(--text-secondary)", fontFamily: "var(--font-mono, monospace)", margin: 0,

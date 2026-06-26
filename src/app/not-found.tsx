@@ -20,7 +20,7 @@ export default function NotFound() {
               <Link href="/#scan" className="btn primary">
                 <ArrowRight size={13} /> Back to scanner
               </Link>
-              <Link href="/results" className="btn">
+              <Link href="/results?sample=1" className="btn">
                 <ExternalLink size={13} /> See a sample report
               </Link>
               <a
@@ -36,10 +36,10 @@ export default function NotFound() {
             <div className="err-row">
               <div className="err-card">
                 <div className="lbl">Scan failed</div>
-                <h4>
+                <h2>
                   <span style={{ width: 8, height: 8, borderRadius: 2, background: "var(--severity-critical)" }} />
                   Can&rsquo;t reach target
-                </h4>
+                </h2>
                 <p>
                   The target returned{" "}
                   <span className="mono">ERR_CONNECTION_REFUSED</span> after three retries. Check the URL, or wait if
@@ -54,10 +54,10 @@ export default function NotFound() {
               </div>
               <div className="err-card">
                 <div className="lbl">Rate limited</div>
-                <h4>
+                <h2>
                   <span style={{ width: 8, height: 8, borderRadius: 2, background: "var(--severity-major)" }} />
                   Slow down — 5 scans / min
-                </h4>
+                </h2>
                 <p>
                   We throttle anonymous scans to keep the service free. Wait a minute, or sign in for unlimited scans.
                 </p>

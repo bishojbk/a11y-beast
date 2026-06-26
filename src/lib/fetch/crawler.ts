@@ -1,5 +1,6 @@
 import { puppeteerScanWithLinks } from "./puppeteer-scanner";
 import { validateUrl } from "./ssrf-guard";
+import { safeFetch } from "./safe-fetch";
 import { processServerResults } from "@/lib/analyzer/process-results";
 import type { ScanResult } from "@/lib/types/scan-result";
 import type { CrawlFailure } from "@/lib/types/site-scan";
@@ -62,14 +63,23 @@ class RobotsRules {
 
   static async fetch(origin: string): Promise<RobotsRules> {
     const rules = new RobotsRules();
+    let dispose: (() => Promise<void>) | null = null;
     try {
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 4000);
-      const res = await fetch(`${origin}/robots.txt`, { signal: ctrl.signal });
+      // Route robots.txt through the SSRF-hardened fetch: it re-validates and
+      // IP-pins every hop, so a robots.txt that 30x-redirects to an internal
+      // host (e.g. metadata endpoint) can't be followed. The seed is validated
+      // before this call, but redirects from robots.txt were previously
+      // unchecked under the default redirect:"follow".
+      const { response, dispose: d } = await safeFetch(`${origin}/robots.txt`, { signal: ctrl.signal });
+      dispose = d;
       clearTimeout(t);
-      if (res.ok) rules.parse(await res.text());
+      if (response.status >= 200 && response.status < 300) rules.parse(await response.text());
     } catch {
       /* no robots.txt or unreachable — allow all */
+    } finally {
+      if (dispose) await dispose();
     }
     return rules;
   }

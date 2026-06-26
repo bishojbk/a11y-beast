@@ -63,6 +63,14 @@ export interface ValidationResult {
   safe: boolean;
   url: URL | null;
   reason?: string;
+  /**
+   * On the SAFE path, the exact IP address(es) that were vetted. For a literal-IP
+   * host this is the host itself; for a hostname it is the set of IPs resolved
+   * during the DNS step below. Callers should pin the actual connection to one of
+   * these so a second resolution can't return a freshly-rebound private IP
+   * (TOCTOU / DNS rebinding). Empty/undefined on the unsafe path.
+   */
+  addresses?: string[];
 }
 
 export async function validateUrl(input: string): Promise<ValidationResult> {
@@ -113,7 +121,14 @@ export async function validateUrl(input: string): Promise<ValidationResult> {
 
   // 8. DNS resolution — catch DNS rebinding and public hostnames that resolve
   // to private IPs. Literal IPs have already been checked above.
-  if (!isLiteralIpv4) {
+  //
+  // We also remember the vetted addresses so callers can pin the connection to
+  // the exact IP we checked, instead of re-resolving (which could rebind to a
+  // private IP between this check and the actual fetch).
+  let vettedAddresses: string[];
+  if (isLiteralIpv4) {
+    vettedAddresses = [hostname];
+  } else {
     try {
       const addresses = await lookup(hostname, { all: true });
       for (const { address } of addresses) {
@@ -125,12 +140,13 @@ export async function validateUrl(input: string): Promise<ValidationResult> {
           };
         }
       }
+      vettedAddresses = addresses.map((a) => a.address);
     } catch {
       return { safe: false, url, reason: `Could not resolve hostname '${hostname}'.` };
     }
   }
 
-  return { safe: true, url };
+  return { safe: true, url, addresses: vettedAddresses };
 }
 
 export const FETCH_LIMITS = {

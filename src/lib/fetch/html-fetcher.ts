@@ -1,4 +1,5 @@
 import { validateUrl, FETCH_LIMITS } from "./ssrf-guard";
+import { safeFetch } from "./safe-fetch";
 
 export interface FetchResult {
   ok: boolean;
@@ -18,24 +19,30 @@ export async function fetchHtml(url: string): Promise<FetchResult> {
     return { ok: false, error: validation.reason ?? "Invalid URL", fetchDurationMs: Date.now() - start };
   }
 
+  let dispose: (() => Promise<void>) | null = null;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_LIMITS.timeoutMs);
 
-    const response = await fetch(validation.url.toString(), {
+    // safeFetch re-validates and IP-pins EVERY hop (initial + each redirect),
+    // following redirects manually under FETCH_LIMITS.maxRedirects. This closes
+    // the SSRF hole where a validated public URL 30x-redirects to an internal
+    // host (e.g. 169.254.169.254 / 127.0.0.1) and its body comes back to us.
+    const fetched = await safeFetch(validation.url.toString(), {
       method: "GET",
       headers: {
         "User-Agent": FETCH_LIMITS.userAgent,
         "Accept": "text/html,application/xhtml+xml,*/*",
         "Accept-Language": "en-US,en;q=0.9",
       },
-      redirect: "follow",
       signal: controller.signal,
     });
+    const { response } = fetched;
+    dispose = fetched.dispose;
 
     clearTimeout(timeout);
 
-    if (!response.ok) {
+    if (response.status < 200 || response.status >= 300) {
       return {
         ok: false,
         statusCode: response.status,
@@ -76,7 +83,9 @@ export async function fetchHtml(url: string): Promise<FetchResult> {
     // Inject <base href> so relative URLs (CSS, JS, images) resolve to the
     // original domain when the HTML is rendered inside an iframe via srcdoc.
     // This is what makes the scanned page actually render properly.
-    const finalUrl = response.url;
+    // Use the validated final URL from safeFetch (response.url is unset under
+    // manual redirect handling).
+    const finalUrl = fetched.finalUrl;
     const baseUrl = new URL(finalUrl);
     const baseHref = `${baseUrl.protocol}//${baseUrl.host}/`;
     const baseTag = `<base href="${baseHref}">`;
@@ -108,10 +117,15 @@ export async function fetchHtml(url: string): Promise<FetchResult> {
       fetchDurationMs: Date.now() - start,
     };
   } catch (err) {
+    const name = err instanceof Error ? err.name : "";
     const message = err instanceof Error ? err.message : "Fetch failed";
-    if (message.includes("abort")) {
+    if (name === "AbortError" || message.toLowerCase().includes("abort")) {
       return { ok: false, error: `Timeout: page took longer than ${FETCH_LIMITS.timeoutMs / 1000}s`, fetchDurationMs: Date.now() - start };
     }
     return { ok: false, error: message, fetchDurationMs: Date.now() - start };
+  } finally {
+    // Release the IP-pinned dispatcher once the body has been consumed (or on
+    // any error/early return above).
+    if (dispose) await dispose();
   }
 }

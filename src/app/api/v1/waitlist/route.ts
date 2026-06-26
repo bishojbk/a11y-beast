@@ -1,4 +1,5 @@
 import { type NextRequest } from "next/server";
+import { getClientIp } from "@/lib/getClientIp";
 
 // Light in-memory rate limit (resets on cold start) — abuse guard.
 const rateMap = new Map<string, { count: number; resetAt: number }>();
@@ -20,7 +21,7 @@ function checkRateLimit(ip: string): boolean {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(request);
   if (!checkRateLimit(ip)) {
     return Response.json(
       { error: { code: "RATE_LIMITED", message: "Too many requests. Try again in a minute." } },

@@ -23,9 +23,25 @@ interface Opt {
 }
 
 function Options({ rows }: { rows: Opt[] }) {
+  const th: React.CSSProperties = {
+    padding: "11px 16px",
+    textAlign: "left",
+    fontSize: 11,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    color: "var(--text-tertiary)",
+    fontWeight: 600,
+  };
   return (
     <div className="opt-table-wrap">
       <table className="opt-table">
+        <caption className="sr-only">CLI options</caption>
+        <thead>
+          <tr>
+            <th scope="col" style={th}>Flag</th>
+            <th scope="col" style={th}>Description</th>
+          </tr>
+        </thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.flag}>

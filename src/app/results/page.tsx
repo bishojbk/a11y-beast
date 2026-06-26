@@ -335,7 +335,7 @@ function ComplianceCard({
     "var(--pass)";
 
   return (
-    <motion.article
+    <motion.div
       className="compl-card"
       role="button"
       tabIndex={0}
@@ -366,7 +366,7 @@ function ComplianceCard({
       </div>
       <div className="compl-region">{fw.region}</div>
       <span className={`compl-risk ${riskLevel}`}>{riskLabel}</span>
-    </motion.article>
+    </motion.div>
   );
 }
 
@@ -423,16 +423,21 @@ export default function ResultsPage() {
   const [fixLoading, setFixLoading] = useState<Record<string, boolean>>({});
   const [modal, setModal] = useState<"action" | "report" | "legal" | null>(null);
   const [evidenceCount, setEvidenceCount] = useState(0);
+  // True when this report is the baked sample (arrived via ?sample), not a real
+  // scan. Drives the sample banner and gates real-ledger / counter side effects.
+  const [isSample, setIsSample] = useState(false);
+  const h1Ref = useRef<HTMLHeadingElement>(null);
 
   // How many evidence records this browser already holds for this site (the ledger).
+  // Skip on the sample — its W3C demo URL must not read the visitor's real ledger.
   useEffect(() => {
-    if (!result?.url) return;
+    if (!result?.url || isSample) return;
     let cancelled = false;
     import("@/lib/report/evidence-ledger").then(({ getSiteEntries }) => {
       if (!cancelled) setEvidenceCount(getSiteEntries(result.url).length);
     });
     return () => { cancelled = true; };
-  }, [result?.url]);
+  }, [result?.url, isSample]);
 
   // Hand the scan to the statement generator (EN 301 549 / EAA mode), pre-filled
   // from these findings. See docs/evidence-ledger-spec.md.
@@ -451,30 +456,40 @@ export default function ResultsPage() {
     const { buildEvidenceRecord, renderEvidenceHtml } = await import("@/lib/report/evidence-file");
     const { getSiteEntries, appendEntry, diffEntries } = await import("@/lib/report/evidence-ledger");
     const record = await buildEvidenceRecord(result);
-    const prior = getSiteEntries(result.url)[0];
+    // On the sample, still build and open the printable doc — but never mutate
+    // the visitor's real localStorage ledger (or the on-screen counter) with the
+    // W3C demo's record.
+    const prior = isSample ? undefined : getSiteEntries(result.url)[0];
     const diff = prior && prior.contentHash !== record.contentHash ? diffEntries(prior, record) : undefined;
-    appendEntry(record);
-    setEvidenceCount(getSiteEntries(result.url).length);
+    if (!isSample) {
+      appendEntry(record);
+      setEvidenceCount(getSiteEntries(result.url).length);
+    }
     const blob = new Blob([renderEvidenceHtml(record, diff)], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank", "noopener");
     setTimeout(() => URL.revokeObjectURL(url), 30_000);
-  }, [result]);
+  }, [result, isSample]);
   const rowsInited = useRef(false);
 
   useEffect(() => {
-    // Use a real scan from session storage, or fall back to the baked sample
-    // report when the visitor arrives via ?sample (the "See a sample" CTA).
+    // An explicit ?sample (the "See a sample" CTA) always wins — check it FIRST
+    // so the baked sample never silently shows a prior real scan from session
+    // storage. Otherwise use the real scan stored from the homepage scanner.
     let parsed: ScanResult | null = null;
-    const stored = sessionStorage.getItem("a11y-beast-result");
-    if (stored) {
-      try { parsed = JSON.parse(stored) as ScanResult; } catch { /* invalid cache */ }
-    }
-    if (!parsed && new URLSearchParams(window.location.search).has("sample")) {
+    let sample = false;
+    if (new URLSearchParams(window.location.search).has("sample")) {
       parsed = SAMPLE_RESULT;
+      sample = true;
+    } else {
+      const stored = sessionStorage.getItem("a11y-beast-result");
+      if (stored) {
+        try { parsed = JSON.parse(stored) as ScanResult; } catch { /* invalid cache */ }
+      }
     }
     if (!parsed) return;
     {
+      setIsSample(sample);
       setResult(parsed);
       const storedSite = sessionStorage.getItem("a11y-beast-site");
       if (storedSite) {
@@ -511,6 +526,13 @@ export default function ResultsPage() {
       .then((r) => setAiAvailable(r.status !== 501))
       .catch(() => setAiAvailable(false));
   }, []);
+
+  // Move focus to the report h1 once results render, so a scan completion lands
+  // assistive-tech users at the top of the report instead of leaving focus on
+  // the scanner. Runs once when the dashboard first mounts.
+  useEffect(() => {
+    if (result) h1Ref.current?.focus();
+  }, [result]);
 
   const generateFixForIssue = useCallback(
     async (issueId: string) => {
@@ -720,7 +742,7 @@ export default function ResultsPage() {
   return (
     <MotionConfig reducedMotion="user">
       <main id="main-content" role="main" className="dash" style={{ flex: 1 }}>
-        {result === SAMPLE_RESULT && (
+        {isSample && (
           <div
             className="mono"
             style={{
@@ -756,6 +778,16 @@ export default function ResultsPage() {
           <div className="dash-head">
             <div>
               <div className="dash-target">{formatScanTimestamp(timestamp)}</div>
+              {/* Real page h1 — focusable (tabIndex -1) so scan completion can move
+                  focus here, and styled to match the existing target/url block. */}
+              <h1
+                ref={h1Ref}
+                tabIndex={-1}
+                className="font-display"
+                style={{ fontSize: 22, lineHeight: 1.2, margin: "4px 0 2px", outline: "none" }}
+              >
+                Accessibility report for {host}
+              </h1>
               <div className="dash-url mono">
                 {host}
                 <span className="ext">{ext}</span>
@@ -797,7 +829,7 @@ export default function ResultsPage() {
                 </button>
               )}
             </div>
-            {evidenceCount > 0 && (
+            {!isSample && evidenceCount > 0 && (
               <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
                 <FileText size={11} /> {evidenceCount} evidence record{evidenceCount === 1 ? "" : "s"} on file for this site — each Evidence file adds a dated, timestamped entry and shows what changed since the last one.
               </p>
@@ -843,7 +875,7 @@ export default function ResultsPage() {
         </div>
 
         {/* ─── Monitor opt-in (free weekly re-scan; email capture). Real URL scans only — not paste/upload or the sample. ─── */}
-        {result.url && /^https?:\/\//i.test(result.url) && result !== SAMPLE_RESULT && (
+        {result.url && /^https?:\/\//i.test(result.url) && !isSample && (
           <MonitorCta url={result.url} />
         )}
 
@@ -884,7 +916,7 @@ export default function ResultsPage() {
         {/* ─── Compliance grid (worst-first; collapsed to 8 by default) ─── */}
         <section className="dash-section" aria-label="Compliance by framework">
           <div className="dash-section-head">
-            <h3 className="font-display">Coverage by framework</h3>
+            <h2 className="font-display">Coverage by framework</h2>
             <span className="hint">{showAllFw ? "16 jurisdictions" : "worst-exposed first"} · automated-coverage indicator vs each law&rsquo;s WCAG version — not a conformance verdict</span>
           </div>
           <motion.div
@@ -939,7 +971,7 @@ export default function ResultsPage() {
         {/* ─── Issues ─── */}
         <section className="dash-section" id="issues" aria-label="Issue list">
           <div className="dash-section-head">
-            <h3 className="font-display">Issues</h3>
+            <h2 className="font-display">Issues</h2>
             <span className="hint">
               {filteredRaw.length} shown · {grouped.length} unique rules · grouped &amp; sorted by severity
             </span>
@@ -1109,9 +1141,9 @@ export default function ResultsPage() {
             }}
           >
             <div>
-              <h3 className="font-display" style={{ fontSize: 20, marginBottom: 6 }}>
+              <h2 className="font-display" style={{ fontSize: 20, marginBottom: 6 }}>
                 Ship this report to your team
-              </h3>
+              </h2>
               <p style={{ color: "var(--text-secondary)", fontSize: 14, maxWidth: "64ch", lineHeight: 1.55 }}>
                 Drop the GitHub Action into <span className="mono" style={{ color: "var(--text-primary)" }}>.github/workflows/</span> so regressions fail CI, or
                 download a PR-ready markdown report to paste into an issue or ticket. Your scan data stays in your
@@ -1214,15 +1246,43 @@ function ComplianceDetailModal({
   onClose: () => void;
   onFilterIssues: () => void;
 }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Focus management (matches ExportDialogs): focus the close button on open,
+  // trap Tab / Shift+Tab inside the dialog, and restore focus to the element
+  // that opened the modal (the compliance card) on close.
   useEffect(() => {
     if (!fw) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const opener = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key !== "Tab") return;
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !panel.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
+      opener?.focus?.();
     };
   }, [fw, onClose]);
 
@@ -1241,6 +1301,7 @@ function ComplianceDetailModal({
           style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.62)", backdropFilter: "blur(6px)", display: "grid", placeItems: "center", padding: 24 }}
         >
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, y: 14, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -1255,7 +1316,7 @@ function ComplianceDetailModal({
                   <div className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{fw.region} · {fw.wcagBasis}</div>
                 </div>
               </div>
-              <button type="button" className="modal-close" onClick={onClose} aria-label="Close dialog">
+              <button ref={closeRef} type="button" className="modal-close" onClick={onClose} aria-label="Close dialog">
                 <X size={16} aria-hidden="true" />
               </button>
             </div>
@@ -1466,7 +1527,7 @@ function CrawledPages({
   return (
     <section className="dash-section" aria-label="Pages crawled">
       <div className="dash-section-head">
-        <h3 className="font-display">Pages crawled</h3>
+        <h2 className="font-display">Pages crawled</h2>
         <span className="hint">{site.pages.length} pages · worst score first · click to filter issues</span>
       </div>
       <div style={{ border: "1px solid var(--border-default)", borderRadius: 6, overflow: "hidden" }}>
@@ -1585,7 +1646,7 @@ function ConformanceByCriterion({
   return (
     <section className="dash-section" aria-label="Conformance by success criterion">
       <div className="dash-section-head">
-        <h3 className="font-display">Conformance by success criterion</h3>
+        <h2 className="font-display">Conformance by success criterion</h2>
         <span className="hint">pass / fail per WCAG criterion — the audit-grade view</span>
       </div>
 
@@ -1708,7 +1769,7 @@ function JurisdictionSpotlight({
   return (
     <section className="dash-section" aria-label="Jurisdiction spotlight">
       <div className="dash-section-head">
-        <h3 className="font-display">Jurisdiction spotlight</h3>
+        <h2 className="font-display">Jurisdiction spotlight</h2>
         <span className="hint">The two regimes driving enforcement right now</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14 }}>

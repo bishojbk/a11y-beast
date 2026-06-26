@@ -15,10 +15,29 @@ function TierPill({ tier }: { tier: Tier }) {
   return <span className={`tier-pill ${tier.toLowerCase()}`}>{tier}</span>;
 }
 
+/** Visibly-distinct, non-live pill for features that are not yet built (concierge / roadmap). */
+function RoadmapPill() {
+  return (
+    <span
+      className="tier-pill"
+      style={{
+        color: "var(--text-tertiary)",
+        borderStyle: "dashed",
+        borderColor: "var(--border-strong)",
+        background: "transparent",
+      }}
+    >
+      Roadmap
+    </span>
+  );
+}
+
 interface Feature {
   name: string;
   tier: Tier;
   desc: string;
+  /** Not live in the default deploy — show a Roadmap pill instead of a live tier pill. */
+  roadmap?: boolean;
 }
 
 interface Group {
@@ -97,14 +116,15 @@ const GROUPS: Group[] = [
         desc: "Scan a whole site, not just one page — real businesses have many, and risk hides on the ones you forget.",
       },
       {
-        name: "Export — Markdown, JSON & evidence file",
+        name: "Export — Markdown, JSON & evidence record",
         tier: "Pro",
         desc: "Download the full report and the printable evidence record to attach to procurement, an audit, or your accessibility statement.",
       },
       {
         name: "AI fix suggestions",
         tier: "Pro",
-        desc: "Claude-generated corrected HTML for your critical and major issues — minimal, attribute-preserving changes, not JavaScript band-aids.",
+        roadmap: true,
+        desc: "Claude-generated corrected HTML for your critical and major issues — minimal, attribute-preserving changes, not JavaScript band-aids. In early access and off by default; on the roadmap for general availability.",
       },
       {
         name: "CLI + GitHub Action",
@@ -114,7 +134,8 @@ const GROUPS: Group[] = [
       {
         name: "Monitoring & alerts",
         tier: "Pro",
-        desc: "Scheduled re-scans that email you when new issues appear, so a deploy can't quietly reintroduce risk. (Early access — see Pricing.)",
+        roadmap: true,
+        desc: "Scheduled re-scans that email you when new issues appear, so a deploy can't quietly reintroduce risk. Currently offered as a manual / concierge service while automated monitoring is on the roadmap.",
       },
     ],
   },
@@ -170,6 +191,7 @@ export default function FeaturesPage() {
                 <div className="spec-head">
                   <span className="spec-name">{f.name}</span>
                   <TierPill tier={f.tier} />
+                  {f.roadmap && <RoadmapPill />}
                 </div>
                 <p className="spec-desc">{f.desc}</p>
               </li>

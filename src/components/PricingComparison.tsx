@@ -35,8 +35,8 @@ const GROUPS: Group[] = [
     title: "Reporting",
     rows: [
       ["View & copy results in-browser", true, true, true, true],
-      ["Markdown, JSON & evidence export", false, true, true, true],
-      ["AI fix suggestions", false, true, true, true],
+      ["Markdown, JSON & evidence record export", false, true, true, true],
+      ["AI fix suggestions", false, "Early access", "Early access", "Early access"],
     ],
   },
   {
@@ -64,7 +64,11 @@ function CellContent({ value }: { value: Cell }) {
     );
   }
   if (value === false) {
-    return <span aria-label="Not included" style={{ color: "var(--text-tertiary)", opacity: 0.5 }}>—</span>;
+    return (
+      <span role="img" aria-label="Not included" style={{ color: "var(--text-tertiary)", opacity: 0.5 }}>
+        <span aria-hidden="true">—</span>
+      </span>
+    );
   }
   return <span style={{ fontSize: 12.5, color: "var(--text-secondary)" }}>{value}</span>;
 }

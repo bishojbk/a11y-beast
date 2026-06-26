@@ -3,6 +3,8 @@ import { crawlSite } from "@/lib/fetch/crawler";
 import { aggregateSite } from "@/lib/analyzer/aggregate";
 import { generateComplianceResults } from "@/lib/compliance/mapper";
 import { getEffort } from "@/lib/analyzer/effort";
+import { getClientIp } from "@/lib/getClientIp";
+import { tryAcquireRenderSlot, releaseRenderSlot } from "@/lib/scan-semaphore";
 
 // Crawling is heavier than a single scan — stricter limit.
 const rateMap = new Map<string, { count: number; resetAt: number }>();
@@ -34,7 +36,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(request);
   const rate = checkRateLimit(ip);
 
   const headers = {
@@ -85,8 +87,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Global in-flight render cap: a crawl fans out to many Puppeteer renders,
+    // so hold a single slot for the whole crawl. Reject with 503 past N
+    // concurrent renders so header rotation / many IPs can't exhaust the box.
+    if (!tryAcquireRenderSlot()) {
+      return Response.json(
+        { error: { code: "SERVER_BUSY", message: "Too many scans in progress. Try again shortly." } },
+        { status: 503, headers: { ...headers, "Retry-After": "10" } }
+      );
+    }
+
     const start = Date.now();
-    const outcome = await crawlSite(url, { maxPages: typeof maxPages === "number" ? maxPages : undefined });
+    let outcome;
+    try {
+      outcome = await crawlSite(url, { maxPages: typeof maxPages === "number" ? maxPages : undefined });
+    } finally {
+      releaseRenderSlot();
+    }
 
     if (outcome.pages.length === 0) {
       const reason = outcome.failed[0]?.error ?? "No pages could be scanned";
