@@ -108,7 +108,7 @@ export default function WaitlistCta({
                     </div>
                     <h3 className="font-display" style={{ fontSize: 22, marginBottom: 8 }}>You&rsquo;re on the list.</h3>
                     <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.5 }}>
-                      We&rsquo;ll email you the moment <b style={{ color: "var(--text-primary)" }}>{plan}</b> opens. No spam — just the launch.
+                      We&rsquo;ll email you the moment <b style={{ color: "var(--text-primary)" }}>{plan}</b> opens. We&rsquo;ll only email you about the launch.
                     </p>
                   </div>
                 ) : (
@@ -143,7 +143,7 @@ export default function WaitlistCta({
                       {status === "submitting" ? "Joining…" : "Join the waitlist"}
                     </button>
                     <p className="mono" style={{ fontSize: 10, color: "var(--text-tertiary)", textAlign: "center", marginTop: 12 }}>
-                      One email at launch. No spam, ever.
+                      We&rsquo;ll only email you about the launch.
                     </p>
                   </form>
                 )}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Code2, GitCompare, Globe, Lock, Trash2, Upload, XCircle } from "lucide-react";
 import { loadHistory, clearHistory, type ScanHistoryEntry } from "@/lib/history";
-import { AnimatePresence, MotionConfig, motion } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "framer-motion";
 import { useAxeAnalysis } from "@/hooks/useAxeAnalysis";
 import { FRAMEWORKS, getFrameworkDescription, type FrameworkWithTags } from "@/lib/compliance/frameworks";
 import { computeConformance } from "@/lib/compliance/wcag-criteria";
@@ -30,14 +30,14 @@ const inView = { once: true, amount: 0.15 } as const;
 const LAWSUITS: ReadonlyArray<{ date: string; tag: string; msg: string }> = [
   { date: "2025.11.18", tag: "ADA III", msg: "S.D.N.Y · Hospitality co. sued for inaccessible booking flow" },
   { date: "2025.11.14", tag: "Unruh", msg: "California class action · $4M settlement, retail e-comm" },
-  { date: "2025.11.09", tag: "EAA", msg: "Austria — BKS Bank fined for non-compliant online banking" },
+  { date: "2025.11.09", tag: "EAA", msg: "EU — in force since 28 Jun 2025; first-year enforcement minimal" },
   { date: "2025.11.03", tag: "ADA III", msg: "C.D. Cal · fitness platform settles for $1.2M, remediation" },
   { date: "2025.10.28", tag: "UK EA", msg: "EHRC compliance notice issued to national retailer" },
   { date: "2025.10.21", tag: "ADA III", msg: "E.D.N.Y · 142-plaintiff serial filer, university sites" },
-  { date: "2025.10.14", tag: "AODA", msg: "Ontario — CAD $110K/day penalty affirmed on appeal" },
-  { date: "2025.10.08", tag: "EAA", msg: "Germany — BFSG enforcement action, fintech onboarding" },
+  { date: "2025.10.14", tag: "AODA", msg: "Ontario — statutory max up to CAD 100,000/day; none levied to date" },
+  { date: "2025.10.08", tag: "EAA", msg: "Germany BFSG — obligation live, but no enforcement wave in year one" },
   { date: "2025.09.30", tag: "Sec 508", msg: "GSA procurement disqualification, federal vendor" },
-  { date: "2025.09.22", tag: "Unruh", msg: "San Francisco · per-visit damages affirmed" },
+  { date: "2025.09.22", tag: "Unruh", msg: "California — $4,000 statutory minimum per offense; stacking rejected (Robles)" },
   { date: "2025.09.15", tag: "SI 5568", msg: "Israel — ILS 150K fine, second-offense news publisher" },
   { date: "2025.09.03", tag: "ADA III", msg: "S.D. Fla · hotel reservation system, $85K settlement" },
 ];
@@ -380,20 +380,31 @@ const INDICTMENTS: ReadonlyArray<{ rule: string; wcag: string; selector: string;
 ];
 
 function Indictment() {
+  const reduceMotion = useReducedMotion();
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  // Honour reduced-motion: never auto-rotate, hold a single static frame.
+  const stopped = paused || !!reduceMotion;
   useEffect(() => {
-    if (paused) return;
+    if (stopped) return;
     const t = setInterval(() => setIdx((i) => (i + 1) % INDICTMENTS.length), 3600);
     return () => clearInterval(t);
-  }, [paused]);
+  }, [stopped]);
 
   const cur = INDICTMENTS[idx];
   return (
     <div
       className="indict"
+      // Focusable so keyboard users can land on it; landing pauses the rotation
+      // (onFocus/onBlur) just as hovering does for mouse users.
+      tabIndex={0}
+      aria-label="Auto-rotating example: how one violation maps to multiple laws. Focus or hover to pause."
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      // Keyboard + touch users get the same pause as mouse users.
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+      onTouchStart={() => setPaused(true)}
     >
       <div className="indict-label">
         <span className="dot" aria-hidden="true" /> One violation · {INDICTMENTS.length} verdicts
@@ -464,7 +475,7 @@ function Hero({
       >
         <div className="hero-main">
           <motion.span variants={fadeUp} className="hero-eyebrow">
-            <span className="dot" /> 5,000+ digital accessibility lawsuits filed in 2025
+            <span className="dot" /> 5,000+ US web-accessibility lawsuits in 2025 (federal + state)
           </motion.span>
           <motion.h1 variants={fadeUp} className="hero-title">
             Most tools say you fail <span className="wcag-mono">WCAG&nbsp;1.1.1.</span>
@@ -494,18 +505,55 @@ function Hero({
    Ticker
    ═══════════════════════════════════════════════════════════════ */
 function Ticker() {
-  const items = [...LAWSUITS, ...LAWSUITS];
+  // The list is rendered twice for a seamless marquee loop. Only the first copy
+  // is exposed to assistive tech; the duplicate is aria-hidden so screen readers
+  // don't read every entry twice.
   return (
-    <div className="ticker" aria-label="Recent accessibility enforcement — curated sample">
-      <div className="ticker-track">
-        {items.map((l, i) => (
-          <span key={i} className="ticker-item">
-            <span className="date">{l.date}</span>
-            <span className="tag">[{l.tag}]</span>
-            <span>{l.msg}</span>
-            <span className="tick-sep">·</span>
-          </span>
-        ))}
+    <div className="ticker-wrap" style={{ position: "relative" }}>
+      {/* Visible honesty label adjacent to the ticker — mirrors the aria-label and
+          the Indictment's "Illustrative" footer. Kept OUTSIDE .ticker so it never
+          scrolls with the marquee or gets clipped, and doesn't disturb the
+          hover/focus-within pause rule that targets .ticker. */}
+      <span
+        className="ticker-flag mono"
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 4,
+          right: 12,
+          zIndex: 2,
+          padding: "2px 8px",
+          borderRadius: 5,
+          background: "var(--bg-raised)",
+          fontSize: 10,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          color: "var(--text-tertiary)",
+          whiteSpace: "nowrap",
+          pointerEvents: "none",
+        }}
+      >
+        Illustrative · curated sample, not a live feed
+      </span>
+      <div className="ticker" aria-label="Recent accessibility enforcement — curated sample, not a live feed">
+        <div className="ticker-track">
+          {LAWSUITS.map((l, i) => (
+            <span key={`a-${i}`} className="ticker-item">
+              <span className="date">{l.date}</span>
+              <span className="tag">[{l.tag}]</span>
+              <span>{l.msg}</span>
+              <span className="tick-sep">·</span>
+            </span>
+          ))}
+          {LAWSUITS.map((l, i) => (
+            <span key={`b-${i}`} className="ticker-item" aria-hidden="true">
+              <span className="date">{l.date}</span>
+              <span className="tag">[{l.tag}]</span>
+              <span>{l.msg}</span>
+              <span className="tick-sep">·</span>
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -549,6 +597,9 @@ function Stats() {
    ═══════════════════════════════════════════════════════════════ */
 function Frameworks() {
   const [selected, setSelected] = useState<FrameworkWithTags | null>(null);
+  // Stable identity so the modal's focus-management effect runs only on real
+  // open/close transitions, not on every Frameworks re-render.
+  const closeModal = useCallback(() => setSelected(null), []);
   return (
     <section className="frameworks" id="frameworks">
       <div className="fw-inner">
@@ -581,7 +632,7 @@ function Frameworks() {
             const risk = riskFor(f);
             const deadline = formatDeadline(f.enforcementDate);
             return (
-              <motion.article
+              <motion.div
                 key={f.id}
                 className={`fw-cell ${f.id === "ada-title-iii" ? "active" : ""}`}
                 role="button"
@@ -609,12 +660,12 @@ function Frameworks() {
                     <span className={`fw-risk ${risk}`}>{risk} risk</span>
                   </div>
                 </div>
-              </motion.article>
+              </motion.div>
             );
           })}
         </motion.div>
       </div>
-      <FrameworkInfoModal fw={selected} onClose={() => setSelected(null)} />
+      <FrameworkInfoModal fw={selected} onClose={closeModal} />
     </section>
   );
 }
@@ -640,13 +691,65 @@ function scoringFactors(fw: FrameworkWithTags): string[] {
 }
 
 function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onClose: () => void }) {
+  // Focus management — matches the pattern in results/ExportDialogs.tsx:
+  // focus the close button on open, trap Tab/Shift+Tab inside the dialog, and
+  // restore focus to whatever opened it on close. (Kept inline per the MODALS
+  // contract — no shared modal component.)
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!fw) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    // Remember the element that had focus so we can restore it on close. Only
+    // capture on the open transition — `onClose` is a fresh closure each parent
+    // render, so this effect can re-run while open; without this guard we'd
+    // overwrite the opener with the dialog's own close button.
+    if (!openerRef.current) {
+      openerRef.current = (document.activeElement as HTMLElement) ?? null;
+      // Move focus into the dialog on first open.
+      closeRef.current?.focus();
+    }
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const focusable = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey) {
+        if (active === first || !root.contains(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !root.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+      // Restore focus to the opener once the dialog is dismissed, then clear so
+      // the next open captures a fresh opener.
+      const opener = openerRef.current;
+      openerRef.current = null;
+      opener?.focus?.();
+    };
   }, [fw, onClose]);
 
   const fld: React.CSSProperties = { fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.55 };
@@ -663,6 +766,7 @@ function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onC
           style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(0,0,0,0.62)", backdropFilter: "blur(6px)", display: "grid", placeItems: "center", padding: 24 }}
         >
           <motion.div
+            ref={dialogRef}
             initial={{ opacity: 0, y: 14, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.3, ease: EASE }}
             style={{ width: "min(520px, 100%)", maxHeight: "calc(100vh - 48px)", overflow: "auto", background: "var(--bg-raised)", border: "1px solid var(--border-strong)", borderRadius: 8, boxShadow: "var(--shadow-pop)" }}
@@ -675,7 +779,7 @@ function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onC
                   <div className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{fw.region} · {fw.wcagBasis}</div>
                 </div>
               </div>
-              <button type="button" className="modal-close" onClick={onClose} aria-label="Close"><XCircle size={16} aria-hidden="true" /></button>
+              <button ref={closeRef} type="button" className="modal-close" onClick={onClose} aria-label="Close"><XCircle size={16} aria-hidden="true" /></button>
             </div>
 
             <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -977,9 +1081,13 @@ export default function Home() {
   const router = useRouter();
   const { stage, result, site, error, scanUrl, crawlUrl, analyzeHtml, isScanning } = useAxeAnalysis();
   const [scanTarget, setScanTarget] = useState<string>("");
+  // Polite SR announcement on scan completion. The results page itself moves
+  // focus to its new h1; this just announces the transition.
+  const [announce, setAnnounce] = useState("");
 
   useEffect(() => {
     if (result) {
+      setAnnounce("Scan complete — results ready");
       sessionStorage.setItem("a11y-beast-result", JSON.stringify(result));
       if (site) sessionStorage.setItem("a11y-beast-site", JSON.stringify(site));
       else sessionStorage.removeItem("a11y-beast-site");
@@ -1052,6 +1160,12 @@ export default function Home() {
   return (
     <MotionConfig reducedMotion="user">
       <JsonLd data={[organizationLd, softwareApplicationLd, howToLd]} />
+
+      {/* Visually-hidden polite live region — announces scan completion to SR
+          users before navigation to /results. */}
+      <div className="sr-only" role="status" aria-live="polite">
+        {announce}
+      </div>
 
       {isScanning ? (
         <main id="main-content" role="main" style={{ flex: 1 }}>

@@ -40,7 +40,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <h5
+          <h2
             className="mono"
             style={{
               fontSize: 11,
@@ -52,7 +52,7 @@ export default function Footer() {
             }}
           >
             Product
-          </h5>
+          </h2>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
             {([
               { label: "Web scanner", href: "/#scan", internal: true },
@@ -102,7 +102,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <h5
+          <h2
             className="mono"
             style={{
               fontSize: 11,
@@ -114,7 +114,7 @@ export default function Footer() {
             }}
           >
             Frameworks
-          </h5>
+          </h2>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
             {[
               "ADA Title II & III",
@@ -133,7 +133,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <h5
+          <h2
             className="mono"
             style={{
               fontSize: 11,
@@ -145,7 +145,7 @@ export default function Footer() {
             }}
           >
             Resources
-          </h5>
+          </h2>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
             <li>
               <Link href="/blog" style={{ color: "var(--text-secondary)", fontSize: 14 }}>
@@ -216,6 +216,10 @@ export default function Footer() {
         <span>A11Y BEAST · BUILT OPEN · AGPL-3.0</span>
         <span>AXE-CORE BY DEQUE SYSTEMS · MPL-2.0</span>
         <span>NOT LEGAL ADVICE · USE WITH AN AUDIT</span>
+      </div>
+
+      <div style={{ textAlign: "center", padding: "16px 0 0", fontSize: 13, opacity: 0.6 }}>
+        Made by <a href="https://github.com/bishojbk" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>EJR</a>
       </div>
     </footer>
   );

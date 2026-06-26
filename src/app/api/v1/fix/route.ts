@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 import { generateFix, isAiAvailable } from "@/lib/ai/generate-fix";
 import type { AccessibilityIssue } from "@/lib/types/issue";
 import type { PageMeta } from "@/lib/types/scan-result";
+import { getClientIp } from "@/lib/getClientIp";
 
 const rateMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 20;
@@ -33,7 +34,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(request);
   const rate = checkRateLimit(ip);
 
   const headers = {

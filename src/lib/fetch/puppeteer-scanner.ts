@@ -177,22 +177,124 @@ async function scanPage(page: Page): Promise<{
   return { pageMeta, axeResults, customIssues };
 }
 
+// Literal private/reserved/metadata IPv4 ranges, as [startInclusive, endInclusive].
+// Used by the synchronous, DNS-free fast block below so we can reject obviously
+// internal targets without an async lookup on every single subresource.
+const SYNC_PRIVATE_V4_RANGES: Array<[number, number]> = [
+  [ipv4ToInt("0.0.0.0"), ipv4ToInt("0.255.255.255")],
+  [ipv4ToInt("10.0.0.0"), ipv4ToInt("10.255.255.255")],
+  [ipv4ToInt("100.64.0.0"), ipv4ToInt("100.127.255.255")],
+  [ipv4ToInt("127.0.0.0"), ipv4ToInt("127.255.255.255")],
+  [ipv4ToInt("169.254.0.0"), ipv4ToInt("169.254.255.255")], // incl. 169.254.169.254 metadata
+  [ipv4ToInt("172.16.0.0"), ipv4ToInt("172.31.255.255")],
+  [ipv4ToInt("192.0.0.0"), ipv4ToInt("192.0.0.255")],
+  [ipv4ToInt("192.168.0.0"), ipv4ToInt("192.168.255.255")],
+  [ipv4ToInt("198.18.0.0"), ipv4ToInt("198.19.255.255")],
+];
+
+function ipv4ToInt(ip: string): number {
+  const p = ip.split(".").map(Number);
+  return ((p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]) >>> 0;
+}
+
 /**
- * Re-validate every top-level navigation (including redirect hops) against the
- * SSRF guard. validateUrl() only checks the initial hostname; without this, a
- * public URL could 30x-redirect to a private/metadata host and the browser
- * would happily load it. Subresources pass through so the page still renders.
+ * Synchronous, DNS-free fast block. Returns true if the request must be aborted
+ * outright: non-http(s) scheme, non-80/443 port, or a host that is a literal
+ * private/reserved/metadata IP or a localhost/.local/.internal name. Hostnames
+ * that aren't obviously internal return false and get the async validateUrl()
+ * treatment (which also catches DNS rebinding to private IPs).
+ */
+function syncFastBlock(rawUrl: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(rawUrl);
+  } catch {
+    return true; // unparseable — block
+  }
+
+  if (u.protocol !== "http:" && u.protocol !== "https:") return true;
+  if (u.port && u.port !== "80" && u.port !== "443") return true;
+
+  const host = u.hostname.toLowerCase();
+
+  if (host === "localhost" || host === "metadata.google.internal") return true;
+  if (
+    host.endsWith(".local") ||
+    host.endsWith(".internal") ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".test")
+  ) {
+    return true;
+  }
+
+  // IPv6 literal (e.g. [::1]) — block link-local/loopback/unspecified outright.
+  if (host.startsWith("[")) {
+    const v6 = host.replace(/^\[|\]$/g, "");
+    if (
+      v6 === "::1" ||
+      v6 === "::" ||
+      v6.startsWith("::ffff:127.") ||
+      v6.startsWith("fc") ||
+      v6.startsWith("fd") ||
+      v6.startsWith("fe80:") ||
+      v6.startsWith("ff")
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  // Literal IPv4 — block if in a private/reserved range.
+  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) {
+    const n = ipv4ToInt(host);
+    for (const [start, end] of SYNC_PRIVATE_V4_RANGES) {
+      if (n >= start && n <= end) return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Re-validate EVERY intercepted request against the SSRF guard — main frame,
+ * iframes, and subresources alike. Previously only main-frame navigations were
+ * checked, so an iframe or subresource (made worse by setBypassCSP) could reach
+ * an internal host. We first apply a synchronous DNS-free fast block, then for
+ * surviving hostnames run async validateUrl() (cached per host for the scan).
  */
 async function applySsrfGuard(page: Page): Promise<void> {
+  // Per-scan cache so a page with many subresources on the same host triggers
+  // at most one DNS resolution per host.
+  const hostVerdicts = new Map<string, Promise<boolean>>();
+
   await page.setRequestInterception(true);
   page.on("request", async (req) => {
     try {
-      if (!req.isNavigationRequest() || req.frame() !== page.mainFrame()) {
-        await req.continue();
+      const url = req.url();
+
+      // 1. Synchronous, no-DNS fast block.
+      if (syncFastBlock(url)) {
+        await req.abort("blockedbyclient");
         return;
       }
-      const v = await validateUrl(req.url());
-      if (v.safe) await req.continue();
+
+      // 2. Async validateUrl() for surviving hostnames, cached per host so we
+      //    don't re-resolve for every subresource on the same origin.
+      let host: string;
+      try {
+        host = new URL(url).hostname.toLowerCase();
+      } catch {
+        await req.abort("blockedbyclient");
+        return;
+      }
+
+      let verdict = hostVerdicts.get(host);
+      if (!verdict) {
+        verdict = validateUrl(url).then((v) => v.safe);
+        hostVerdicts.set(host, verdict);
+      }
+
+      if (await verdict) await req.continue();
       else await req.abort("blockedbyclient");
     } catch {
       /* request may already be resolved/aborted — ignore */
