@@ -242,8 +242,10 @@ a:focus-visible { outline-offset: 3px; }
   --measure: 64ch;
   --maxw: 1120px;
 }
-.rc h1, .rc h2, .rc h3 { font-family: var(--serif); font-optical-sizing: auto; font-weight: 600; letter-spacing: -0.012em; line-height: 1.06; margin: 0; text-wrap: balance; }
-.rc p { margin: 0; }
+/* :where() keeps these resets at zero specificity so component classes
+   (.rc-lede, .rc-assure, …) win their own margins instead of being zeroed. */
+:where(.rc h1, .rc h2, .rc h3) { font-family: var(--serif); font-optical-sizing: auto; font-weight: 600; letter-spacing: -0.012em; line-height: 1.06; margin: 0; text-wrap: balance; }
+:where(.rc p) { margin: 0; }
 .rc a { color: var(--text-link); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; transition: text-decoration-thickness .12s; }
 .rc a:hover { text-decoration-thickness: 3px; }
 .rc-wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
@@ -270,7 +272,7 @@ a:focus-visible { outline-offset: 3px; }
 .rc-eyebrow .rule { width: 26px; height: 1.5px; background: var(--brand); }
 .rc-hero h1 { font-size: clamp(38px, 5.4vw, 64px); letter-spacing: -0.02em; }
 .rc-hero h1 em { font-style: italic; font-weight: 600; }
-.rc-lede { font-size: 19px; color: var(--ink-2); margin-top: 22px; max-width: 54ch; line-height: 1.55; }
+.rc-lede { font-size: 19px; color: var(--ink-2); margin-top: 28px; max-width: 54ch; line-height: 1.6; }
 .rc-lede b { color: var(--ink); font-weight: 600; }
 .rc-cta-row { display: flex; align-items: center; gap: 18px; margin-top: 32px; flex-wrap: wrap; }
 .rc-cta-row .seemore { font-weight: 600; font-size: 15px; }
