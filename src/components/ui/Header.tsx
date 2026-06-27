@@ -6,9 +6,11 @@ import { Sun, Moon, Menu, X, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogoIcon } from "./Logo";
 
-// The inline theme-init script in layout.tsx mutates <html data-theme="…">
-// before hydration. useSyncExternalStore lets us read that value on the
-// client while the SSR snapshot stays stable (dark), so hydration matches.
+// The inline theme-init script in layout.tsx sets <html data-theme="dark">
+// only when the saved preference is dark; otherwise the default :root (light
+// "warm paper") applies and no attribute is present. useSyncExternalStore reads
+// that on the client while the SSR snapshot stays stable (light), so hydration
+// matches. `dark` === true means the dark theme is active.
 function subscribeTheme(cb: () => void) {
   if (typeof document === "undefined") return () => {};
   const obs = new MutationObserver(cb);
@@ -16,10 +18,10 @@ function subscribeTheme(cb: () => void) {
   return () => obs.disconnect();
 }
 function getThemeSnapshot() {
-  return document.documentElement.getAttribute("data-theme") !== "light";
+  return document.documentElement.getAttribute("data-theme") === "dark";
 }
 function getThemeServerSnapshot() {
-  return true;
+  return false;
 }
 
 const NAV_ITEMS = [
@@ -36,9 +38,15 @@ function ThemeToggle({ large }: { large?: boolean }) {
   const dark = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
 
   const toggle = () => {
-    const next = !dark;
-    document.documentElement.setAttribute("data-theme", next ? "" : "light");
-    localStorage.setItem("theme", next ? "dark" : "light");
+    const nextDark = !dark;
+    if (nextDark) {
+      document.documentElement.setAttribute("data-theme", "dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      // remove the attribute so the default :root (light) applies
+      document.documentElement.removeAttribute("data-theme");
+      localStorage.setItem("theme", "light");
+    }
   };
 
   if (large) {
