@@ -763,8 +763,6 @@ export default function ResultsPage() {
               official inaccessible demo —{" "}
               <a
                 href="https://www.w3.org/WAI/demos/bad/before/home.html"
-                target="_blank"
-                rel="noopener noreferrer"
                 style={{ color: "var(--accent-text)", textDecoration: "underline" }}
               >
                 visit it
@@ -1346,7 +1344,7 @@ function ComplianceDetailModal({
                 <button type="button" className="btn primary" onClick={onFilterIssues}>
                   Show issues affecting this law →
                 </button>
-                <a href={fw.url} target="_blank" rel="noopener noreferrer" className="btn">
+                <a href={fw.url} className="btn">
                   <ExternalLink size={13} /> Read the law
                 </a>
               </div>
@@ -1565,8 +1563,6 @@ function CrawledPages({
               </span>
               <a
                 href={p.url}
-                target="_blank"
-                rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Open ${p.url} in a new tab`}
                 style={{ color: "var(--text-tertiary)", display: "inline-flex" }}

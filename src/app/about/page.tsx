@@ -45,16 +45,12 @@ export default function AboutPage() {
             sites — the{" "}
             <a
               href="https://github.com/bishojbk/a11y-beast/blob/main/docs/benchmark/benchmark.md"
-              target="_blank"
-              rel="noopener noreferrer"
             >
               full comparison is public and reproducible
             </a>{" "}
             (run it yourself with <code>a11y-beast benchmark</code>) — and align the methodology with the W3C’s{" "}
             <a
               href="https://www.w3.org/WAI/test-evaluate/conformance/wcag-em/"
-              target="_blank"
-              rel="noopener noreferrer"
             >
               Website Accessibility Conformance Evaluation Methodology (WCAG-EM)
             </a>
@@ -98,7 +94,7 @@ export default function AboutPage() {
             A11y Beast is built and maintained by <strong>EJR</strong>, an independent developer. It started as a tool
             to answer a question no free scanner would: not just “what’s broken,” but “which laws does this expose me to,
             and how do I fix it?” The engine, the 16-framework legal mapping, and the CLI are all built in the open —{" "}
-            <a href="https://github.com/bishojbk" target="_blank" rel="noopener noreferrer">
+            <a href="https://github.com/bishojbk">
               github.com/bishojbk
             </a>
             .

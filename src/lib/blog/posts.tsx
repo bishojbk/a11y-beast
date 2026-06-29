@@ -33,7 +33,7 @@ const aStyle: React.CSSProperties = {
 // External source link — opens in a new tab, accent-coloured.
 function Ext({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" style={aStyle}>
+    <a href={href} style={aStyle}>
       {children}
     </a>
   );

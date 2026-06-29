@@ -21,7 +21,7 @@ export default function StatementGeneratorPage() {
         <h1 className="doc-title">Accessibility statement generator</h1>
         <p className="doc-lead" style={{ marginBottom: 40 }}>
           Fill in the details and copy a ready-to-use accessibility statement, structured the way the{" "}
-          <a href="https://www.w3.org/WAI/planning/statements/" target="_blank" rel="noopener noreferrer">
+          <a href="https://www.w3.org/WAI/planning/statements/">
             W3C
           </a>{" "}
           recommends. Free, no signup — it runs entirely in your browser. We default to <em>partially conformant</em> on

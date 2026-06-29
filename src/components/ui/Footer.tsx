@@ -95,7 +95,7 @@ export default function Footer() {
                 </li>
               ) : (
                 <li key={l.label}>
-                  <a href={l.href} target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+                  <a href={l.href} style={{ color: "var(--text-secondary)", fontSize: 14 }}>
                     {inner}
                   </a>
                 </li>
@@ -163,8 +163,6 @@ export default function Footer() {
             <li>
               <a
                 href="https://www.w3.org/WAI/standards-guidelines/wcag/"
-                target="_blank"
-                rel="noopener noreferrer"
                 style={{ color: "var(--text-secondary)", fontSize: 14 }}
               >
                 WCAG 2.2 cheatsheet
@@ -173,8 +171,6 @@ export default function Footer() {
             <li>
               <a
                 href="https://www.deque.com/axe/core-documentation/"
-                target="_blank"
-                rel="noopener noreferrer"
                 style={{ color: "var(--text-secondary)", fontSize: 14 }}
               >
                 axe-core docs
@@ -183,8 +179,6 @@ export default function Footer() {
             <li>
               <a
                 href="https://github.com/bishojbk/a11y-beast"
-                target="_blank"
-                rel="noopener noreferrer"
                 style={{ color: "var(--text-secondary)", fontSize: 14 }}
               >
                 Open-source (AGPL-3.0)
@@ -222,7 +216,7 @@ export default function Footer() {
       </div>
 
       <div style={{ textAlign: "center", padding: "16px 0 0", fontSize: 13, color: "var(--text-tertiary)" }}>
-        Made by <a href="https://github.com/bishojbk" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>EJR Bisoj</a>
+        Made by <a href="https://github.com/bishojbk" style={{ color: "inherit", textDecoration: "underline" }}>EJR Bisoj</a>
       </div>
     </footer>
   );

@@ -25,8 +25,6 @@ export default function NotFound() {
               </Link>
               <a
                 href="https://www.w3.org/WAI/standards-guidelines/wcag/"
-                target="_blank"
-                rel="noopener noreferrer"
                 className="btn"
               >
                 <BookOpen size={13} /> Read the docs
