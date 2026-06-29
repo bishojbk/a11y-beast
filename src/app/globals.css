@@ -1542,7 +1542,7 @@ h1, h2, h3, h4 {
 /* Score strip */
 .dash-verdict {
   max-width: var(--dash-max);
-  margin: 0 auto;
+  margin: 28px auto 0;
   padding: 4px 32px 0;
   font-family: var(--font-newsreader), Georgia, serif;
   font-size: clamp(20px, 2.4vw, 30px);
