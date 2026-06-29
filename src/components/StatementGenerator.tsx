@@ -349,7 +349,7 @@ export default function StatementGenerator({ prefill }: { prefill?: StatementPre
           ) : (
             <>
               A starting template based on the{" "}
-              <a href="https://www.w3.org/WAI/planning/statements/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-text)" }}>W3C/WAI</a>{" "}
+              <a href="https://www.w3.org/WAI/planning/statements/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-text)", textDecoration: "underline", textDecorationColor: "var(--accent-line)", textUnderlineOffset: 2 }}>W3C/WAI</a>{" "}
               structure. Only claim the conformance level you can actually back up — overstating it carries
               legal risk. EU/UK public-sector statements also require a formal complaints/enforcement link.
             </>

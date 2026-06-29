@@ -222,7 +222,7 @@ export default function Footer() {
       </div>
 
       <div style={{ textAlign: "center", padding: "16px 0 0", fontSize: 13, color: "var(--text-tertiary)" }}>
-        Made by <a href="https://github.com/bishojbk" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>EJR</a>
+        Made by <a href="https://github.com/bishojbk" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>EJR Bisoj</a>
       </div>
     </footer>
   );

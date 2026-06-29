@@ -109,7 +109,7 @@ html { scroll-behavior: smooth; }
 
   --text-primary: #ECEEF1;
   --text-secondary: #AEB4BD;
-  --text-tertiary: #828892;
+  --text-tertiary: #969CA6;  /* clears 4.5:1 on raised/overlay dark surfaces */
   --text-inverse: #14161A;
   --text-link: #9FD3C4;
 
@@ -268,8 +268,8 @@ a:focus-visible { outline-offset: 3px; }
 .rc-hero { padding: 64px 0 56px; }
 .rc-hero-grid { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(0,.95fr); gap: 56px; align-items: center; }
 @media (max-width: 920px) { .rc-hero-grid { grid-template-columns: 1fr; gap: 40px; } }
-.rc-eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; color: var(--brand); margin-bottom: 20px; }
-.rc-eyebrow .rule { width: 26px; height: 1.5px; background: var(--brand); }
+.rc-eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; color: var(--accent-text); margin-bottom: 20px; }
+.rc-eyebrow .rule { width: 26px; height: 1.5px; background: var(--accent-text); }
 .rc-hero h1 { font-size: clamp(38px, 5.4vw, 64px); letter-spacing: -0.02em; }
 .rc-hero h1 em { font-style: italic; font-weight: 600; }
 .rc-lede { font-size: 19px; color: var(--ink-2); margin-top: 28px; max-width: 54ch; line-height: 1.6; }
@@ -327,7 +327,11 @@ a:focus-visible { outline-offset: 3px; }
 .rc .btn-scan:hover:not(:disabled) { background: var(--accent-hover); box-shadow: 0 1px 0 rgba(255,255,255,.2) inset; transform: translateY(-1px); }
 
 /* honesty band (dark ink) */
-.rc-honesty { background: var(--ink); padding: 84px 0; }
+/* Deliberate inverted band: always a dark panel with light text, in BOTH
+   themes. The global --ink/--paper tokens flip in dark mode, which turned this
+   block white. Pin a fixed dark background and a local light --paper so every
+   child rule below (which reads var(--paper)) stays legible in either theme. */
+.rc-honesty { --paper: #F4F2EC; background: #181A1E; border-block: 1px solid rgba(255,255,255,0.08); padding: 84px 0; }
 .rc-honesty .rc-label { color: color-mix(in srgb, var(--good) 70%, #fff); margin-bottom: 18px; }
 .rc-honesty .big { font-family: var(--serif); font-weight: 600; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.18; letter-spacing: -0.01em; max-width: 26ch; color: var(--paper); }
 .rc-honesty .big em { font-style: italic; color: color-mix(in srgb, var(--good) 55%, #fff); }
@@ -350,7 +354,7 @@ a:focus-visible { outline-offset: 3px; }
 @media (max-width: 880px) { .rc-steps { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 520px) { .rc-steps { grid-template-columns: 1fr; } }
 .rc-step { background: var(--paper); padding: 26px 22px 28px; display: flex; flex-direction: column; gap: 10px; min-height: 184px; }
-.rc-step .idx { font-family: var(--rc-mono); font-size: 12px; color: var(--brand); letter-spacing: 0.1em; }
+.rc-step .idx { font-family: var(--rc-mono); font-size: 12px; color: var(--accent-text); letter-spacing: 0.1em; }
 .rc-step h3 { font-family: var(--serif); font-size: 21px; font-weight: 600; }
 .rc-step p { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
 .rc-step .meta { margin-top: auto; font-family: var(--rc-mono); font-size: 10.5px; color: var(--ink-3); letter-spacing: 0.04em; }
@@ -386,7 +390,7 @@ a:focus-visible { outline-offset: 3px; }
 .rc-agency ul { list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
 .rc-agency li { display: flex; gap: 12px; font-size: 15.5px; color: var(--ink-2); line-height: 1.45; }
 .rc-agency li b { color: var(--ink); font-weight: 600; }
-.rc-agency li .mk { color: var(--brand); font-family: var(--rc-mono); flex-shrink: 0; }
+.rc-agency li .mk { color: var(--accent-text); font-family: var(--rc-mono); flex-shrink: 0; }
 .rc-pricecard { background: var(--card); border: 1px solid var(--line-2); border-radius: var(--radius-lg); padding: 28px; }
 .rc-pricecard .l { font-family: var(--rc-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
 .rc-pricecard .amt { font-family: var(--serif); font-size: 46px; font-weight: 600; margin: 8px 0 2px; color: var(--ink); }
@@ -2420,8 +2424,10 @@ details[open] > summary .faq-icon { transform: rotate(45deg); }
   margin: 0 0 16px;
 }
 .doc-p strong { color: var(--text-primary); font-weight: 600; }
-.doc-p a, .doc-lead a { color: var(--accent-text); text-decoration: none; border-bottom: 1px solid var(--accent-line); }
-.doc-p a:hover, .doc-lead a:hover { border-bottom-color: var(--accent); }
+/* Real underline (axe credits text-decoration, not border-bottom) so prose
+   links are distinguishable without relying on colour — WCAG 1.4.1. */
+.doc-p a, .doc-lead a { color: var(--accent-text); text-decoration: underline; text-decoration-color: var(--accent-line); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.doc-p a:hover, .doc-lead a:hover { text-decoration-color: var(--accent); }
 .doc-p code, .doc-lead code {
   font-family: var(--font-plex-mono), ui-monospace, monospace;
   font-size: 0.86em;
@@ -2608,8 +2614,8 @@ details[open] > summary .faq-icon { transform: rotate(45deg); }
 }
 .prose p, .prose li { color: var(--text-secondary); font-size: 16px; line-height: 1.72; }
 .prose strong { color: var(--text-primary); font-weight: 600; }
-.prose a { color: var(--accent-text); text-decoration: none; border-bottom: 1px solid var(--accent-line); }
-.prose a:hover { border-bottom-color: var(--accent); }
+.prose a { color: var(--accent-text); text-decoration: underline; text-decoration-color: var(--accent-line); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.prose a:hover { text-decoration-color: var(--accent); }
 .prose ul, .prose ol { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
 .prose li::marker { color: var(--accent-text); }
 .prose code {

@@ -145,7 +145,7 @@ function Scanner({
                 <Lock size={12} aria-hidden="true" />
                 <span>Scan your <b>whole site</b></span>
                 <span className="tier-pill pro">Pro</span>
-                <span className="crawl-upsell-cta">Founding access <ArrowRight size={12} aria-hidden="true" /></span>
+                <span className="crawl-upsell-cta"><ArrowRight size={13} aria-hidden="true" /></span>
               </Link>
             </form>
             <div className="sample-row">
@@ -317,18 +317,18 @@ function Honesty() {
       <motion.div className="rc-wrap" variants={stagger} initial="hidden" whileInView="visible" viewport={inView}>
         <motion.p variants={fadeUp} className="rc-label">The whole pitch</motion.p>
         <motion.p variants={fadeUp} className="big">
-          Most scanners imply a clean result means you&rsquo;re compliant. <em>We don&rsquo;t make that claim</em> — because it isn&rsquo;t true, and it&rsquo;s the one the FTC fines people for.
+          Most scanners imply a clean result means you&rsquo;re compliant. <em>We don&rsquo;t make that claim</em>{" "}— because it isn&rsquo;t true, and it&rsquo;s the one the FTC fines people for.
         </motion.p>
         <div className="cols">
           <motion.p variants={fadeUp}>
-            Automated testing catches roughly <b>a third</b> of real accessibility barriers. The honest move isn&rsquo;t a bigger number — it&rsquo;s telling you <b>exactly which third</b> we checked, which we couldn&rsquo;t, and what a person still needs to review. That candour is the product.
+            Automated testing catches roughly <b>a third</b> of real accessibility barriers. The honest move isn&rsquo;t a bigger number — it&rsquo;s telling you <b>exactly which third</b>{" "}we checked, which we couldn&rsquo;t, and what a person still needs to review. That candour is the product.
           </motion.p>
           <motion.p variants={fadeUp}>
-            Every scan becomes a <b>dated, SHA-256-hashed record</b> of what you tested and when. Re-scan and we diff the changes. It&rsquo;s not a compliance badge — it&rsquo;s a defensible paper trail of the effort you actually made.
+            Every scan becomes a <b>dated, SHA-256-hashed record</b>{" "}of what you tested and when. Re-scan and we diff the changes. It&rsquo;s not a compliance badge — it&rsquo;s a defensible paper trail of the effort you actually made.
           </motion.p>
         </div>
         <motion.p variants={fadeUp} className="rc-ftc">
-          <b>&ldquo;Guaranteed compliance.&rdquo;</b> That&rsquo;s the claim that cost an overlay vendor a <b>$1M FTC settlement.</b> You&rsquo;ll never see it here.
+          <b>&ldquo;Guaranteed compliance.&rdquo;</b> That&rsquo;s the claim that cost an overlay vendor a <b>$1M FTC settlement.</b>{" "}You&rsquo;ll never see it here.
         </motion.p>
       </motion.div>
     </section>
