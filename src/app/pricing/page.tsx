@@ -43,7 +43,7 @@ export default function PricingPage() {
 
         <p style={{ textAlign: "center", color: "var(--text-secondary)", fontSize: 12.5, marginTop: 72, lineHeight: 1.6, maxWidth: "70ch", marginInline: "auto" }}>
           <b style={{ color: "var(--text-primary)" }}>On the roadmap:</b>{" "}
-          scheduled monitoring &amp; regression alerts,
+          scheduled monitoring &amp; regression alerts, document (PDF) accessibility checks,
           white-label reports, and a public API — rolling out to paid tiers. Founding members keep their price as these land.
         </p>
 
