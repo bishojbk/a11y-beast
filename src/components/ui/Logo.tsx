@@ -9,26 +9,21 @@ export function LogoIcon({ size = 32, className = "" }: { size?: number; classNa
       className={className}
       aria-hidden="true"
     >
-      <rect width="48" height="48" rx="12" fill="url(#logo-ember)" />
+      {/* Evidence-green seal — flat, no gradient (calm + credible) */}
+      <rect width="48" height="48" rx="11" fill="#1C5D52" />
       {/* Lens/eye shape */}
       <path
         d="M10 24C10 24 16 15 24 15C32 15 38 24 38 24C38 24 32 33 24 33C16 33 10 24 10 24Z"
-        stroke="white"
+        stroke="#F3F6F2"
         strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
       />
       {/* Iris */}
-      <circle cx="24" cy="24" r="5" fill="white" opacity="0.9" />
+      <circle cx="24" cy="24" r="5" fill="#F3F6F2" />
       {/* Pupil */}
-      <circle cx="24" cy="24" r="2" fill="url(#logo-ember)" />
-      <defs>
-        <linearGradient id="logo-ember" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#B4283A" />
-          <stop offset="1" stopColor="#FF6B7A" />
-        </linearGradient>
-      </defs>
+      <circle cx="24" cy="24" r="2" fill="#1C5D52" />
     </svg>
   );
 }

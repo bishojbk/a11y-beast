@@ -6,9 +6,11 @@ import { Sun, Moon, Menu, X, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogoIcon } from "./Logo";
 
-// The inline theme-init script in layout.tsx mutates <html data-theme="…">
-// before hydration. useSyncExternalStore lets us read that value on the
-// client while the SSR snapshot stays stable (dark), so hydration matches.
+// The inline theme-init script in layout.tsx sets <html data-theme="dark">
+// only when the saved preference is dark; otherwise the default :root (light
+// "warm paper") applies and no attribute is present. useSyncExternalStore reads
+// that on the client while the SSR snapshot stays stable (light), so hydration
+// matches. `dark` === true means the dark theme is active.
 function subscribeTheme(cb: () => void) {
   if (typeof document === "undefined") return () => {};
   const obs = new MutationObserver(cb);
@@ -16,10 +18,10 @@ function subscribeTheme(cb: () => void) {
   return () => obs.disconnect();
 }
 function getThemeSnapshot() {
-  return document.documentElement.getAttribute("data-theme") !== "light";
+  return document.documentElement.getAttribute("data-theme") === "dark";
 }
 function getThemeServerSnapshot() {
-  return true;
+  return false;
 }
 
 const NAV_ITEMS = [
@@ -36,9 +38,15 @@ function ThemeToggle({ large }: { large?: boolean }) {
   const dark = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
 
   const toggle = () => {
-    const next = !dark;
-    document.documentElement.setAttribute("data-theme", next ? "" : "light");
-    localStorage.setItem("theme", next ? "dark" : "light");
+    const nextDark = !dark;
+    if (nextDark) {
+      document.documentElement.setAttribute("data-theme", "dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      // remove the attribute so the default :root (light) applies
+      document.documentElement.removeAttribute("data-theme");
+      localStorage.setItem("theme", "light");
+    }
   };
 
   if (large) {
@@ -95,9 +103,9 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
       role="banner"
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group" onClick={() => setMobileOpen(false)}>
+        <Link href="/" className="flex items-center gap-2.5 group" onClick={() => setMobileOpen(false)}>
           <LogoIcon size={26} />
-          <span className="mono text-foreground" style={{ fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          <span className="text-foreground" style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, letterSpacing: "-0.01em" }}>
             A11y Beast
           </span>
         </Link>
@@ -120,6 +128,16 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
           <div className="hidden md:block">
             <ThemeToggle />
           </div>
+
+          {showNav && (
+            <Link
+              href="/#scan"
+              className="hidden md:inline-flex items-center rounded-md bg-accent px-4 py-2 text-sm font-semibold text-[#F4F6F2] hover:bg-accent-hover transition-colors"
+              style={{ textDecoration: "none" }}
+            >
+              Scan a page
+            </Link>
+          )}
 
           {showNav && (
             <button
@@ -203,9 +221,9 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
                   <Link
                     href="/#scan"
                     onClick={() => setMobileOpen(false)}
-                    className="scan-btn flex items-center justify-center gap-2 w-full h-12 rounded-xl text-sm font-semibold"
+                    className="flex items-center justify-center gap-2 w-full h-12 rounded-lg text-sm font-semibold bg-accent text-[#F4F6F2] hover:bg-accent-hover transition-colors"
                   >
-                    Scan Your Site
+                    Scan a page
                   </Link>
                 </motion.div>
               </div>

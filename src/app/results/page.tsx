@@ -763,8 +763,6 @@ export default function ResultsPage() {
               official inaccessible demo —{" "}
               <a
                 href="https://www.w3.org/WAI/demos/bad/before/home.html"
-                target="_blank"
-                rel="noopener noreferrer"
                 style={{ color: "var(--accent-text)", textDecoration: "underline" }}
               >
                 visit it
@@ -1346,7 +1344,7 @@ function ComplianceDetailModal({
                 <button type="button" className="btn primary" onClick={onFilterIssues}>
                   Show issues affecting this law →
                 </button>
-                <a href={fw.url} target="_blank" rel="noopener noreferrer" className="btn">
+                <a href={fw.url} className="btn">
                   <ExternalLink size={13} /> Read the law
                 </a>
               </div>
@@ -1442,23 +1440,16 @@ function Risk({
     );
   }
 
-  // Rough exposure range — heuristic only
-  const lo = breakingLaws * 5_000;
-  const hi = breakingLaws * Math.max(Math.round((100 - pct) * 1_500), 15_000);
-  const fmt = (n: number) =>
-    n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `$${Math.round(n / 1_000)}K` : `$${n}`;
-
   const extra = Math.max(0, worst.length - 6);
 
   return (
     <div className="risk-col">
       <div className="risk-lead">
-        You&rsquo;re likely breaking <span className="hot">{breakingLaws} law{breakingLaws === 1 ? "" : "s"}</span>
-        {" "}and exposed to <span className="hot">{fmt(lo)}–{fmt(hi)}</span> in potential damages.
+        You&rsquo;re likely exposed under <span className="hot">{breakingLaws} of 16 framework{breakingLaws === 1 ? "" : "s"}</span> — here&rsquo;s what to fix first.
       </div>
       <p className="risk-sub">
-        Based on your violations, jurisdictional exposure, and per-framework severity multipliers. Figures are
-        directional, not legal advice — use them to prioritise fixes, not to set reserves.
+        Ranked by your violations, jurisdictional scope, and per-framework severity, so you can resolve the riskiest
+        first. Directional, not legal advice — and automation only sees part of the picture.
       </p>
       <div className="risk-tags">
         {worst.slice(0, 6).map((c) => (
@@ -1572,8 +1563,6 @@ function CrawledPages({
               </span>
               <a
                 href={p.url}
-                target="_blank"
-                rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Open ${p.url} in a new tab`}
                 style={{ color: "var(--text-tertiary)", display: "inline-flex" }}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PageContainer from "@/components/ui/PageContainer";
+import PdfInterestCta from "@/components/PdfInterestCta";
 
 export const metadata: Metadata = {
   title: "Features",
@@ -137,6 +138,12 @@ const GROUPS: Group[] = [
         roadmap: true,
         desc: "Scheduled re-scans that email you when new issues appear, so a deploy can't quietly reintroduce risk. Currently offered as a manual / concierge service while automated monitoring is on the roadmap.",
       },
+      {
+        name: "Document (PDF) accessibility checks",
+        tier: "Pro",
+        roadmap: true,
+        desc: "Check PDFs and documents against PDF/UA + WCAG — the format where most compliance programs quietly fail (Section 508, ADA Title II, the EAA's EN 301 549 §10). Not built yet: we're scoping it for Pro and will prioritise by who actually needs it. Tell us below.",
+      },
     ],
   },
   {
@@ -199,6 +206,19 @@ export default function FeaturesPage() {
           </ul>
         </section>
       ))}
+
+      <section className="doc-section" aria-labelledby="g-roadmap">
+        <div className="doc-eyebrow">help shape it</div>
+        <div className="doc-section-head">
+          <span className="doc-num">04</span>
+          <h2 id="g-roadmap" className="doc-h2">Tell us what to build next</h2>
+        </div>
+        <p className="doc-p">
+          We build for the proof layer, then add what real users ask for — not what a competitor&rsquo;s feature page
+          lists. PDF/document checking is the most-requested gap; if your clients need it, say so and it moves up.
+        </p>
+        <PdfInterestCta />
+      </section>
 
       <p className="doc-note">
         Whatever the tier, A11y Beast reports an automated indicator mapped to legal risk — not a compliance verdict.

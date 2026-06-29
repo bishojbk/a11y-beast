@@ -21,12 +21,19 @@ export interface BlogPost {
 const p: React.CSSProperties = { color: "var(--text-secondary)", fontSize: 16.5, lineHeight: 1.7, marginBottom: 18 };
 const h2: React.CSSProperties = { fontSize: "clamp(22px, 3vw, 28px)", lineHeight: 1.2, marginTop: 44, marginBottom: 14 };
 const li: React.CSSProperties = { ...p, marginBottom: 8 };
-const aStyle: React.CSSProperties = { color: "var(--accent-text)" };
+// Underline (not just colour) so inline prose links are distinguishable
+// without relying on colour alone — WCAG 1.4.1 / axe link-in-text-block.
+const aStyle: React.CSSProperties = {
+  color: "var(--accent-text)",
+  textDecoration: "underline",
+  textDecorationColor: "var(--accent-line)",
+  textUnderlineOffset: 2,
+};
 
 // External source link — opens in a new tab, accent-coloured.
 function Ext({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" style={aStyle}>
+    <a href={href} style={aStyle}>
       {children}
     </a>
   );

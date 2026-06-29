@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import AnalyticsInit from "@/components/AnalyticsInit";
 import AppChrome from "@/components/ui/AppChrome";
-import { Newsreader, Archivo, IBM_Plex_Mono } from "next/font/google";
+import { Fraunces, Archivo, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 // Inline no-flash theme script. Rendered as a raw <script dangerouslySetInnerHTML>
@@ -11,14 +11,14 @@ import "./globals.css";
 // theme with no light/dark flash. Using next/script beforeInteractive with inline
 // *children* triggers a React warning (script children don't execute on the
 // client), and beforeInteractive is meant for external src= scripts anyway.
-// <html> already defaults to data-theme="dark", so this only overrides to a saved
-// non-default preference.
-const THEME_INIT = `try{var t=localStorage.getItem("theme");if(t&&t!=="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
+// <html> now defaults to the light "warm paper" theme (:root), so this only
+// overrides to a saved dark preference.
+const THEME_INIT = `try{var t=localStorage.getItem("theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}`;
 
-// Forensic-editorial type system: Newsreader (display serif),
-// Archivo (UI grotesk), IBM Plex Mono (data / code / legal tags).
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
+// "The Record" editorial type system: Fraunces (display serif, real italics),
+// Archivo (UI grotesk), IBM Plex Mono (data / code / legal tags only).
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
@@ -44,7 +44,7 @@ const SITE_URL = "https://accesslens-green.vercel.app";
 // BRAND_TITLE is the distinctive hook reserved for SOCIAL shares (og/twitter), where
 // curiosity converts better than keywords. Splitting the two gets both: ranking + swagger.
 const SEO_TITLE = "Free Accessibility Checker for ADA & WCAG | A11y Beast";
-const BRAND_TITLE = "A11y Beast — you're not just failing WCAG. You're breaking 16 laws.";
+const BRAND_TITLE = "A11y Beast — the record that proves you tried.";
 const DESCRIPTION =
   "Free accessibility checker that maps every WCAG violation to 16 laws — ADA, EAA, Section 508, California Unruh and more. 110+ checks in a real browser. Not an overlay.";
 
@@ -82,9 +82,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      data-theme="dark"
       data-scroll-behavior="smooth"
-      className={`${newsreader.variable} ${archivo.variable} ${plexMono.variable} h-full`}
+      className={`${fraunces.variable} ${archivo.variable} ${plexMono.variable} h-full`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col antialiased">

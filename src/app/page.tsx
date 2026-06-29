@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Code2, GitCompare, Globe, Lock, Trash2, Upload, XCircle } from "lucide-react";
 import { loadHistory, clearHistory, type ScanHistoryEntry } from "@/lib/history";
-import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { useAxeAnalysis } from "@/hooks/useAxeAnalysis";
 import { FRAMEWORKS, getFrameworkDescription, type FrameworkWithTags } from "@/lib/compliance/frameworks";
 import { computeConformance } from "@/lib/compliance/wcag-criteria";
@@ -14,59 +14,21 @@ import JsonLd from "@/components/JsonLd";
 import { organizationLd, softwareApplicationLd, howToLd } from "@/lib/seo/structured-data";
 import { track } from "@/lib/analytics";
 
-/* Shared motion primitives — restrained, ease-out-expo, no springs */
+/* Shared motion primitives — restrained, ease-out, no springs. Honour
+   prefers-reduced-motion via the page-level MotionConfig reducedMotion="user". */
 const EASE = [0.22, 1, 0.36, 1] as const;
 const fadeUp = {
   hidden: { opacity: 0, y: 14 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
 };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
-const inView = { once: true, amount: 0.15 } as const;
-
-/* ═══════════════════════════════════════════════════════════════
-   Static data — lawsuit ticker + HOW_STEPS
-   (curated, not live — see handoff §data.js)
-   ═══════════════════════════════════════════════════════════════ */
-const LAWSUITS: ReadonlyArray<{ date: string; tag: string; msg: string }> = [
-  { date: "2025.11.18", tag: "ADA III", msg: "S.D.N.Y · Hospitality co. sued for inaccessible booking flow" },
-  { date: "2025.11.14", tag: "Unruh", msg: "California class action · $4M settlement, retail e-comm" },
-  { date: "2025.11.09", tag: "EAA", msg: "EU — in force since 28 Jun 2025; first-year enforcement minimal" },
-  { date: "2025.11.03", tag: "ADA III", msg: "C.D. Cal · fitness platform settles for $1.2M, remediation" },
-  { date: "2025.10.28", tag: "UK EA", msg: "EHRC compliance notice issued to national retailer" },
-  { date: "2025.10.21", tag: "ADA III", msg: "E.D.N.Y · 142-plaintiff serial filer, university sites" },
-  { date: "2025.10.14", tag: "AODA", msg: "Ontario — statutory max up to CAD 100,000/day; none levied to date" },
-  { date: "2025.10.08", tag: "EAA", msg: "Germany BFSG — obligation live, but no enforcement wave in year one" },
-  { date: "2025.09.30", tag: "Sec 508", msg: "GSA procurement disqualification, federal vendor" },
-  { date: "2025.09.22", tag: "Unruh", msg: "California — $4,000 statutory minimum per offense; stacking rejected (Robles)" },
-  { date: "2025.09.15", tag: "SI 5568", msg: "Israel — ILS 150K fine, second-offense news publisher" },
-  { date: "2025.09.03", tag: "ADA III", msg: "S.D. Fla · hotel reservation system, $85K settlement" },
-];
+const inView = { once: true, amount: 0.18 } as const;
 
 const HOW_STEPS = [
-  {
-    idx: "01",
-    tag: "Fetch",
-    title: "Fetch the page",
-    desc: "Puppeteer pulls a real browser render — SPAs, JS-gated content and all. SSRF-guarded, private IPs blocked.",
-  },
-  {
-    idx: "02",
-    tag: "Render",
-    title: "Render the DOM",
-    desc: "Full document, computed styles, role tree, focus order. No static parsing shortcuts — what users actually see.",
-  },
-  {
-    idx: "03",
-    tag: "Analyse",
-    title: "Run 110+ rules",
-    desc: "axe-core's 96 rules plus 20 custom checks axe-core doesn't catch: heading gaps, small text, suspicious alt, zoom-lock.",
-  },
-  {
-    idx: "04",
-    tag: "Map",
-    title: "Map to 16 laws",
-    desc: "Every finding scored against jurisdiction WCAG scope, severity multiplier, deadline exposure. One scan, 16 verdicts.",
-  },
+  { idx: "01 / Render", title: "Real browser", desc: "We load your page in a real Chromium browser with JavaScript on — exactly what a visitor gets, not a static guess.", meta: "Puppeteer · SSRF-guarded" },
+  { idx: "02 / Check", title: "110+ checks", desc: "axe-core's 96 rules plus 20 of our own run against the rendered accessibility tree.", meta: "axe-core 4.11 · 20 custom" },
+  { idx: "03 / Map", title: "16 frameworks", desc: "Each violation is mapped to the specific laws it implicates, with jurisdiction and severity.", meta: "deterministic · not an LLM guess" },
+  { idx: "04 / Record", title: "Dated record", desc: "You get a hash-verifiable evidence record. Re-scan anytime; we diff what changed.", meta: "SHA-256 · regression diff" },
 ];
 
 const SAMPLES = ["shopify.com", "hermes.com", "ticketmaster.com", "stripe.com"];
@@ -76,10 +38,7 @@ const SAMPLES = ["shopify.com", "hermes.com", "ticketmaster.com", "stripe.com"];
    ═══════════════════════════════════════════════════════════════ */
 function flagFor(fw: FrameworkWithTags): string {
   const r = fw.region.toLowerCase();
-  // Canada (AODA = Ontario, ACA = "Canada Federal") MUST be checked before the
-  // USA rule — otherwise "Canada Federal" matches `federal` and mis-flags as US.
   if (r.includes("ontario") || r.includes("canada")) return "CA";
-  // California is a US jurisdiction; flag it US (its name/region still say California).
   if (r.includes("usa") || r.includes("california") || r.includes("federal")) return "US";
   if (r.includes("eu")) return "EU";
   if (r.includes("united kingdom") || r.includes("uk")) return "UK";
@@ -101,36 +60,31 @@ function riskFor(fw: FrameworkWithTags): "high" | "med" | "low" {
 }
 
 const FLAG_STYLES: Record<string, { bg: string; fg: string }> = {
-  US: { bg: "#1a2547", fg: "#E8EAF2" },
-  CA: { bg: "#3a1f20", fg: "#E8D4D4" },
-  EU: { bg: "#1a2b4a", fg: "#F0D96A" },
-  UK: { bg: "#1e2747", fg: "#E8EAF2" },
-  AU: { bg: "#1a2747", fg: "#E8EAF2" },
-  JP: { bg: "#2c1417", fg: "#E8D4D4" },
-  IN: { bg: "#33260f", fg: "#F0C87A" },
-  KR: { bg: "#1b2a3f", fg: "#E8EAF2" },
-  NZ: { bg: "#1a2747", fg: "#E8EAF2" },
-  IL: { bg: "#1a2a3f", fg: "#E8EAF2" },
+  US: { bg: "var(--bg-wash)", fg: "var(--text-secondary)" },
+  CA: { bg: "var(--bg-wash)", fg: "var(--text-secondary)" },
+  EU: { bg: "var(--bg-wash)", fg: "var(--text-secondary)" },
+  UK: { bg: "var(--bg-wash)", fg: "var(--text-secondary)" },
+  AU: { bg: "var(--bg-wash)", fg: "var(--text-secondary)" },
+  IL: { bg: "var(--bg-wash)", fg: "var(--text-secondary)" },
 };
 
 function Flag({ code }: { code: string }) {
-  const c = FLAG_STYLES[code] ?? { bg: "var(--bg-overlay)", fg: "var(--text-secondary)" };
+  const c = FLAG_STYLES[code] ?? { bg: "var(--bg-wash)", fg: "var(--text-secondary)" };
   return (
-    <span className="flag-mono" style={{ background: c.bg, color: c.fg }} aria-hidden="true">
+    <span className="flag-mono" style={{ background: c.bg, color: c.fg, border: "1px solid var(--border-default)" }} aria-hidden="true">
       {code}
     </span>
   );
 }
 
-function formatDeadline(iso?: string): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
+const RISK_CHIP: Record<"high" | "med" | "low", { cls: string; label: string }> = {
+  high: { cls: "risk", label: "High risk" },
+  med: { cls: "part", label: "Applies" },
+  low: { cls: "ok", label: "Lower risk" },
+};
 
 /* ═══════════════════════════════════════════════════════════════
-   Scanner — 3-tab (URL / paste HTML / upload)
+   Scanner — 3-tab (URL / paste HTML / upload). Unchanged behaviour.
    ═══════════════════════════════════════════════════════════════ */
 type Tab = "url" | "paste" | "upload";
 
@@ -140,9 +94,6 @@ function Scanner({
   isScanning,
 }: {
   onScanUrl: (url: string) => void;
-  // Site-wide crawl is a Pro feature (see docs/tier-gating-spec.md §PRO). Until
-  // billing/auth lands we don't run it for free — the homepage offers single-page
-  // scans and upsells the crawl. onCrawlUrl stays threaded for the entitled path.
   onCrawlUrl: (url: string, maxPages: number) => void;
   onAnalyzeHtml: (html: string, name: string, method: "paste" | "upload") => void;
   isScanning: boolean;
@@ -165,40 +116,13 @@ function Scanner({
   return (
     <section className="scanner" aria-label="Scan a website">
       <div role="tablist" aria-label="Input method" className="scanner-tabs">
-        <button
-          role="tab"
-          id="tab-url"
-          aria-selected={tab === "url"}
-          aria-controls="panel-url"
-          tabIndex={tab === "url" ? 0 : -1}
-          className="scanner-tab"
-          onClick={() => setTab("url")}
-          disabled={isScanning}
-        >
+        <button role="tab" id="tab-url" aria-selected={tab === "url"} aria-controls="panel-url" tabIndex={tab === "url" ? 0 : -1} className="scanner-tab" onClick={() => setTab("url")} disabled={isScanning}>
           <Globe size={14} aria-hidden="true" /> URL
         </button>
-        <button
-          role="tab"
-          id="tab-paste"
-          aria-selected={tab === "paste"}
-          aria-controls="panel-paste"
-          tabIndex={tab === "paste" ? 0 : -1}
-          className="scanner-tab"
-          onClick={() => setTab("paste")}
-          disabled={isScanning}
-        >
+        <button role="tab" id="tab-paste" aria-selected={tab === "paste"} aria-controls="panel-paste" tabIndex={tab === "paste" ? 0 : -1} className="scanner-tab" onClick={() => setTab("paste")} disabled={isScanning}>
           <Code2 size={14} aria-hidden="true" /> Paste HTML
         </button>
-        <button
-          role="tab"
-          id="tab-upload"
-          aria-selected={tab === "upload"}
-          aria-controls="panel-upload"
-          tabIndex={tab === "upload" ? 0 : -1}
-          className="scanner-tab"
-          onClick={() => setTab("upload")}
-          disabled={isScanning}
-        >
+        <button role="tab" id="tab-upload" aria-selected={tab === "upload"} aria-controls="panel-upload" tabIndex={tab === "upload" ? 0 : -1} className="scanner-tab" onClick={() => setTab("upload")} disabled={isScanning}>
           <Upload size={14} aria-hidden="true" /> Upload file
         </button>
       </div>
@@ -206,106 +130,48 @@ function Scanner({
       <div className="scanner-body">
         {tab === "url" && (
           <div role="tabpanel" id="panel-url" aria-labelledby="tab-url">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                submit(url);
-              }}
-            >
+            <form onSubmit={(e) => { e.preventDefault(); submit(url); }}>
               <div className="url-row">
                 <div className="url-field">
                   <span className="scheme" aria-hidden="true">https://</span>
-                  <label htmlFor="scan-url" className="sr-only">
-                    Website URL
-                  </label>
-                  <input
-                    id="scan-url"
-                    type="text"
-                    inputMode="url"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="yoursite.com"
-                    spellCheck={false}
-                    autoComplete="url"
-                    disabled={isScanning}
-                  />
+                  <label htmlFor="scan-url" className="sr-only">Website URL</label>
+                  <input id="scan-url" type="text" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="yoursite.com" spellCheck={false} autoComplete="url" disabled={isScanning} />
                 </div>
                 <button type="submit" className="btn-scan" disabled={isScanning || !url.trim()}>
-                  Scan for legal risk <ArrowRight size={14} aria-hidden="true" />
+                  Scan a page <ArrowRight size={14} aria-hidden="true" />
                 </button>
               </div>
               <Link href="/pricing" className="crawl-upsell">
                 <Lock size={12} aria-hidden="true" />
                 <span>Scan your <b>whole site</b></span>
                 <span className="tier-pill pro">Pro</span>
-                <span className="crawl-upsell-cta">
-                  Founding access <ArrowRight size={12} aria-hidden="true" />
-                </span>
+                <span className="crawl-upsell-cta"><ArrowRight size={13} aria-hidden="true" /></span>
               </Link>
             </form>
             <div className="sample-row">
               <span className="label">Try:</span>
               {SAMPLES.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className="chip"
-                  onClick={() => {
-                    setUrl(s);
-                    submit(s);
-                  }}
-                  disabled={isScanning}
-                >
+                <button key={s} type="button" className="chip" onClick={() => { setUrl(s); submit(s); }} disabled={isScanning}>
                   {s}
                 </button>
               ))}
               <Link href="/results?sample=1" className="sample-link">
-                or see a sample report <ArrowRight size={12} aria-hidden="true" />
+                or see a sample record <ArrowRight size={12} aria-hidden="true" />
               </Link>
             </div>
-            <p className="scanner-trust mono">
-              Free · no signup · your HTML never leaves your browser on paste/upload
-            </p>
+            <p className="scanner-trust mono">Free · no signup · your HTML never leaves your browser on paste/upload</p>
           </div>
         )}
 
         {tab === "paste" && (
           <div role="tabpanel" id="panel-paste" aria-labelledby="tab-paste" className="html-paste">
-            <label htmlFor="html-paste" className="sr-only">
-              HTML to analyse
-            </label>
-            <textarea
-              id="html-paste"
-              value={html}
-              onChange={(e) => setHtml(e.target.value)}
-              placeholder={'<!doctype html>\n<html>\n  <head><title>Paste your document</title></head>\n  <body>...</body>\n</html>'}
-              disabled={isScanning}
-              spellCheck={false}
-            />
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginTop: 12,
-                alignItems: "center",
-                gap: 12,
-                flexWrap: "wrap",
-              }}
-            >
-              <span
-                className="mono"
-                style={{ fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.08em", textTransform: "uppercase" }}
-              >
+            <label htmlFor="html-paste" className="sr-only">HTML to analyse</label>
+            <textarea id="html-paste" value={html} onChange={(e) => setHtml(e.target.value)} placeholder={'<!doctype html>\n<html>\n  <head><title>Paste your document</title></head>\n  <body>...</body>\n</html>'} disabled={isScanning} spellCheck={false} />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <span className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                 Analysed in-browser · 0 bytes sent to server
               </span>
-              <button
-                type="button"
-                className="btn-scan"
-                disabled={isScanning || !html.trim()}
-                onClick={() => {
-                  if (html.trim()) onAnalyzeHtml(html, "pasted.html", "paste");
-                }}
-              >
+              <button type="button" className="btn-scan" disabled={isScanning || !html.trim()} onClick={() => { if (html.trim()) onAnalyzeHtml(html, "pasted.html", "paste"); }}>
                 Analyse <ArrowRight size={14} aria-hidden="true" />
               </button>
             </div>
@@ -314,39 +180,18 @@ function Scanner({
 
         {tab === "upload" && (
           <div role="tabpanel" id="panel-upload" aria-labelledby="tab-upload">
-            <label
-              className="file-drop"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  fileRef.current?.click();
-                }
-              }}
-              tabIndex={0}
-            >
+            <label className="file-drop" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileRef.current?.click(); } }} tabIndex={0}>
               <Upload size={28} aria-hidden="true" />
-              <div
-                className="mono"
-                style={{ marginTop: 10, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase" }}
-              >
+              <div className="mono" style={{ marginTop: 10, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                 Drop .html file, or <u>browse</u>
               </div>
-              <div style={{ marginTop: 6, fontSize: 12 }}>
-                Max 5 MB. Rendered in an isolated iframe.
-              </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".html,.htm,text/html"
-                className="sr-only"
-                disabled={isScanning}
+              <div style={{ marginTop: 6, fontSize: 12 }}>Max 5 MB. Rendered in an isolated iframe.</div>
+              <input ref={fileRef} type="file" accept=".html,.htm,text/html" className="sr-only" disabled={isScanning}
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f && f.size <= 5 * 1024 * 1024) {
                     const r = new FileReader();
-                    r.onload = () => {
-                      if (typeof r.result === "string") onAnalyzeHtml(r.result, f.name, "upload");
-                    };
+                    r.onload = () => { if (typeof r.result === "string") onAnalyzeHtml(r.result, f.name, "upload"); };
                     r.readAsText(f);
                   }
                 }}
@@ -367,85 +212,44 @@ function Scanner({
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Indictment — signature hero interaction. Cycles through real
-   violations and "indicts" the specific laws each one breaks,
-   stamping the law badges in one at a time. The whole product
-   thesis ("we say which laws") in a single animated glance.
+   The evidence-record artifact — the hero thesis (static sample)
    ═══════════════════════════════════════════════════════════════ */
-const INDICTMENTS: ReadonlyArray<{ rule: string; wcag: string; selector: string; laws: string[] }> = [
-  { rule: "Image missing alt text", wcag: "1.1.1", selector: "img.hero-banner", laws: ["ADA III", "EAA", "Unruh", "Section 508"] },
-  { rule: "Button has no accessible name", wcag: "4.1.2", selector: "button.icon-only", laws: ["ADA III", "EAA", "AODA", "Equality Act"] },
-  { rule: "Text contrast below 4.5:1", wcag: "1.4.3", selector: ".muted-label", laws: ["ADA III", "EAA", "EN 301 549", "Unruh"] },
-  { rule: "Form input without a label", wcag: "3.3.2", selector: "input#email", laws: ["ADA III", "Section 508", "EAA", "DDA"] },
-];
-
-function Indictment() {
-  const reduceMotion = useReducedMotion();
-  const [idx, setIdx] = useState(0);
-  const [paused, setPaused] = useState(false);
-  // Honour reduced-motion: never auto-rotate, hold a single static frame.
-  const stopped = paused || !!reduceMotion;
-  useEffect(() => {
-    if (stopped) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % INDICTMENTS.length), 3600);
-    return () => clearInterval(t);
-  }, [stopped]);
-
-  const cur = INDICTMENTS[idx];
+function RecordArtifact() {
+  // r=36 circumference ≈ 226.19; 34% coverage → offset ≈ 149.3 (static, no motion)
+  const offset = 226.19 * (1 - 0.34);
   return (
-    <div
-      className="indict"
-      // Focusable so keyboard users can land on it; landing pauses the rotation
-      // (onFocus/onBlur) just as hovering does for mouse users.
-      tabIndex={0}
-      aria-label="Auto-rotating example: how one violation maps to multiple laws. Focus or hover to pause."
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      // Keyboard + touch users get the same pause as mouse users.
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
-      onTouchStart={() => setPaused(true)}
-    >
-      <div className="indict-label">
-        <span className="dot" aria-hidden="true" /> One violation · {INDICTMENTS.length} verdicts
-      </div>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={idx}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.4, ease: EASE }}
-        >
-          <div className="indict-finding">
-            <span className="indict-sev" aria-hidden="true" />
-            <div>
-              <div className="indict-rule">{cur.rule}</div>
-              <div className="indict-meta mono">
-                WCAG {cur.wcag} · <span className="indict-sel">{cur.selector}</span>
-              </div>
-            </div>
+    <div className="rc-record-stack" aria-label="Sample accessibility evidence record">
+      <div className="rc-record">
+        <span className="rc-stamp" aria-hidden="true">SAMPLE</span>
+        <div className="rc-rec-mast">
+          <div className="ttl">Accessibility Evidence Record</div>
+          <div className="sub">
+            <span>Target&nbsp; <b>store.example.com</b></span>
+            <span>26 Jun 2026 · 14:32 UTC</span>
           </div>
-
-          <div className="indict-arrow mono" aria-hidden="true">↓ indicts</div>
-
-          <ul className="indict-laws" aria-label={`Laws implicated: ${cur.laws.join(", ")}`}>
-            {cur.laws.map((law, i) => (
-              <motion.li
-                key={law}
-                className="indict-law"
-                initial={{ opacity: 0, scale: 0.9, x: -6 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                transition={{ duration: 0.32, ease: EASE, delay: 0.25 + i * 0.12 }}
-              >
-                {law}
-              </motion.li>
-            ))}
-          </ul>
-        </motion.div>
-      </AnimatePresence>
-
-      <div className="indict-foot mono">Illustrative · your scan maps every finding to all 16</div>
+        </div>
+        <div className="rc-thin" aria-hidden="true" />
+        <div className="rc-cov">
+          <div className="rc-ring" role="img" aria-label="Automated coverage 34 percent">
+            <svg width="84" height="84" viewBox="0 0 84 84" aria-hidden="true">
+              <circle cx="42" cy="42" r="36" fill="none" stroke="var(--border-default)" strokeWidth="7" />
+              <circle cx="42" cy="42" r="36" fill="none" stroke="var(--accent)" strokeWidth="7" strokeLinecap="round" strokeDasharray="226.19" strokeDashoffset={offset} />
+            </svg>
+            <div className="num"><b>34<span style={{ fontSize: 14 }}>%</span></b><span>coverage</span></div>
+          </div>
+          <p className="ct"><b>34% automated coverage.</b> Machines catch about a third of WCAG. We tell you which third we checked — and which still needs a human.</p>
+        </div>
+        <div className="rc-fw-rows">
+          <div className="rc-fw-row"><div><div className="n">ADA Title III</div><div className="b">WCAG 2.1 AA basis</div></div><span className="rc-chip risk">At risk</span></div>
+          <div className="rc-fw-row"><div><div className="n">European Accessibility Act</div><div className="b">EN 301 549</div></div><span className="rc-chip risk">At risk</span></div>
+          <div className="rc-fw-row"><div><div className="n">Section 508</div><div className="b">Revised 508 · WCAG 2.0 AA</div></div><span className="rc-chip part">Partial</span></div>
+          <div className="rc-fw-row"><div><div className="n">UK Equality Act</div><div className="b">PSBAR 2018</div></div><span className="rc-chip ok">On track</span></div>
+        </div>
+        <div className="rc-rec-foot">
+          <div className="hash"><b>sha256</b> 7f3a…c41e · 73 issues · 14 critical</div>
+          <Link href="/results?sample=1" className="mono" style={{ fontSize: 10.5 }}>verify ↗</Link>
+        </div>
+      </div>
     </div>
   );
 }
@@ -453,7 +257,34 @@ function Indictment() {
 /* ═══════════════════════════════════════════════════════════════
    Hero
    ═══════════════════════════════════════════════════════════════ */
-function Hero({
+function Hero() {
+  return (
+    <section className="rc-hero">
+      <motion.div className="rc-wrap rc-hero-grid" variants={stagger} initial="hidden" animate="visible" transition={{ delayChildren: 0.05, staggerChildren: 0.08 }}>
+        <div className="rc-hero-copy">
+          <motion.span variants={fadeUp} className="rc-eyebrow"><span className="rule" aria-hidden="true" />Accessibility evidence, done honestly</motion.span>
+          <motion.h1 variants={fadeUp}>The record that proves <em>you tried.</em></motion.h1>
+          <motion.p variants={fadeUp} className="rc-lede">
+            We render your page in a real browser, run <b>110+ checks</b>, and map every issue to the <b>16 laws</b> it touches — then issue a <b>dated, hash-verifiable record</b> you can hand a client, a regulator, or a court.
+          </motion.p>
+          <motion.div variants={fadeUp} className="rc-cta-row">
+            <a className="rc-btn rc-btn-primary" href="#scan">Scan a page</a>
+            <Link className="seemore" href="/results?sample=1">See a sample record <span className="rc-arw" aria-hidden="true">→</span></Link>
+          </motion.div>
+          <motion.p variants={fadeUp} className="rc-assure"><span className="dot" aria-hidden="true" />Free · no signup · your page is never stored.</motion.p>
+        </div>
+        <motion.div variants={fadeUp}>
+          <RecordArtifact />
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Scan band — the real scanner, kept prominent right under the hero
+   ═══════════════════════════════════════════════════════════════ */
+function ScanBand({
   onScanUrl,
   onCrawlUrl,
   onAnalyzeHtml,
@@ -465,205 +296,100 @@ function Hero({
   isScanning: boolean;
 }) {
   return (
-    <section className="hero">
-      <motion.div
-        className="hero-inner"
-        variants={stagger}
-        initial="hidden"
-        animate="visible"
-        transition={{ delayChildren: 0.05, staggerChildren: 0.09 }}
-      >
-        <div className="hero-main">
-          <motion.span variants={fadeUp} className="hero-eyebrow">
-            <span className="dot" /> 5,000+ US web-accessibility lawsuits in 2025 (federal + state)
-          </motion.span>
-          <motion.h1 variants={fadeUp} className="hero-title">
-            Most tools say you fail <span className="wcag-mono">WCAG&nbsp;1.1.1.</span>
-            <br />
-            We say <span className="ember">you&rsquo;re breaking 16 laws.</span>
-          </motion.h1>
-          <motion.p variants={fadeUp} className="hero-lede">
-            Know exactly which of <b>16 laws</b> your site is exposed under — and the code to fix each issue.
-            We render your page in a real browser and run 110+ checks against every framework. Real findings,{" "}
-            <b>not an overlay widget</b>.
+    <section className="rc-scan-band" id="scan" style={{ scrollMarginTop: 80 }}>
+      <div className="rc-wrap">
+        <div className="rc-scan-head">
+          <h2>Scan a page</h2>
+          <p>Paste a URL, drop in HTML, or upload a file. Results in seconds — no account needed.</p>
+        </div>
+        <Scanner onScanUrl={onScanUrl} onCrawlUrl={onCrawlUrl} onAnalyzeHtml={onAnalyzeHtml} isScanning={isScanning} />
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Honesty band — the differentiator
+   ═══════════════════════════════════════════════════════════════ */
+function Honesty() {
+  return (
+    <section className="rc-honesty">
+      <motion.div className="rc-wrap" variants={stagger} initial="hidden" whileInView="visible" viewport={inView}>
+        <motion.p variants={fadeUp} className="rc-label">The whole pitch</motion.p>
+        <motion.p variants={fadeUp} className="big">
+          Most scanners imply a clean result means you&rsquo;re compliant. <em>We don&rsquo;t make that claim</em>{" "}— because it isn&rsquo;t true, and it&rsquo;s the one the FTC fines people for.
+        </motion.p>
+        <div className="cols">
+          <motion.p variants={fadeUp}>
+            Automated testing catches roughly <b>a third</b> of real accessibility barriers. The honest move isn&rsquo;t a bigger number — it&rsquo;s telling you <b>exactly which third</b>{" "}we checked, which we couldn&rsquo;t, and what a person still needs to review. That candour is the product.
+          </motion.p>
+          <motion.p variants={fadeUp}>
+            Every scan becomes a <b>dated, SHA-256-hashed record</b>{" "}of what you tested and when. Re-scan and we diff the changes. It&rsquo;s not a compliance badge — it&rsquo;s a defensible paper trail of the effort you actually made.
           </motion.p>
         </div>
-
-        <motion.aside variants={fadeUp} className="hero-aside" aria-label="How one violation maps to the law">
-          <Indictment />
-        </motion.aside>
-
-        <motion.div variants={fadeUp} className="hero-scanner" id="scan" style={{ scrollMarginTop: 90 }}>
-          <Scanner onScanUrl={onScanUrl} onCrawlUrl={onCrawlUrl} onAnalyzeHtml={onAnalyzeHtml} isScanning={isScanning} />
-        </motion.div>
+        <motion.p variants={fadeUp} className="rc-ftc">
+          <b>&ldquo;Guaranteed compliance.&rdquo;</b> That&rsquo;s the claim that cost an overlay vendor a <b>$1M FTC settlement.</b>{" "}You&rsquo;ll never see it here.
+        </motion.p>
       </motion.div>
     </section>
   );
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Ticker
+   How it works
    ═══════════════════════════════════════════════════════════════ */
-function Ticker() {
-  // The list is rendered twice for a seamless marquee loop. Only the first copy
-  // is exposed to assistive tech; the duplicate is aria-hidden so screen readers
-  // don't read every entry twice.
+function HowItWorks() {
   return (
-    <div className="ticker-wrap" style={{ position: "relative" }}>
-      {/* Visible honesty label adjacent to the ticker — mirrors the aria-label and
-          the Indictment's "Illustrative" footer. Kept OUTSIDE .ticker so it never
-          scrolls with the marquee or gets clipped, and doesn't disturb the
-          hover/focus-within pause rule that targets .ticker. */}
-      <span
-        className="ticker-flag mono"
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: 4,
-          right: 12,
-          zIndex: 2,
-          padding: "2px 8px",
-          borderRadius: 5,
-          background: "var(--bg-raised)",
-          fontSize: 10,
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: "var(--text-tertiary)",
-          whiteSpace: "nowrap",
-          pointerEvents: "none",
-        }}
-      >
-        Illustrative · curated sample, not a live feed
-      </span>
-      <div className="ticker" aria-label="Recent accessibility enforcement — curated sample, not a live feed">
-        <div className="ticker-track">
-          {LAWSUITS.map((l, i) => (
-            <span key={`a-${i}`} className="ticker-item">
-              <span className="date">{l.date}</span>
-              <span className="tag">[{l.tag}]</span>
-              <span>{l.msg}</span>
-              <span className="tick-sep">·</span>
-            </span>
-          ))}
-          {LAWSUITS.map((l, i) => (
-            <span key={`b-${i}`} className="ticker-item" aria-hidden="true">
-              <span className="date">{l.date}</span>
-              <span className="tag">[{l.tag}]</span>
-              <span>{l.msg}</span>
-              <span className="tick-sep">·</span>
-            </span>
-          ))}
+    <section className="rc-section" id="how">
+      <div className="rc-wrap">
+        <div className="rc-sec-head">
+          <span className="rc-label">How it works</span>
+          <h2>Four steps, no magic.</h2>
+          <p className="intro">The same pipeline a careful auditor would run by hand — only faster, and written down.</p>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   Stats strip
-   ═══════════════════════════════════════════════════════════════ */
-function Stats() {
-  const s = [
-    { num: "3,117", sub: "", label: "Federal web accessibility lawsuits in 2025", extra: "Up 27% YoY — Seyfarth Shaw" },
-    { num: "1,416", sub: "", label: "2025 lawsuits hit sites running an a11y widget", extra: "Overlays don't stop lawsuits — UsableNet" },
-    { num: "$4,000", sub: "min", label: "California Unruh statutory damages", extra: "Per offense — courts vary on stacking" },
-    { num: "16", sub: "laws", label: "Frameworks we map your scan to", extra: "1 scan, 16 verdicts" },
-  ];
-  return (
-    <motion.section
-      className="stats"
-      aria-label="Why legal risk matters"
-      variants={stagger}
-      initial="hidden"
-      whileInView="visible"
-      viewport={inView}
-    >
-      {s.map((x) => (
-        <motion.div key={x.label} className="stat" variants={fadeUp}>
-          <div className="stat-num">
-            {x.num}
-            {x.sub && <span className="sub">{x.sub}</span>}
-          </div>
-          <div className="stat-label">{x.label}</div>
-          <div className="stat-sub">{x.extra}</div>
+        <motion.div className="rc-steps" variants={stagger} initial="hidden" whileInView="visible" viewport={inView}>
+          {HOW_STEPS.map((s) => (
+            <motion.div key={s.idx} className="rc-step" variants={fadeUp}>
+              <div className="idx">{s.idx}</div>
+              <h3>{s.title}</h3>
+              <p>{s.desc}</p>
+              <div className="meta">{s.meta}</div>
+            </motion.div>
+          ))}
         </motion.div>
-      ))}
-    </motion.section>
+      </div>
+    </section>
   );
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Frameworks centerpiece — 4×4 grid driven by real FRAMEWORKS
+   Frameworks — calm browsable catalog (click a row for detail)
    ═══════════════════════════════════════════════════════════════ */
 function Frameworks() {
   const [selected, setSelected] = useState<FrameworkWithTags | null>(null);
-  // Stable identity so the modal's focus-management effect runs only on real
-  // open/close transitions, not on every Frameworks re-render.
   const closeModal = useCallback(() => setSelected(null), []);
   return (
-    <section className="frameworks" id="frameworks">
-      <div className="fw-inner">
-        <div className="section-head">
-          <div>
-            <div className="kicker">The map · 16 frameworks</div>
-            <h2>
-              One scan.
-              <br />
-              Sixteen jurisdictions.
-              <br />
-              Sixteen verdicts.
-            </h2>
-          </div>
-          <p className="desc">
-            Every WCAG failure we detect is scored separately against each framework&rsquo;s applicable WCAG tags,
-            severity multipliers, per-violation rules, and jurisdictional penalties. You see where you&rsquo;re actually
-            exposed, not just where you fail in theory.
-          </p>
+    <section className="rc-section" id="frameworks" style={{ background: "var(--bg-raised)", borderTop: "1px solid var(--border-default)", borderBottom: "1px solid var(--border-default)" }}>
+      <div className="rc-wrap">
+        <div className="rc-sec-head">
+          <span className="rc-label">The map</span>
+          <h2>Sixteen frameworks, one scan.</h2>
+          <p className="intro">A clean scan in the US doesn&rsquo;t mean a clean scan in the EU. We check the law in every market your site reaches — and date it.</p>
         </div>
-
-        <motion.div
-          className="fw-grid"
-          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
-          initial="hidden"
-          whileInView="visible"
-          viewport={inView}
-        >
+        <div className="rc-cat" role="list" aria-label="Legal frameworks">
           {FRAMEWORKS.map((f, i) => {
-            const risk = riskFor(f);
-            const deadline = formatDeadline(f.enforcementDate);
+            const chip = RISK_CHIP[riskFor(f)];
             return (
-              <motion.div
-                key={f.id}
-                className={`fw-cell ${f.id === "ada-title-iii" ? "active" : ""}`}
-                role="button"
-                tabIndex={0}
-                aria-label={`${f.name}, ${f.region}, ${risk} risk — view details`}
-                variants={fadeUp}
-                onClick={() => setSelected(f)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(f); }
-                }}
-              >
-                <div>
-                  <div className="fw-top">
-                    <span className="fw-num">{String(i + 1).padStart(2, "0")} / 16</span>
-                    <Flag code={flagFor(f)} />
-                  </div>
-                  <div className="fw-name">{f.name}</div>
-                  <div className="fw-region">{f.region}</div>
-                  {deadline && <span className="fw-deadline">◆ {deadline}</span>}
-                </div>
-                <div>
-                  <div className="fw-penalty">{f.penalties}</div>
-                  <div className="fw-meta">
-                    <span className="fw-wcag">{f.wcagBasis}</span>
-                    <span className={`fw-risk ${risk}`}>{risk} risk</span>
-                  </div>
-                </div>
-              </motion.div>
+              <button key={f.id} type="button" className="rc-cat-row" role="listitem" onClick={() => setSelected(f)} aria-label={`${f.name}, ${f.region} — view details`}>
+                <span className="no">{String(i + 1).padStart(2, "0")}</span>
+                <span className="name">{f.name}<span className="basis">{f.wcagBasis}</span></span>
+                <span className="region">{f.region}</span>
+                <span className={`rc-chip ${chip.cls}`}>{chip.label}</span>
+              </button>
             );
           })}
-        </motion.div>
+        </div>
+        <p className="rc-cat-foot">Status reflects enforcement posture, not a verdict on your site. Your scan maps each to <b>your</b> findings.</p>
       </div>
       <FrameworkInfoModal fw={selected} onClose={closeModal} />
     </section>
@@ -677,8 +403,6 @@ function appliesToLabel(a: FrameworkWithTags["appliesTo"]): string {
   return a === "both" ? "Public & private sector" : a === "public" ? "Public sector" : "Private sector";
 }
 
-/** Plain-English description of how our scorer weights this specific framework
- *  (derived from its real bonusPenalties — describes OUR method, not new legal claims). */
 function scoringFactors(fw: FrameworkWithTags): string[] {
   const b = fw.bonusPenalties;
   const out: string[] = [];
@@ -691,52 +415,31 @@ function scoringFactors(fw: FrameworkWithTags): string[] {
 }
 
 function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onClose: () => void }) {
-  // Focus management — matches the pattern in results/ExportDialogs.tsx:
-  // focus the close button on open, trap Tab/Shift+Tab inside the dialog, and
-  // restore focus to whatever opened it on close. (Kept inline per the MODALS
-  // contract — no shared modal component.)
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!fw) return;
-    // Remember the element that had focus so we can restore it on close. Only
-    // capture on the open transition — `onClose` is a fresh closure each parent
-    // render, so this effect can re-run while open; without this guard we'd
-    // overwrite the opener with the dialog's own close button.
     if (!openerRef.current) {
       openerRef.current = (document.activeElement as HTMLElement) ?? null;
-      // Move focus into the dialog on first open.
       closeRef.current?.focus();
     }
-
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-        return;
-      }
+      if (e.key === "Escape") { onClose(); return; }
       if (e.key !== "Tab") return;
       const root = dialogRef.current;
       if (!root) return;
       const focusable = Array.from(
-        root.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
+        root.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
       ).filter((el) => el.offsetParent !== null || el === document.activeElement);
       if (focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       const active = document.activeElement as HTMLElement | null;
       if (e.shiftKey) {
-        if (active === first || !root.contains(active)) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else if (active === last || !root.contains(active)) {
-        e.preventDefault();
-        first.focus();
-      }
+        if (active === first || !root.contains(active)) { e.preventDefault(); last.focus(); }
+      } else if (active === last || !root.contains(active)) { e.preventDefault(); first.focus(); }
     };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -744,8 +447,6 @@ function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onC
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
-      // Restore focus to the opener once the dialog is dismissed, then clear so
-      // the next open captures a fresh opener.
       const opener = openerRef.current;
       openerRef.current = null;
       opener?.focus?.();
@@ -763,19 +464,19 @@ function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onC
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: EASE }}
           onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-          style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(0,0,0,0.62)", backdropFilter: "blur(6px)", display: "grid", placeItems: "center", padding: 24 }}
+          style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(20,18,14,0.45)", backdropFilter: "blur(6px)", display: "grid", placeItems: "center", padding: 24 }}
         >
           <motion.div
             ref={dialogRef}
             initial={{ opacity: 0, y: 14, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.3, ease: EASE }}
-            style={{ width: "min(520px, 100%)", maxHeight: "calc(100vh - 48px)", overflow: "auto", background: "var(--bg-raised)", border: "1px solid var(--border-strong)", borderRadius: 8, boxShadow: "var(--shadow-pop)" }}
+            style={{ width: "min(520px, 100%)", maxHeight: "calc(100vh - 48px)", overflow: "auto", background: "var(--bg-overlay)", border: "1px solid var(--border-strong)", borderRadius: 8, boxShadow: "var(--shadow-pop)" }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid var(--border-default)", gap: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <Flag code={flagFor(fw)} />
                 <div>
-                  <div className="font-display" style={{ fontSize: 17 }}>{fw.name}</div>
+                  <div className="font-display" style={{ fontSize: 18 }}>{fw.name}</div>
                   <div className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{fw.region} · {fw.wcagBasis}</div>
                 </div>
               </div>
@@ -784,16 +485,11 @@ function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onC
 
             <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 16 }}>
               {getFrameworkDescription(fw.id) && (
-                <p style={{ fontSize: 14.5, color: "var(--text-primary)", lineHeight: 1.55, margin: 0 }}>
-                  {getFrameworkDescription(fw.id)}
-                </p>
+                <p style={{ fontSize: 14.5, color: "var(--text-primary)", lineHeight: 1.55, margin: 0 }}>{getFrameworkDescription(fw.id)}</p>
               )}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div><div className="mono" style={lbl}>Who it applies to</div><div style={fld}>{appliesToLabel(fw.appliesTo)}</div></div>
-                <div>
-                  <div className="mono" style={lbl}>WCAG scope</div>
-                  <div style={fld}>{(() => { const c = computeConformance(fw, []); return `${c.total} success criteria · ${c.target}`; })()}</div>
-                </div>
+                <div><div className="mono" style={lbl}>WCAG scope</div><div style={fld}>{(() => { const c = computeConformance(fw, []); return `${c.total} success criteria · ${c.target}`; })()}</div></div>
               </div>
               <div><div className="mono" style={lbl}>Penalties / enforcement</div><div style={fld}>{fw.penalties}</div></div>
               {scoringFactors(fw).length > 0 && (
@@ -814,10 +510,8 @@ function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onC
                 </div>
               )}
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", paddingTop: 4 }}>
-                <a href={fw.url} target="_blank" rel="noopener noreferrer" className="btn">Read the law ↗</a>
-                <button type="button" className="btn primary" onClick={() => { onClose(); document.getElementById("scan")?.scrollIntoView({ behavior: "smooth" }); }}>
-                  Scan for exposure →
-                </button>
+                <a href={fw.url} className="btn">Read the law ↗</a>
+                <button type="button" className="btn primary" onClick={() => { onClose(); document.getElementById("scan")?.scrollIntoView({ behavior: "smooth" }); }}>Scan for exposure →</button>
               </div>
               <p style={{ fontSize: 11, color: "var(--text-tertiary)", lineHeight: 1.5, margin: 0 }}>
                 Penalty figures are historical or statutory reference points, not predictions, and vary by jurisdiction and case. Not legal advice.
@@ -831,79 +525,68 @@ function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onC
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   How it works
+   Who's behind it — the human move
    ═══════════════════════════════════════════════════════════════ */
-function HowItWorks() {
+function Who() {
   return (
-    <section className="section" id="how">
-      <div className="section-head">
-        <div>
-          <div className="kicker">Under the hood</div>
-          <h2>How the free accessibility checker works</h2>
-        </div>
-        <p className="desc">
-          <strong>Real browsers. Real rules. Real penalties.</strong> Most scanners lint static HTML and miss anything rendered by JavaScript. We render every page in headless
-          Chromium, run the full axe-core suite and our 20 custom checks, then map every finding to legal frameworks in
-          one pass.
-        </p>
-      </div>
-      <motion.div
-        className="how-steps"
-        variants={stagger}
-        initial="hidden"
-        whileInView="visible"
-        viewport={inView}
-      >
-        {HOW_STEPS.map((s) => (
-          <motion.div key={s.idx} className="how-step" variants={fadeUp}>
-            <div>
-              <span className="tag">{s.tag}</span>
-              <div style={{ display: "flex", gap: 10, alignItems: "baseline", marginTop: 4 }}>
-                <span className="idx">{s.idx}</span>
-              </div>
-              <h3>{s.title}</h3>
-              <p>{s.desc}</p>
-            </div>
-            <div className="rule">───────</div>
-          </motion.div>
-        ))}
+    <section className="rc-who">
+      <motion.div className="rc-wrap rc-who-grid" variants={stagger} initial="hidden" whileInView="visible" viewport={inView}>
+        <motion.div variants={fadeUp} className="rc-portrait" aria-hidden="true">
+          <div className="av">B</div>
+          <span className="ph">your photo here</span>
+        </motion.div>
+        <motion.div variants={fadeUp}>
+          <span className="rc-label" style={{ display: "block", marginBottom: 16 }}>Who&rsquo;s behind the audits</span>
+          <blockquote>&ldquo;I built this because I was tired of tools that hand you a green checkmark and a lawsuit. You should know what you actually fixed — and be able to prove it.&rdquo;</blockquote>
+          <p className="by"><b>[Your name]</b> — founder<span className="cred">WAS-certified · ex-agency accessibility lead · 200+ audits</span></p>
+        </motion.div>
       </motion.div>
     </section>
   );
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Trust bar — honest credibility signals (no fabricated counts).
-   The per-device scan count is real localStorage data.
+   For agencies
    ═══════════════════════════════════════════════════════════════ */
-const TRUST_SIGNALS = [
-  "Real-browser rendering",
-  "110+ checks · axe-core + 20 custom",
-  "Benchmarked vs axe-core, Lighthouse & Pa11y",
-  "WCAG-EM aligned methodology",
-  "No overlay — code-level findings",
-];
-
-function TrustBar() {
-  const [localScans, setLocalScans] = useState(0);
-  useEffect(() => {
-    setLocalScans(loadHistory().length);
-  }, []);
-
+function Agencies() {
   return (
-    <section className="trustbar" aria-label="Why this scan is credible">
-      <div className="trustbar-inner">
-        {localScans > 0 && (
-          <span className="trustbar-item trustbar-count mono">
-            <span className="dot" aria-hidden="true" /> {localScans} scan{localScans === 1 ? "" : "s"} run in this browser
-          </span>
-        )}
-        {TRUST_SIGNALS.map((s) => (
-          <span key={s} className="trustbar-item mono">
-            <span className="tick" aria-hidden="true">✓</span> {s}
-          </span>
-        ))}
-      </div>
+    <section className="rc-section rc-agency" id="agencies">
+      <motion.div className="rc-wrap rc-ag-grid" variants={stagger} initial="hidden" whileInView="visible" viewport={inView}>
+        <motion.div variants={fadeUp}>
+          <span className="rc-label">For agencies</span>
+          <h2>Resell the record as your own.</h2>
+          <ul>
+            <li><span className="mk" aria-hidden="true">→</span><span><b>White-label it</b> into the audits you already bill — your logo, your client, your deliverable.</span></li>
+            <li><span className="mk" aria-hidden="true">→</span><span><b>Anchor it to the work</b>, not to a scanner. The record belongs in a $1.25k–25k engagement, not a $9 widget.</span></li>
+            <li><span className="mk" aria-hidden="true">→</span><span><b>Re-scan on a schedule</b> and hand clients a dated trail that shows the work held up.</span></li>
+          </ul>
+          <div className="rc-cta-row"><Link className="rc-btn rc-btn-ghost" href="/pricing">Talk to us about white-label</Link></div>
+        </motion.div>
+        <motion.div variants={fadeUp} className="rc-pricecard" id="pricing-teaser">
+          <div className="l">Agency</div>
+          <div className="amt">$249<span> / mo</span></div>
+          <div className="vs">Brandable records, bulk scans, scheduled re-scans, priority support.</div>
+          <div className="anchor"><b>For comparison:</b> a single manual audit runs $1,250–25,000. The record is what you bill it on.</div>
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Final CTA
+   ═══════════════════════════════════════════════════════════════ */
+function FinalCta() {
+  return (
+    <section className="rc-final">
+      <motion.div className="rc-wrap" variants={stagger} initial="hidden" whileInView="visible" viewport={inView}>
+        <motion.h2 variants={fadeUp}>Run an honest scan.</motion.h2>
+        <motion.p variants={fadeUp} className="rc-lede">See exactly where a page stands across sixteen frameworks — and walk away with a record that proves it.</motion.p>
+        <motion.div variants={fadeUp} className="rc-cta-row">
+          <a className="rc-btn rc-btn-primary" href="#scan">Scan a page</a>
+          <Link className="rc-btn rc-btn-ghost" href="/results?sample=1">See a sample record</Link>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }
@@ -937,7 +620,6 @@ function Delta({ n, suffix = "", invert = false }: { n: number; suffix?: string;
 }
 
 function ComparePanel({ a, b }: { a: ScanHistoryEntry; b: ScanHistoryEntry }) {
-  // a = older, b = newer (sorted by caller)
   const overallDelta = b.overall - a.overall;
   const issueDelta = b.issueCount - a.issueCount;
   const fwDeltas = b.frameworks
@@ -980,11 +662,7 @@ function RecentScans() {
   const [comparing, setComparing] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 
-  // localStorage can only be read after mount — doing it during render would
-  // cause an SSR hydration mismatch, so the one-shot setState here is intentional.
-  useEffect(() => {
-    setHistory(loadHistory());
-  }, []);
+  useEffect(() => { setHistory(loadHistory()); }, []);
 
   if (history.length === 0) return null;
 
@@ -1002,74 +680,47 @@ function RecentScans() {
     .sort((x, y) => new Date(x.timestamp).getTime() - new Date(y.timestamp).getTime());
 
   return (
-    <section className="dash-section" aria-label="Recent scans" style={{ maxWidth: 1100, margin: "0 auto", padding: "64px 24px 40px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
-        <h2 className="font-display" style={{ fontSize: 22 }}>Recent scans</h2>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            className="btn"
-            aria-pressed={comparing}
-            onClick={() => { setComparing((c) => !c); setSelected([]); }}
-          >
-            <GitCompare size={13} /> {comparing ? "Done comparing" : "Compare two"}
-          </button>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => { clearHistory(); setHistory([]); setSelected([]); setComparing(false); }}
-          >
-            <Trash2 size={13} /> Clear
-          </button>
+    <section className="rc-section" aria-label="Recent scans" style={{ paddingTop: 56, paddingBottom: 56 }}>
+      <div className="rc-wrap">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+          <h2 style={{ fontSize: 24 }}>Recent scans</h2>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" className="btn" aria-pressed={comparing} onClick={() => { setComparing((c) => !c); setSelected([]); }}>
+              <GitCompare size={13} /> {comparing ? "Done comparing" : "Compare two"}
+            </button>
+            <button type="button" className="btn" onClick={() => { clearHistory(); setHistory([]); setSelected([]); setComparing(false); }}>
+              <Trash2 size={13} /> Clear
+            </button>
+          </div>
         </div>
+
+        {comparing && (
+          <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 10 }}>
+            Pick two scans to see what changed. {pair.length < 2 ? `${2 - pair.length} more to select.` : ""}
+          </p>
+        )}
+
+        <div style={{ border: "1px solid var(--border-default)", borderRadius: 10, overflow: "hidden" }}>
+          {history.map((h, i) => {
+            const isSel = selected.includes(h.id);
+            return (
+              <div key={h.id + i} onClick={comparing ? () => toggleSelect(h.id) : undefined}
+                style={{ display: "grid", gridTemplateColumns: comparing ? "auto auto 1fr auto auto" : "auto 1fr auto auto", gap: 14, alignItems: "center", padding: "12px 16px", borderTop: i === 0 ? "none" : "1px solid var(--border-default)", background: isSel ? "var(--bg-overlay)" : "transparent", cursor: comparing ? "pointer" : "default" }}>
+                {comparing && (<input type="checkbox" checked={isSel} readOnly aria-label={`Select scan of ${hostOf(h.url)}`} />)}
+                <span className="mono" style={{ fontSize: 18, fontWeight: 700, color: scoreColor(h.overall), minWidth: 32 }}>{h.overall}</span>
+                <span className="mono" style={{ fontSize: 13, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {hostOf(h.url)}
+                  {h.isSite && <span style={{ marginLeft: 8, fontSize: 10, color: "var(--text-tertiary)" }}>SITE · {h.pagesScanned}p</span>}
+                </span>
+                <span className="mono" style={{ fontSize: 12, color: "var(--text-secondary)" }}>{h.issueCount} issue{h.issueCount === 1 ? "" : "s"}</span>
+                <span className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{timeAgo(h.timestamp)}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {comparing && pair.length === 2 && <ComparePanel a={pair[0]} b={pair[1]} />}
       </div>
-
-      {comparing && (
-        <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 10 }}>
-          Pick two scans to see what changed. {pair.length < 2 ? `${2 - pair.length} more to select.` : ""}
-        </p>
-      )}
-
-      <div style={{ border: "1px solid var(--border-default)", borderRadius: 10, overflow: "hidden" }}>
-        {history.map((h, i) => {
-          const isSel = selected.includes(h.id);
-          return (
-            <div
-              key={h.id + i}
-              onClick={comparing ? () => toggleSelect(h.id) : undefined}
-              style={{
-                display: "grid",
-                gridTemplateColumns: comparing ? "auto auto 1fr auto auto" : "auto 1fr auto auto",
-                gap: 14,
-                alignItems: "center",
-                padding: "12px 16px",
-                borderTop: i === 0 ? "none" : "1px solid var(--border-default)",
-                background: isSel ? "var(--bg-overlay)" : "transparent",
-                cursor: comparing ? "pointer" : "default",
-              }}
-            >
-              {comparing && (
-                <input type="checkbox" checked={isSel} readOnly aria-label={`Select scan of ${hostOf(h.url)}`} />
-              )}
-              <span className="mono" style={{ fontSize: 18, fontWeight: 700, color: scoreColor(h.overall), minWidth: 32 }}>
-                {h.overall}
-              </span>
-              <span className="mono" style={{ fontSize: 13, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {hostOf(h.url)}
-                {h.isSite && <span style={{ marginLeft: 8, fontSize: 10, color: "var(--text-tertiary)" }}>SITE · {h.pagesScanned}p</span>}
-              </span>
-              <span className="mono" style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                {h.issueCount} issue{h.issueCount === 1 ? "" : "s"}
-              </span>
-              <span className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                {timeAgo(h.timestamp)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {comparing && pair.length === 2 && <ComparePanel a={pair[0]} b={pair[1]} />}
     </section>
   );
 }
@@ -1081,8 +732,6 @@ export default function Home() {
   const router = useRouter();
   const { stage, result, site, error, scanUrl, crawlUrl, analyzeHtml, isScanning } = useAxeAnalysis();
   const [scanTarget, setScanTarget] = useState<string>("");
-  // Polite SR announcement on scan completion. The results page itself moves
-  // focus to its new h1; this just announces the transition.
   const [announce, setAnnounce] = useState("");
 
   useEffect(() => {
@@ -1101,11 +750,7 @@ export default function Home() {
         grade: result.score.grade,
       });
 
-      // Capture a trimmed history entry (summary metrics only).
-      Promise.all([
-        import("@/lib/compliance/mapper"),
-        import("@/lib/history"),
-      ]).then(([{ generateComplianceResults }, { pushHistory }]) => {
+      Promise.all([import("@/lib/compliance/mapper"), import("@/lib/history")]).then(([{ generateComplianceResults }, { pushHistory }]) => {
         const compliance = generateComplianceResults(result.issues, result.passedRules, {
           hasAccessibilityStatement: result.pageMeta.hasAccessibilityStatement,
           hasSkipLink: result.pageMeta.hasSkipLink,
@@ -1121,11 +766,7 @@ export default function Home() {
           grade: result.score.grade,
           issueCount: result.issues.length,
           bySeverity: result.score.bySeverity,
-          frameworks: compliance.map((c) => ({
-            id: c.framework.id,
-            shortName: c.framework.shortName,
-            percentage: c.percentage,
-          })),
+          frameworks: compliance.map((c) => ({ id: c.framework.id, shortName: c.framework.shortName, percentage: c.percentage })),
         });
       }).catch(() => { /* history is best-effort */ });
 
@@ -1133,75 +774,34 @@ export default function Home() {
     }
   }, [result, site, router]);
 
-  const handleScanUrl = useCallback(
-    (url: string) => {
-      setScanTarget(url);
-      scanUrl(url);
-    },
-    [scanUrl]
-  );
-
-  const handleCrawlUrl = useCallback(
-    (url: string, maxPages: number) => {
-      setScanTarget(url);
-      crawlUrl(url, maxPages);
-    },
-    [crawlUrl]
-  );
-
-  const handleAnalyzeHtml = useCallback(
-    (html: string, name: string, method: "paste" | "upload") => {
-      setScanTarget(name);
-      analyzeHtml(html, name, method);
-    },
-    [analyzeHtml]
-  );
+  const handleScanUrl = useCallback((url: string) => { setScanTarget(url); scanUrl(url); }, [scanUrl]);
+  const handleCrawlUrl = useCallback((url: string, maxPages: number) => { setScanTarget(url); crawlUrl(url, maxPages); }, [crawlUrl]);
+  const handleAnalyzeHtml = useCallback((html: string, name: string, method: "paste" | "upload") => { setScanTarget(name); analyzeHtml(html, name, method); }, [analyzeHtml]);
 
   return (
     <MotionConfig reducedMotion="user">
       <JsonLd data={[organizationLd, softwareApplicationLd, howToLd]} />
 
-      {/* Visually-hidden polite live region — announces scan completion to SR
-          users before navigation to /results. */}
-      <div className="sr-only" role="status" aria-live="polite">
-        {announce}
-      </div>
+      <div className="sr-only" role="status" aria-live="polite">{announce}</div>
 
       {isScanning ? (
         <main id="main-content" role="main" style={{ flex: 1 }}>
-          <ScanningCard
-            target={scanTarget}
-            stage={stage}
-            onCancel={() => window.location.reload()}
-          />
+          <ScanningCard target={scanTarget} stage={stage} onCancel={() => window.location.reload()} />
         </main>
       ) : (
-        <main id="main-content" role="main" style={{ flex: 1 }}>
-          <Hero onScanUrl={handleScanUrl} onCrawlUrl={handleCrawlUrl} onAnalyzeHtml={handleAnalyzeHtml} isScanning={isScanning} />
-          <TrustBar />
-          <Ticker />
-          <RecentScans />
-          <Stats />
-          <Frameworks />
+        <main id="main-content" role="main" className="rc" style={{ flex: 1 }}>
+          <Hero />
+          <ScanBand onScanUrl={handleScanUrl} onCrawlUrl={handleCrawlUrl} onAnalyzeHtml={handleAnalyzeHtml} isScanning={isScanning} />
+          <Honesty />
           <HowItWorks />
+          <Frameworks />
+          <RecentScans />
+          <Who />
+          <Agencies />
+          <FinalCta />
 
           {error && (
-            <div
-              role="alert"
-              style={{
-                maxWidth: 720,
-                margin: "0 auto 40px",
-                padding: "14px 20px",
-                background: "var(--severity-critical-bg)",
-                border: "1px solid color-mix(in oklch, var(--severity-critical) 30%, transparent)",
-                borderRadius: 10,
-                color: "var(--severity-critical)",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                fontSize: 13,
-              }}
-            >
+            <div role="alert" style={{ maxWidth: 720, margin: "0 auto 40px", padding: "14px 20px", background: "var(--severity-critical-bg)", border: "1px solid color-mix(in oklch, var(--severity-critical) 30%, transparent)", borderRadius: 10, color: "var(--severity-critical)", display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
               <XCircle size={16} aria-hidden="true" /> {error}
             </div>
           )}
