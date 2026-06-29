@@ -120,3 +120,150 @@ Value first, disclose, mention once, stay honest. Never lead with the link.
 
 ## Reminder
 The Reddit track is the friendly, comfortable one. The track that tells you whether this is a *business* is still the agency outreach. Do both — but if you only have energy for one in a given day, send the DMs.
+
+---
+
+# 2026-06-29 — VERIFIED per-sub playbook + ready-to-paste posts (USE THESE)
+
+_Built from a live 13-subreddit research pass (adversarially checked where possible). Visual board: https://claude.ai/code/artifact/2df26b3a-166c-4124-8792-235082b711a1 ._
+_These supersede the draft posts above for the subs they cover; the drafts stay as rationale._
+_⚠ Reddit blocked the bots from reading rule pages, so karma gates below are estimates — **read each sub's live sidebar before posting.**_
+
+## Posting times in Nepal Time (NPT)
+NPT = US Eastern **+ 9h45m** while the US is on daylight time (now, EDT). After early November it's **+10h45m** (EST), so shift these ~1hr later.
+
+| Sub | US Eastern sweet spot | **Nepal Time** |
+|---|---|---|
+| r/accessibility | Tue/Wed 7–10am ET | **Tue/Wed 4:45–7:45 PM** |
+| r/SideProject | Tue 9am–1pm ET | **Tue 6:45–10:45 PM** |
+| r/indiehackers | Tue–Thu ~9am ET | **Tue–Thu ~6:45 PM** |
+| r/web_design | Mon–Wed 6–9am ET | **Mon–Wed 3:45–6:45 PM** |
+| r/webdev | Saturday ~8am ET | **Sat ~5:45 PM** |
+| Buyer subs (commenting) | Tue–Thu 6–9am ET | **Tue–Thu 3:45–6:45 PM** |
+
+General rule: aim for **5:45–8:45 PM Nepal time, Tue–Thu**. Post only when you can sit and reply for the next 1–2 hours.
+
+## The verdict board (what you can actually do in each)
+| Sub | Verdict | Key rule / gate |
+|---|---|---|
+| **r/SideProject** | ✅ POST (primary launch) | self-promo is the point; ~10 karma |
+| **r/accessibility** | ✅ POST (learning-journey only) | restricted, value-first; aged acct + real history; verify sidebar |
+| **r/indiehackers** | ✅ POST ×1 | must use the **"SHOW IH" flair**; ~50 karma, 14d |
+| **r/webdev** | 🟠 SHOWCASE ONLY | **"Showoff Saturday" flair, Saturdays only** |
+| **r/web_design** | 🟠 VALUE POST | main-feed promo ≈ banned; use weekly showcase thread or a link-free teaching post |
+| **r/shopify** ★buyer | 🔵 COMMENT-FIRST | strictly promo-free; help in ADA/overlay threads, tool once in-context |
+| **r/squarespace** ★buyer | 🔵 COMMENT-FIRST | "free help before paid tools" norm |
+| **r/Wix** ★buyer | 🔵 COMMENT-FIRST | help/support sub; link-posts removed |
+| **r/Wordpress** | 🔵 COMMENT-FIRST | promotion-free (mod-confirmed); promo only in sibling plugin/theme subs |
+| **r/smallbusiness** | 🔵 COMMENT-FIRST | promo only in the weekly "Promote your Business" thread |
+| **r/ecommerce** | 🔴 COMMENT-ONLY | bans self-promo "even if free"; founder-stories explicitly removable (ban risk) |
+| **r/freelance** | 🔴 COMMENT-ONLY | strict; violations = removal + permanent ban |
+| **r/Entrepreneur** | ⚪ LOW PRIORITY | needs 10 in-sub comment karma to post; AI-written posts = ban; audience = peers not buyers |
+
+★ = your actual buyer. The rooms that let you post aren't your buyers; the rooms with your buyers won't let you post. Buyer signal lives in the *comments* of the merchant subs.
+
+## Ready-to-paste posts (written to read human, not AI)
+Rules: **one sub per day**, link in the **first comment** (not the body), reply fast, and **swap in one TRUE personal detail** before posting (the real reason you got curious) — that's the biggest anti-AI move.
+
+### 1 — r/accessibility (your credibility anchor)
+```text
+Title: went down the web-accessibility law rabbit hole for a few months as a dev. some of it genuinely surprised me, and i'd love if you told me where i'm wrong
+
+quick context: i'm a web dev, not an a11y specialist, so this is me sharing what i learned, not lecturing people who've done this for years.
+
+i got into it kind of by accident. read about a lawsuit, realised i had no idea what "ADA compliant" even meant for a website, started digging. stuff that stuck with me:
+
+- there isn't really one "web accessibility law." WCAG is the technical spec, but it gets referenced by a whole pile of different laws depending where your users are (ADA, Section 508, the EU's EAA, Ontario's AODA...). the same broken button can put you on the wrong side of several at once, which i hadn't clocked.
+
+- in the US a lot of it isn't the government coming after you, it's private lawsuits and demand letters. that reframed the whole thing for me.
+
+- the overlay widgets. i'd assumed those little "accessibility" toolbar things actually fixed sites. then i found the Overlay Fact Sheet, and the FTC fining accessiBe a million dollars for claiming their AI made sites compliant. changed how i see this whole space.
+
+- automated testing only catches roughly a third of WCAG. the rest genuinely needs a human, and i don't think i appreciated how much before.
+
+learning this is what got me to build something. full disclosure it's mine: a free scanner that runs the checks and, instead of one vague score, tells you which of those laws each issue maps to, and is upfront it can't make you "compliant" (only catches the automatable part). no overlay, no signup.
+
+honestly i'm more interested in being corrected than in anyone using it. for those who do this for real: is the per-law mapping actually useful, or is it noise? and what's the one thing a free first-pass tool should do that they all get wrong? happy to be told i've misunderstood any of the above.
+
+(link in a comment so this isn't just an ad)
+```
+
+### 2 — r/SideProject (where the scans + emails come from)
+```text
+Title: i made a free accessibility scanner because the "ADA compliance" widgets everyone sells annoyed me
+
+short version: scan any page, it finds the accessibility problems and tells you which actual laws each one is tied to. free, no signup, no overlay widget. [attach a 10-15s gif of a scan + the report]
+
+longer story: i went looking for a way to check if a site was accessible and the whole market is these overlay scripts promising "instant ADA compliance." turns out a lot of them don't work, sites with them installed still get sued, and the FTC fined one of the big ones (accessiBe) a million dollars last year for the "our AI makes you compliant" claim. that annoyed me enough to build the honest version.
+
+so this thing:
+- runs in a real browser so it sees the page like a user does, not a static fetch
+- maps every issue to the laws it touches instead of one meaningless score
+- is upfront that automated tools only catch ~30-40%, so it tells you what still needs a human instead of pretending it's done
+- doesn't try to sell you a widget that "fixes" everything
+
+it's the first real thing i've shipped solo, so i'd genuinely take brutal feedback. mainly: is the report clear or overwhelming, and would you actually trust a tool MORE for telling you what it can't do? that bit was a gamble.
+
+(it's called A11y Beast for now, the name's probably changing. link in comments.)
+```
+
+### 3 — r/indiehackers (use the **SHOW IH** flair)
+```text
+Title: built a free accessibility scanner, but the interesting part is figuring out what's actually worth paying for
+
+context: spent a while learning web accessibility (the law side is messier than i thought, WCAG gets referenced by like a dozen different laws depending on country). built a free scanner out of it. checks a page, maps each problem to the laws it implicates, honest that automated testing only catches about a third of real issues.
+
+the free scan is easy to give away because it's a commodity, free scanners are everywhere. where i'm stuck is the business side, which is why i'm asking here.
+
+what people seem to actually pay for isn't the scan, it's the paperwork. a dated record proving they tested and tried, that an agency can hand a client or attach to a contract. audits that produce that run a couple grand. so my instinct is the money's in the "evidence" layer (a portable report, monitoring over time, white-label for agencies), not a monthly scanner sub.
+
+but i haven't sold anything yet, so that's a theory, not a fact. for those who've sold to agencies or SMBs: would a "proof you did the work" document actually open wallets, or am i romanticising it? and what would make you reach for it instead of running a free scan and forgetting about it?
+
+(full disclosure the tool's mine, link in comments, would love a teardown of the report itself)
+```
+
+### 4 — r/webdev (**Showoff Saturday only**, with the flair)
+```text
+Title: a free accessibility scanner that's honest about what automated testing can't do
+
+showoff saturday. this is mine, free, no signup.
+
+what it is: paste a url, it loads the page in real chromium (puppeteer, not a static fetch, so JS/SPA content actually gets seen), runs axe-core plus some checks i wrote, and gives you the issues by severity. the twist is it maps each finding to the specific laws it touches (ADA, Section 508, EAA...) instead of one vanity score.
+
+being upfront because this crowd will rightly ask: yes the engine is mostly axe-core, that's open source and i'm not pretending otherwise. what i added is ~20 custom checks for things axe misses, the legal mapping, and a dated report you can keep. it says clearly that automated testing only catches ~30-40% of WCAG, so it flags what still needs manual review instead of slapping a "compliant" badge on you. (built it partly because the overlay side of this industry is genuinely shady, accessiBe ate a $1M FTC fine for the "AI makes you compliant" line.)
+
+stuff i'd love eyes on: report readability, whether the per-law mapping is useful or just noise, and any false positives you hit. roast welcome.
+
+(link in comments)
+```
+
+### 5 — r/web_design (lead with value, hold the link back)
+```text
+Title: the same 5 accessibility issues show up on almost every small site i look at. here's what they are and how to fix them.
+
+i've been scanning a lot of small-business and portfolio sites lately (why, at the end) and it's the same handful of things every time. none are hard to fix, so sharing in case it saves someone a redesign headache or a demand letter.
+
+1. low-contrast text. that light-grey-on-white look designers love fails WCAG AA constantly. normal text needs 4.5:1. check your muted text and placeholders especially.
+
+2. images with no alt text, or alt="IMG_1234.jpg". decorative images get empty alt (alt=""), meaningful ones need a real description.
+
+3. focus states stripped off. someone sets outline:none to make buttons look cleaner and now keyboard users can't tell where they are. if you remove the default outline, put a visible one back.
+
+4. inputs with no real label. placeholder text isn't a label, it vanishes when you type and screen readers handle it inconsistently. every input needs an associated <label>.
+
+5. links that all say "click here" / "read more." meaningless out of context for anyone navigating by links. describe where the link goes.
+
+none of this needs an overlay widget, by the way. those tend to make it worse and don't stop lawsuits, sites with them still get sued. it's all just markup.
+
+why i've been scanning so many: i built a free tool that checks these and maps them to the laws they fall under. it's mine so i won't link it in the post, but happy to drop it in a comment if anyone wants it. mostly i just wanted to share the list, this stuff is so common and so fixable.
+```
+
+### Bonus — the comment for buyer subs (Shopify / Squarespace / Wix / r/Wordpress / smallbusiness)
+Use when someone asks "is my store ADA compliant / do I need an accessibility app / are overlays legit." Help first, link optional.
+```text
+honest answer since this comes up a lot: you don't need an overlay widget, and i'd avoid them. the little "accessibility" toolbars that promise instant ADA compliance mostly don't work, and sites that install them still get sued (the FTC even fined accessiBe $1M for claiming their AI made sites compliant). don't let anyone scare you into one.
+
+what actually helps is fixing the real stuff, and most of it is boring and doable: color contrast, alt text on images, labels on form fields, visible focus outlines, and link text that isn't "click here." that handful covers a big chunk of what gets flagged.
+
+if you want to see where your store stands, run any free scanner. full disclosure i built one that maps each issue to the laws it touches and is upfront that automated checks only catch ~30-40%, so you still want a human for the rest. happy to link it if useful, but honestly any decent scanner plus fixing the basics puts you ahead of most stores.
+```
