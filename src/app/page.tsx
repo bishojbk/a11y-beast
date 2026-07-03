@@ -563,9 +563,9 @@ function Agencies() {
           <div className="rc-cta-row"><Link className="rc-btn rc-btn-ghost" href="/pricing">Talk to us about white-label</Link></div>
         </motion.div>
         <motion.div variants={fadeUp} className="rc-pricecard" id="pricing-teaser">
-          <div className="l">Agency</div>
-          <div className="amt">$249<span> / mo</span></div>
-          <div className="vs">Brandable records, bulk scans, scheduled re-scans, priority support.</div>
+          <div className="l">Agency · founding</div>
+          <div className="amt">$99<span> / mo</span></div>
+          <div className="vs">Brandable records, bulk scans, scheduled re-scans, priority support. First 20 agencies — list price $249/mo.</div>
           <div className="anchor"><b>For comparison:</b> a single manual audit runs $1,250–25,000. The record is what you bill it on.</div>
         </motion.div>
       </motion.div>

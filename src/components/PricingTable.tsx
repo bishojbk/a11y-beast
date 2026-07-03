@@ -1,21 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import WaitlistCta from "@/components/WaitlistCta";
+import CheckoutCta from "@/components/CheckoutCta";
 
 interface Tier {
   name: string;
   /** Monthly list price in USD. null = custom / contact-sales. */
   monthly: number | null;
+  /** Crossed-out reference price (founding tiers). */
+  listMonthly?: number;
+  /** True = tier has no annual variant; the toggle doesn't apply. */
+  noAnnual?: boolean;
   /** Shown instead of a price when monthly is null. */
   customLabel?: string;
   tagline: string;
   features: string[];
-  cta: { kind: "link" | "waitlist"; label: string; href?: string };
+  cta:
+    | { kind: "link"; label: string; href: string }
+    | { kind: "waitlist"; label: string }
+    | { kind: "checkout"; label: string; priceMonthly: string; priceAnnual: string };
   featured?: boolean;
-  /** Pre-launch paid tier — shows "Coming soon" + founding-price microcopy. */
+  /** Founding-price tier — shows the founding pill + microcopy. */
   founding?: boolean;
 }
 
@@ -35,7 +43,7 @@ const TIERS: Tier[] = [
   },
   {
     name: "Pro",
-    monthly: 49,
+    monthly: 19,
     tagline: "Prove it, over time. Turn each scan into a dated EN 301 549 evidence record and track progress.",
     features: [
       "Everything in Free",
@@ -47,13 +55,14 @@ const TIERS: Tier[] = [
       "Up to 3 sites",
       "AI fix suggestions (early access)",
     ],
-    cta: { kind: "waitlist", label: "Get founding access" },
+    cta: { kind: "checkout", label: "Get Pro", priceMonthly: "pro_monthly", priceAnnual: "pro_annual" },
     featured: true,
-    founding: true,
   },
   {
     name: "Agency",
-    monthly: 249,
+    monthly: 99,
+    listMonthly: 249,
+    noAnnual: true,
     tagline: "Prove it for clients. Audit-ready evidence records you can put your name on and bill for.",
     features: [
       "Everything in Pro",
@@ -62,7 +71,7 @@ const TIERS: Tier[] = [
       "Client-ready, brandable evidence records",
       "Priority support",
     ],
-    cta: { kind: "waitlist", label: "Get founding access" },
+    cta: { kind: "checkout", label: "Claim a founding seat", priceMonthly: "agency_founding", priceAnnual: "agency_founding" },
     founding: true,
   },
   {
@@ -112,6 +121,25 @@ function PriceBlock({ tier, annual }: { tier: Tier; annual: boolean }) {
     );
   }
 
+  if (tier.noAnnual) {
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          {tier.listMonthly && (
+            <s className="mono" style={{ fontSize: 20, color: "var(--text-tertiary)" }}>
+              <span className="sr-only">List price </span>${tier.listMonthly}
+            </s>
+          )}
+          <span className="mono" style={{ fontSize: 40, fontWeight: 600, color: "var(--text-primary)" }}>${tier.monthly}</span>
+          <span className="mono" style={{ fontSize: 13, color: "var(--text-tertiary)" }}>/ mo</span>
+        </div>
+        <div className="mono" style={lbl}>
+          {tier.listMonthly ? `founding rate · list price $${tier.listMonthly}/mo` : "billed monthly"}
+        </div>
+      </div>
+    );
+  }
+
   const shown = annual ? annualPerMonth(tier.monthly) : tier.monthly;
   return (
     <div>
@@ -128,6 +156,22 @@ function PriceBlock({ tier, annual }: { tier: Tier; annual: boolean }) {
 
 export default function PricingTable() {
   const [annual, setAnnual] = useState(true);
+  // Billing probe: until Stripe is configured, checkout tiers render the
+  // honest waitlist CTA. When configured, real buy buttons + the public
+  // founding-seat count appear automatically.
+  const [billing, setBilling] = useState<{ configured: boolean; foundingSeatsLeft: number | null }>({
+    configured: false,
+    foundingSeatsLeft: null,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/v1/billing/status")
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled) setBilling({ configured: !!d.configured, foundingSeatsLeft: d.foundingSeatsLeft ?? null }); })
+      .catch(() => { /* stays waitlist */ });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <>
@@ -186,7 +230,7 @@ export default function PricingTable() {
                 )}
                 {t.founding && !t.featured && (
                   <span className="mono" style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-tertiary)", border: "1px solid var(--border-default)", borderRadius: 3, padding: "2px 7px" }}>
-                    Coming soon
+                    Founding · 20 seats
                   </span>
                 )}
               </div>
@@ -205,14 +249,24 @@ export default function PricingTable() {
 
             {t.cta.kind === "waitlist" ? (
               <WaitlistCta plan={t.name} label={t.cta.label} featured={t.featured} />
+            ) : t.cta.kind === "checkout" ? (
+              <CheckoutCta
+                price={annual && !t.noAnnual ? t.cta.priceAnnual : t.cta.priceMonthly}
+                plan={t.name}
+                label={billing.configured ? t.cta.label : "Get founding access"}
+                featured={t.featured}
+                configured={billing.configured}
+              />
             ) : (
-              <Link href={t.cta.href ?? "/"} className={`btn ${t.featured ? "primary" : ""}`} style={{ justifyContent: "center" }}>
+              <Link href={t.cta.href} className={`btn ${t.featured ? "primary" : ""}`} style={{ justifyContent: "center" }}>
                 {t.cta.label}
               </Link>
             )}
             {t.founding && (
               <p className="mono" style={{ fontSize: 10, color: "var(--text-tertiary)", textAlign: "center", marginTop: -8 }}>
-                Founding price — locked in for life
+                {billing.configured && billing.foundingSeatsLeft !== null
+                  ? `Founding price — locked for life · ${billing.foundingSeatsLeft} of 20 seats left`
+                  : "Founding price — locked in for life"}
               </p>
             )}
           </div>
