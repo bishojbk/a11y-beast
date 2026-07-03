@@ -23,14 +23,17 @@ function hostOf(url: string): string {
   }
 }
 
-const AUTH_REQUIRED = Response.json(
-  { error: { code: "AUTH_REQUIRED", message: "Sign in to keep a server-backed ledger." } },
-  { status: 401 }
-);
+// A Response body is a one-shot stream, so build a fresh one per call rather
+// than sharing a module-level object across requests.
+const authRequired = () =>
+  Response.json(
+    { error: { code: "AUTH_REQUIRED", message: "Sign in to keep a server-backed ledger." } },
+    { status: 401 }
+  );
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return AUTH_REQUIRED;
+  if (!user) return authRequired();
   const site = request.nextUrl.searchParams.get("site") ?? "";
   if (!site) {
     return Response.json({ error: { code: "NO_SITE", message: "site query param is required." } }, { status: 400 });
@@ -58,7 +61,7 @@ export async function POST(request: NextRequest) {
   if (!checkRateLimit(`evidence:${getClientIp(request)}`, 20, 60_000)) return rateLimited();
 
   const user = await getSessionUser();
-  if (!user) return AUTH_REQUIRED;
+  if (!user) return authRequired();
 
   let body: { record?: { siteUrl?: string; contentHash?: string; scanDate?: string } };
   try {
@@ -67,9 +70,19 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: { code: "BAD_JSON", message: "Invalid request body." } }, { status: 400 });
   }
   const record = body.record;
-  if (!record?.siteUrl || !record.contentHash || !record.scanDate) {
+  // Validate types (not just truthiness): a non-string siteUrl or an
+  // unparseable scanDate would otherwise crash hostOf()/new Date() inside the
+  // insert and surface as a 500 instead of a clean 400.
+  if (
+    typeof record?.siteUrl !== "string" ||
+    typeof record.contentHash !== "string" ||
+    typeof record.scanDate !== "string" ||
+    !record.siteUrl ||
+    !record.contentHash ||
+    Number.isNaN(Date.parse(record.scanDate))
+  ) {
     return Response.json(
-      { error: { code: "BAD_RECORD", message: "record needs siteUrl, contentHash and scanDate." } },
+      { error: { code: "BAD_RECORD", message: "record needs siteUrl, contentHash and a valid scanDate." } },
       { status: 400 }
     );
   }

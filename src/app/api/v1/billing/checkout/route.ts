@@ -36,6 +36,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Block a second concurrent subscription on the same customer (Stripe allows
+  // it → double billing, and two live subs make webhook plan-sync ambiguous).
+  // Changing tiers happens through the billing portal, not a fresh checkout.
+  if (user.plan !== "free" && user.stripeSubscriptionId) {
+    return Response.json(
+      {
+        error: {
+          code: "ALREADY_SUBSCRIBED",
+          message: "You already have an active plan. Change or cancel it from your account billing page.",
+        },
+      },
+      { status: 409 }
+    );
+  }
+
   let body: { price?: string };
   try {
     body = await request.json();

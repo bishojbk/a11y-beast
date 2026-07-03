@@ -36,7 +36,13 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
-        await syncSubscription(event.data.object);
+        // Re-fetch the live subscription instead of trusting the (possibly
+        // stale, out-of-order) event payload — Stripe does not guarantee
+        // delivery order. A deleted sub is still retrievable (status=canceled),
+        // so this yields current truth. syncSubscription's isCurrent guard is
+        // the second line of defence.
+        const fresh = await stripe.subscriptions.retrieve(event.data.object.id);
+        await syncSubscription(fresh);
         break;
       }
       default:

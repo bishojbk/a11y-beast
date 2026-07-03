@@ -43,9 +43,21 @@ export default function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         // Header listens for this to refresh its Account/Sign-in state without
         // a hard reload (client-side nav keeps it mounted).
         window.dispatchEvent(new Event("ab:auth-changed"));
+        // Only same-origin relative paths — never redirect off-site. A prefix
+        // check ("/", not "//") is not enough: the URL parser normalizes
+        // backslashes, so "/\\evil.com" resolves to https://evil.com. Resolve
+        // against the real origin and confirm it stays on-origin.
         const next = params.get("next");
-        // Only same-site relative paths — never redirect off-site.
-        router.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : "/account");
+        let dest = "/account";
+        if (next) {
+          try {
+            const resolved = new URL(next, window.location.origin);
+            if (resolved.origin === window.location.origin) dest = resolved.pathname + resolved.search;
+          } catch {
+            /* malformed next — fall back to /account */
+          }
+        }
+        router.replace(dest);
         router.refresh();
       } catch (err) {
         setStatus("idle");

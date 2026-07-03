@@ -46,43 +46,70 @@ export async function foundingSeatsLeft(): Promise<number> {
 
 const ACTIVE_STATUSES = new Set(["active", "trialing", "past_due"]);
 
-/** Mirror a Stripe subscription onto the owning user row (webhook + checkout). */
+/** Mirror a Stripe subscription onto the owning user row (webhook + checkout).
+ *  Three safety rules, because Stripe does not guarantee event ordering and a
+ *  customer can briefly hold two subscriptions:
+ *   1. An ACTIVE sub with a price we don't recognise (e.g. a rotated/re-priced
+ *      price id) never downgrades a paying customer — keep their plan, log it.
+ *   2. An INACTIVE event for a subscription that is NOT the user's current one
+ *      is ignored (a stale/out-of-order or old-sub-lapsing event must not wipe
+ *      the live plan).
+ *   3. An ACTIVE event always takes ownership (handles re-subscribe with a new
+ *      sub id on the same customer). */
 export async function syncSubscription(sub: Stripe.Subscription): Promise<void> {
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
   const item = sub.items.data[0];
-  const plan: Plan =
-    ACTIVE_STATUSES.has(sub.status) && item ? planForPriceId(item.price.id) ?? "free" : "free";
+  const active = ACTIVE_STATUSES.has(sub.status) && !!item;
+  const mappedPlan = item ? planForPriceId(item.price.id) : null;
   // API 2025+ moved current_period_end onto the subscription item.
   const periodEnd =
     (item as unknown as { current_period_end?: number })?.current_period_end ??
     (sub as unknown as { current_period_end?: number }).current_period_end;
 
   const db = await getDb();
-  const byCustomer = await db
+  const userId = sub.metadata?.userId;
+  const row =
+    (await db.select().from(users).where(eq(users.stripeCustomerId, customerId)).limit(1))[0] ??
+    (userId ? (await db.select().from(users).where(eq(users.id, userId)).limit(1))[0] : undefined);
+  if (!row) {
+    console.error("[stripe] syncSubscription: no user for customer", customerId, "sub", sub.id);
+    return;
+  }
+
+  const isCurrent = !row.stripeSubscriptionId || row.stripeSubscriptionId === sub.id;
+  // Rule 2: ignore inactive events for a non-current subscription.
+  if (!active && !isCurrent) return;
+
+  // Rule 1: unrecognised active price → keep the existing plan, don't fail open.
+  if (active && mappedPlan === null) {
+    console.error("[stripe] unrecognised active price", item?.price.id, "sub", sub.id, "— keeping plan", row.plan);
+  }
+  const plan: Plan = active ? mappedPlan ?? row.plan : "free";
+
+  // Founding-cap backstop: the checkout pre-check can be beaten by concurrent /
+  // long-lived unpaid sessions (a created session stays payable for hours). We
+  // can't refuse a completed payment, but a loud alert lets the founder refund
+  // or close signups. A hard guarantee would need a seat-reservation table.
+  if (plan === "agency" && row.plan !== "agency" && (await foundingSeatsLeft()) <= 0) {
+    console.error(
+      "[stripe] FOUNDING CAP EXCEEDED — granting agency to",
+      row.email,
+      "past the",
+      FOUNDING_AGENCY_CAP,
+      "seat cap. Review/refund and close founding signups."
+    );
+  }
+
+  await db
     .update(users)
     .set({
       plan,
-      stripeSubscriptionId: sub.id,
-      planRenewsAt: periodEnd ? new Date(periodEnd * 1000) : null,
+      stripeCustomerId: customerId,
+      // Rule 3: active event owns the row; deactivation of the current sub clears it.
+      stripeSubscriptionId: active ? sub.id : null,
+      planRenewsAt: active && periodEnd ? new Date(periodEnd * 1000) : null,
     })
-    .where(eq(users.stripeCustomerId, customerId))
-    .returning({ id: users.id });
-
-  // Fallback: customer not linked yet (shouldn't happen — checkout links first).
-  if (!byCustomer.length) {
-    const userId = sub.metadata?.userId;
-    if (userId) {
-      await db
-        .update(users)
-        .set({
-          plan,
-          stripeCustomerId: customerId,
-          stripeSubscriptionId: sub.id,
-          planRenewsAt: periodEnd ? new Date(periodEnd * 1000) : null,
-        })
-        .where(eq(users.id, userId));
-    }
-  }
+    .where(eq(users.id, row.id));
 }
 
 /** Origin for redirect URLs: SITE_URL env wins, else the request's forwarded host. */
