@@ -5,6 +5,10 @@ import { generateComplianceResults } from "@/lib/compliance/mapper";
 import { getEffort } from "@/lib/analyzer/effort";
 import { getClientIp } from "@/lib/getClientIp";
 import { tryAcquireRenderSlot, releaseRenderSlot } from "@/lib/scan-semaphore";
+import { getSessionUser } from "@/lib/auth/session";
+
+// Per-plan page caps for a single crawl request.
+const PLAN_MAX_PAGES = { pro: 12, agency: 25 } as const;
 
 // Crawling is heavier than a single scan — stricter limit.
 const rateMap = new Map<string, { count: number; resetAt: number }>();
@@ -53,22 +57,26 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Site-wide crawl is a Pro feature (docs/tier-gating-spec.md). There is no
-  // billing/auth yet, so the public endpoint is gated OFF by default — otherwise
-  // the headline paid feature (and the most expensive endpoint: up to 12
-  // Puppeteer renders/request) is free to anyone who curls it. Flip
-  // ENABLE_SITE_CRAWL=true only once an entitlement check is in front of it.
-  if (process.env.ENABLE_SITE_CRAWL !== "true") {
+  // Site-wide crawl is a Pro feature (docs/tier-gating-spec.md). The
+  // entitlement check is the session plan; ENABLE_SITE_CRAWL=true remains as a
+  // dev/self-host override for running without accounts.
+  const user = await getSessionUser();
+  const plan = user?.plan;
+  const entitled = plan === "pro" || plan === "agency" || process.env.ENABLE_SITE_CRAWL === "true";
+  if (!entitled) {
     return Response.json(
       {
         error: {
           code: "PRO_FEATURE",
-          message: "Site-wide crawl is a Pro feature (founding access). Single-page scans are free at /api/v1/scan.",
+          message: user
+            ? "Site-wide crawl is a Pro feature — upgrade at /pricing. Single-page scans stay free."
+            : "Site-wide crawl is a Pro feature — sign in with a Pro account. Single-page scans are free at /api/v1/scan.",
         },
       },
       { status: 402, headers }
     );
   }
+  const planMaxPages = plan === "agency" ? PLAN_MAX_PAGES.agency : PLAN_MAX_PAGES.pro;
 
   try {
     const body = await request.json();
@@ -100,7 +108,9 @@ export async function POST(request: NextRequest) {
     const start = Date.now();
     let outcome;
     try {
-      outcome = await crawlSite(url, { maxPages: typeof maxPages === "number" ? maxPages : undefined });
+      outcome = await crawlSite(url, {
+        maxPages: Math.min(typeof maxPages === "number" && maxPages > 0 ? maxPages : planMaxPages, planMaxPages),
+      });
     } finally {
       releaseRenderSlot();
     }

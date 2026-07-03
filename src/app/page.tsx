@@ -90,17 +90,21 @@ type Tab = "url" | "paste" | "upload";
 
 function Scanner({
   onScanUrl,
+  onCrawlUrl,
   onAnalyzeHtml,
   isScanning,
+  canCrawl,
 }: {
   onScanUrl: (url: string) => void;
   onCrawlUrl: (url: string, maxPages: number) => void;
   onAnalyzeHtml: (html: string, name: string, method: "paste" | "upload") => void;
   isScanning: boolean;
+  canCrawl: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("url");
   const [url, setUrl] = useState("");
   const [html, setHtml] = useState("");
+  const [wholeSite, setWholeSite] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const submit = useCallback(
@@ -108,9 +112,10 @@ function Scanner({
       const trimmed = raw.trim();
       if (!trimmed) return;
       const normalized = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-      onScanUrl(normalized);
+      if (wholeSite && canCrawl) onCrawlUrl(normalized, 12);
+      else onScanUrl(normalized);
     },
-    [onScanUrl]
+    [onScanUrl, onCrawlUrl, wholeSite, canCrawl]
   );
 
   return (
@@ -138,15 +143,29 @@ function Scanner({
                   <input id="scan-url" type="text" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="yoursite.com" spellCheck={false} autoComplete="url" disabled={isScanning} />
                 </div>
                 <button type="submit" className="btn-scan" disabled={isScanning || !url.trim()}>
-                  Scan a page <ArrowRight size={14} aria-hidden="true" />
+                  {wholeSite && canCrawl ? "Scan the site" : "Scan a page"} <ArrowRight size={14} aria-hidden="true" />
                 </button>
               </div>
-              <Link href="/pricing" className="crawl-upsell">
-                <Lock size={12} aria-hidden="true" />
-                <span>Scan your <b>whole site</b></span>
-                <span className="tier-pill pro">Pro</span>
-                <span className="crawl-upsell-cta"><ArrowRight size={13} aria-hidden="true" /></span>
-              </Link>
+              {canCrawl ? (
+                <label className="crawl-upsell" style={{ cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={wholeSite}
+                    onChange={(e) => setWholeSite(e.target.checked)}
+                    disabled={isScanning}
+                    style={{ accentColor: "var(--accent)" }}
+                  />
+                  <span>Scan the <b>whole site</b> — up to 12 pages, same-origin crawl</span>
+                  <span className="tier-pill pro">Pro</span>
+                </label>
+              ) : (
+                <Link href="/pricing" className="crawl-upsell">
+                  <Lock size={12} aria-hidden="true" />
+                  <span>Scan your <b>whole site</b></span>
+                  <span className="tier-pill pro">Pro</span>
+                  <span className="crawl-upsell-cta"><ArrowRight size={13} aria-hidden="true" /></span>
+                </Link>
+              )}
             </form>
             <div className="sample-row">
               <span className="label">Try:</span>
@@ -289,11 +308,13 @@ function ScanBand({
   onCrawlUrl,
   onAnalyzeHtml,
   isScanning,
+  canCrawl,
 }: {
   onScanUrl: (url: string) => void;
   onCrawlUrl: (url: string, maxPages: number) => void;
   onAnalyzeHtml: (html: string, name: string, method: "paste" | "upload") => void;
   isScanning: boolean;
+  canCrawl: boolean;
 }) {
   return (
     <section className="rc-scan-band" id="scan" style={{ scrollMarginTop: 80 }}>
@@ -302,7 +323,7 @@ function ScanBand({
           <h2>Scan a page</h2>
           <p>Paste a URL, drop in HTML, or upload a file. Results in seconds — no account needed.</p>
         </div>
-        <Scanner onScanUrl={onScanUrl} onCrawlUrl={onCrawlUrl} onAnalyzeHtml={onAnalyzeHtml} isScanning={isScanning} />
+        <Scanner onScanUrl={onScanUrl} onCrawlUrl={onCrawlUrl} onAnalyzeHtml={onAnalyzeHtml} isScanning={isScanning} canCrawl={canCrawl} />
       </div>
     </section>
   );
@@ -733,6 +754,19 @@ export default function Home() {
   const { stage, result, site, error, scanUrl, crawlUrl, analyzeHtml, isScanning } = useAxeAnalysis();
   const [scanTarget, setScanTarget] = useState<string>("");
   const [announce, setAnnounce] = useState("");
+  // Pro/Agency accounts get the real whole-site crawl toggle in the scanner.
+  const [canCrawl, setCanCrawl] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/v1/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled) setCanCrawl(d.user?.plan === "pro" || d.user?.plan === "agency");
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (result) {
@@ -791,7 +825,7 @@ export default function Home() {
       ) : (
         <main id="main-content" role="main" className="rc" style={{ flex: 1 }}>
           <Hero />
-          <ScanBand onScanUrl={handleScanUrl} onCrawlUrl={handleCrawlUrl} onAnalyzeHtml={handleAnalyzeHtml} isScanning={isScanning} />
+          <ScanBand onScanUrl={handleScanUrl} onCrawlUrl={handleCrawlUrl} onAnalyzeHtml={handleAnalyzeHtml} isScanning={isScanning} canCrawl={canCrawl} />
           <Honesty />
           <HowItWorks />
           <Frameworks />
