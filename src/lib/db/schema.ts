@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   plan: text("plan").$type<Plan>().notNull().default("free"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  brandName: text("brand_name"),
   planRenewsAt: timestamp("plan_renews_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

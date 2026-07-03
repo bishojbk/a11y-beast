@@ -33,4 +33,7 @@ CREATE TABLE IF NOT EXISTS evidence_records (
 );
 CREATE INDEX IF NOT EXISTS evidence_user_site_idx
   ON evidence_records(user_id, site_host, created_at DESC);
+
+-- 2026-07-03: white-label name shown as "Prepared by" on Agency evidence PDFs
+ALTER TABLE users ADD COLUMN IF NOT EXISTS brand_name TEXT;
 `;

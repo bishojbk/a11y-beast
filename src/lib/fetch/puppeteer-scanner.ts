@@ -33,7 +33,7 @@ const IS_VERCEL = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME
 // callers in a TOCTOU race share one browser instead of leaking spares.
 let browserPromise: Promise<Browser> | null = null;
 
-async function getBrowser(): Promise<Browser> {
+export async function getBrowser(): Promise<Browser> {
   if (browserPromise) {
     try {
       const b = await browserPromise;

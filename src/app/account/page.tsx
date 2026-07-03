@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import PageContainer from "@/components/ui/PageContainer";
 import SignOutButton from "@/components/SignOutButton";
 import ManageBillingButton from "@/components/ManageBillingButton";
+import BrandingForm from "@/components/BrandingForm";
 import { getSessionUser } from "@/lib/auth/session";
 import { getDb, evidenceRecords, type Plan } from "@/lib/db";
 import { count, desc, eq, max } from "drizzle-orm";
@@ -88,6 +89,15 @@ export default async function AccountPage({
         </h2>
         <LedgerSummary userId={user.id} plan={user.plan} />
       </section>
+
+      {user.plan === "agency" && (
+        <section aria-labelledby="account-brand" style={{ marginBottom: 32 }}>
+          <h2 id="account-brand" className="font-display" style={{ fontSize: 20, marginBottom: 10 }}>
+            White-label
+          </h2>
+          <BrandingForm initial={user.brandName ?? ""} />
+        </section>
+      )}
 
       <SignOutButton />
     </PageContainer>

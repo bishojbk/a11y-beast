@@ -500,6 +500,42 @@ export default function ResultsPage() {
     if (unlocked) void openEvidenceFile();
     else setEvidenceGateOpen(true);
   }, [unlocked, openEvidenceFile]);
+
+  // Styled evidence PDF — server-rendered, Pro-gated (Agency gets white-label).
+  // 402 routes to /pricing: the button doubles as the honest upsell.
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const downloadEvidencePdf = useCallback(async () => {
+    if (!result || pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      const { buildEvidenceRecord } = await import("@/lib/report/evidence-file");
+      const { getSiteEntries, diffEntries } = await import("@/lib/report/evidence-ledger");
+      const record = await buildEvidenceRecord(result);
+      const prior = isSample ? undefined : getSiteEntries(result.url)[0];
+      const diff = prior && prior.contentHash !== record.contentHash ? diffEntries(prior, record) : undefined;
+      const res = await fetch("/api/v1/evidence/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ record, diff }),
+      });
+      if (res.status === 402 || res.status === 401) {
+        router.push("/pricing");
+        return;
+      }
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      const host = (() => {
+        try { return new URL(result.url).host.replace(/[^\w.-]+/g, "_"); } catch { return "site"; }
+      })();
+      a.download = `evidence-record-${host}-${new Date(result.timestamp).toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } finally {
+      setPdfBusy(false);
+    }
+  }, [result, isSample, pdfBusy, router]);
   const rowsInited = useRef(false);
 
   useEffect(() => {
@@ -847,6 +883,10 @@ export default function ResultsPage() {
               </button>
               <button type="button" className="btn" onClick={handleEvidenceClick}>
                 <FileText size={13} /> Evidence file
+              </button>
+              <button type="button" className="btn" onClick={downloadEvidencePdf} disabled={pdfBusy}>
+                <Download size={13} /> {pdfBusy ? "Rendering…" : "Evidence PDF"}
+                <span className="tier-pill pro" style={{ marginLeft: 2 }}>Pro</span>
               </button>
               <button type="button" className="btn" onClick={() => setModal("action")}>
                 <Code2 size={13} /> CI / CLI
