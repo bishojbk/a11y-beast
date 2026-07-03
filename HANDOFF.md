@@ -21,7 +21,17 @@ A11y Beast (repo: `a11y-beast`, product dir `~/Personal/accesslens`) — a Next.
 4. **Server evidence ledger** — `api/v1/evidence` GET/POST, per-plan limits (free 1 site×5, pro 3×24, agency 25×24), hash dedup, trim; results page prefers server prior for the diff; account page lists sites.
 5. **Plan-gated crawl** — `api/v1/crawl` entitlement = session plan (pro 12 pages / agency 25, clamped); `ENABLE_SITE_CRAWL` is now only a dev override; homepage shows a real whole-site checkbox to pro/agency.
 6. **Evidence PDF + white-label** — `api/v1/evidence/pdf` (Pro+; sanitizes the untrusted record field-by-field; shared Puppeteer + render semaphore); Agency stamps saved `users.brand_name` as "Prepared by" (form on `/account`, `api/v1/account/brand`).
-**Full-site axe sweep after the build: 0 violations, 14 routes × 2 themes (`.axe-sweep.mjs`, scroll+final-state harness).** Adversarial review of the diff run via workflow — findings + fixes recorded below/in git.
+**Full-site axe sweep after the build: 0 violations, 14 routes × 2 themes (`.axe-sweep.mjs`, scroll+final-state harness).**
+
+**Adversarial security/correctness review (workflow: 4 dimension reviewers + 2-skeptic verification each) → 10 confirmed, 2 contested, 6 killed. ALL fixed in commit `a00b096`:**
+- **AuthForm open redirect** — `?next` guarded only against `//`; `/\evil.com` normalized off-origin. Now resolves against `window.location.origin` + same-origin check. (was major)
+- **Double subscription** — checkout now blocks a 2nd sub when the user already has an active plan+sub (409 `ALREADY_SUBSCRIBED`); tier changes go through the portal. (was critical)
+- **`syncSubscription` hardening** — (1) unrecognised active price no longer fails open to `free` (silent downgrade on Stripe price rotation); (2) inactive events for a non-current sub ignored (stale/out-of-order clobber); (3) active events take ownership (re-subscribe safe). (was major×2)
+- **Webhook freshness** — `subscription.*` events re-fetch the live sub instead of trusting the payload (Stripe doesn't guarantee ordering). (was major)
+- **Evidence route** — fresh `AUTH_REQUIRED` per call (no shared one-shot stream); type-validate `siteUrl`/`scanDate` → 400 not 500. (contested; fixed anyway — cheap)
+- **Founding-cap TOCTOU** — ⚠️ RESIDUAL: loud webhook-time alert when agency granted past 20 seats, but concurrent/long-lived-unpaid checkout sessions can still oversell by a few. A hard guarantee needs a seat-reservation table — acceptable for a hand-watched 20-seat founding tier; revisit if it matters.
+- **Killed (correctly, not bugs):** bcrypt signin timing (signup already discloses account existence by design), x-forwarded-host redirect URLs (Vercel sets `SITE_URL` + CORS preflight blocks the browser vector), oversized-body abuse, PDF Content-Disposition header (scanDate now validated regardless).
+Re-verified after fixes: open-redirect cases fall back to `/account`, anon GET+POST both 401 on repeat, bad evidence input → 400 / valid → 201, build clean, **axe sweep still 0/14×2**.
 
 **4th research pass (2026-07-02, adversarial deep-research → `docs/deep-research-viability-2026-07-02.md`): CONDITIONAL GO with one reframe.** Verified: 2025 US suits hit a RECORD (5,114 total; 3,117 federal +27%; **46% of federal cases = repeat defendants — the single strongest sales hook found**); accessiBe gives agencies a FREE white-labeled scanner → never market "white-label scanner"; the unoccupied seam is the white-label evidence RECORD (AudioEye prohibits white-labeling; no incumbent ships the record). REFUTED (don't use): HHS-504 healthcare deadline as a demand segment; Belkins cold-email benchmarks.
 
