@@ -454,19 +454,38 @@ export default function ResultsPage() {
 
   // Build the dated, hashed evidence record, diff it against this site's prior
   // ledger entry (regression proof), append it, and open the printable doc.
+  // Signed-in users get the server ledger (durable, cross-device); anonymous
+  // visitors keep the localStorage ledger. The server copy wins for the diff.
   const openEvidenceFile = useCallback(async () => {
     if (!result) return;
     const { buildEvidenceRecord, renderEvidenceHtml } = await import("@/lib/report/evidence-file");
     const { getSiteEntries, appendEntry, diffEntries } = await import("@/lib/report/evidence-ledger");
     const record = await buildEvidenceRecord(result);
     // On the sample, still build and open the printable doc — but never mutate
-    // the visitor's real localStorage ledger (or the on-screen counter) with the
-    // W3C demo's record.
-    const prior = isSample ? undefined : getSiteEntries(result.url)[0];
+    // the visitor's real ledger (local or server) with the W3C demo's record.
+    let prior = isSample ? undefined : getSiteEntries(result.url)[0];
+    if (!isSample) {
+      try {
+        const res = await fetch(`/api/v1/evidence?site=${encodeURIComponent(result.url)}`);
+        if (res.ok) {
+          const data = (await res.json()) as { records?: Array<{ record: typeof record }> };
+          if (data.records?.[0]?.record) prior = data.records[0].record;
+        }
+      } catch {
+        /* offline / signed out — local prior stands */
+      }
+    }
     const diff = prior && prior.contentHash !== record.contentHash ? diffEntries(prior, record) : undefined;
     if (!isSample) {
       appendEntry(record);
       setEvidenceCount(getSiteEntries(result.url).length);
+      // Server append is fire-and-forget: 401 (signed out) and plan limits are
+      // non-fatal — the local ledger already has the record either way.
+      void fetch("/api/v1/evidence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ record }),
+      }).catch(() => {});
     }
     const blob = new Blob([renderEvidenceHtml(record, diff)], { type: "text/html" });
     const url = URL.createObjectURL(blob);

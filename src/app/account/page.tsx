@@ -5,6 +5,8 @@ import PageContainer from "@/components/ui/PageContainer";
 import SignOutButton from "@/components/SignOutButton";
 import ManageBillingButton from "@/components/ManageBillingButton";
 import { getSessionUser } from "@/lib/auth/session";
+import { getDb, evidenceRecords, type Plan } from "@/lib/db";
+import { count, desc, eq, max } from "drizzle-orm";
 
 export const metadata: Metadata = {
   title: "Account",
@@ -84,13 +86,67 @@ export default async function AccountPage({
         <h2 id="account-evidence" className="font-display" style={{ fontSize: 20, marginBottom: 10 }}>
           Evidence ledger
         </h2>
-        <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.6, maxWidth: "62ch" }}>
-          Evidence records you generate on the results page are kept in this browser today. Account-backed
-          storage — your ledger available on any device — ships next as part of Pro.
-        </p>
+        <LedgerSummary userId={user.id} plan={user.plan} />
       </section>
 
       <SignOutButton />
     </PageContainer>
+  );
+}
+
+const SITE_LIMITS: Record<Plan, number> = { free: 1, pro: 3, agency: 25 };
+
+async function LedgerSummary({ userId, plan }: { userId: string; plan: Plan }) {
+  const db = await getDb();
+  const sites = await db
+    .select({
+      host: evidenceRecords.siteHost,
+      n: count(),
+      latest: max(evidenceRecords.createdAt),
+    })
+    .from(evidenceRecords)
+    .where(eq(evidenceRecords.userId, userId))
+    .groupBy(evidenceRecords.siteHost)
+    .orderBy(desc(max(evidenceRecords.createdAt)));
+
+  if (!sites.length) {
+    return (
+      <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.6, maxWidth: "62ch" }}>
+        No server-backed records yet. Scan a page and open its <b style={{ color: "var(--text-primary)" }}>Evidence file</b> —
+        while you&rsquo;re signed in, every record is stored here too, available on any device.
+      </p>
+    );
+  }
+
+  return (
+    <div>
+      <ul style={{ listStyle: "none", margin: "0 0 10px", padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+        {sites.map((s) => (
+          <li
+            key={s.host}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
+              border: "1px solid var(--border-default)",
+              borderRadius: 6,
+              padding: "10px 14px",
+              fontSize: 13.5,
+            }}
+          >
+            <span className="mono" style={{ color: "var(--text-primary)" }}>{s.host}</span>
+            <span style={{ color: "var(--text-secondary)" }}>
+              {s.n} record{s.n === 1 ? "" : "s"}
+              {s.latest &&
+                ` · latest ${new Date(s.latest).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mono" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+        {sites.length} of {SITE_LIMITS[plan] ?? 1} site{(SITE_LIMITS[plan] ?? 1) === 1 ? "" : "s"} on your plan
+      </p>
+    </div>
   );
 }
