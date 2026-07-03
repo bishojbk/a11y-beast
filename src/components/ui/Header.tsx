@@ -77,6 +77,27 @@ function ThemeToggle({ large }: { large?: boolean }) {
 export default function Header({ showNav = true }: { showNav?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // undefined = not yet known (render nothing, avoids a signed-in flash),
+  // null = signed out, object = signed in.
+  const [user, setUser] = useState<undefined | null | { email: string }>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () =>
+      fetch("/api/v1/auth/me")
+        .then((r) => r.json())
+        .then((d) => { if (!cancelled) setUser(d.user ?? null); })
+        .catch(() => { if (!cancelled) setUser(null); });
+    load();
+    // AuthForm/SignOutButton fire this after sign-in/out so the header updates
+    // across client-side navigations (it stays mounted the whole session).
+    const onAuthChanged = () => { void load(); };
+    window.addEventListener("ab:auth-changed", onAuthChanged);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("ab:auth-changed", onAuthChanged);
+    };
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -123,6 +144,15 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
                 </Link>
               ))}
             </nav>
+          )}
+
+          {showNav && user !== undefined && (
+            <Link
+              href={user ? "/account" : "/signin"}
+              className="hidden md:inline-flex px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-faint hover:text-foreground"
+            >
+              {user ? "Account" : "Sign in"}
+            </Link>
           )}
 
           <div className="hidden md:block">
@@ -201,6 +231,23 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
 
                 {/* Divider */}
                 <div className="h-px bg-edge my-2 mx-4" />
+
+                {/* Account */}
+                {user !== undefined && (
+                  <Link
+                    href={user ? "/account" : "/signin"}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-between px-4 py-3.5 rounded-xl text-foreground hover:bg-surface-overlay transition-colors group"
+                  >
+                    <div>
+                      <div className="text-sm font-semibold">{user ? "Account" : "Sign in"}</div>
+                      <div className="text-xs text-faint mt-0.5">
+                        {user ? user.email : "Scan history · evidence ledger · plan"}
+                      </div>
+                    </div>
+                    <ArrowUpRight size={14} className="text-faint group-hover:text-accent transition-colors" />
+                  </Link>
+                )}
 
                 {/* Theme toggle */}
                 <motion.div
