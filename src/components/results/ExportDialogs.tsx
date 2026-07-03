@@ -8,6 +8,7 @@ import type { ComplianceResult } from "@/lib/types/compliance";
 import { getEffort, type EffortLevel } from "@/lib/analyzer/effort";
 import { getFrameworkById } from "@/lib/compliance/frameworks";
 import { computeConformance } from "@/lib/compliance/wcag-criteria";
+import { useEmailUnlock, EmailUnlockInline } from "./EmailUnlock";
 
 const DIALOG_EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -579,6 +580,7 @@ export function LegalReportDialog({
   compliance: ComplianceResult[];
 }) {
   const [copied, setCopied] = useState(false);
+  const { unlocked, unlock } = useEmailUnlock();
   const sorted = useMemo(() => [...compliance].sort((a, b) => a.percentage - b.percentage), [compliance]);
   const [fwId, setFwId] = useState<string | null>(null);
   const selected = sorted.find((c) => c.framework.id === fwId) ?? sorted[0];
@@ -622,15 +624,19 @@ export function LegalReportDialog({
       onClose={onClose}
       title="Legal report · per jurisdiction"
       footer={
-        <>
-          <button type="button" className="btn" onClick={copy}>
-            {copied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
-            {copied ? "Copied" : "Copy markdown"}
-          </button>
-          <button type="button" className="btn primary" onClick={download}>
-            <Download size={13} aria-hidden="true" /> Download .md
-          </button>
-        </>
+        unlocked ? (
+          <>
+            <button type="button" className="btn" onClick={copy}>
+              {copied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
+              {copied ? "Copied" : "Copy markdown"}
+            </button>
+            <button type="button" className="btn primary" onClick={download}>
+              <Download size={13} aria-hidden="true" /> Download .md
+            </button>
+          </>
+        ) : (
+          <EmailUnlockInline context="legal" scanUrl={result.url} onUnlocked={unlock} />
+        )
       }
     >
       <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 14, lineHeight: 1.55 }}>
@@ -716,6 +722,7 @@ export function DownloadReportDialog({
   aiFixes: Record<string, string>;
 }) {
   const [copied, setCopied] = useState(false);
+  const { unlocked, unlock } = useEmailUnlock();
   const markdown = open ? buildMarkdownReport(result, compliance, aiFixes) : "";
 
   const download = useCallback(() => {
@@ -767,18 +774,22 @@ export function DownloadReportDialog({
       onClose={onClose}
       title="Download report · PR-ready markdown"
       footer={
-        <>
-          <button type="button" className="btn" onClick={downloadJson}>
-            <Download size={13} aria-hidden="true" /> JSON
-          </button>
-          <button type="button" className="btn" onClick={copy}>
-            {copied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
-            {copied ? "Copied" : "Copy markdown"}
-          </button>
-          <button type="button" className="btn primary" onClick={download}>
-            <Download size={13} aria-hidden="true" /> Download .md
-          </button>
-        </>
+        unlocked ? (
+          <>
+            <button type="button" className="btn" onClick={downloadJson}>
+              <Download size={13} aria-hidden="true" /> JSON
+            </button>
+            <button type="button" className="btn" onClick={copy}>
+              {copied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
+              {copied ? "Copied" : "Copy markdown"}
+            </button>
+            <button type="button" className="btn primary" onClick={download}>
+              <Download size={13} aria-hidden="true" /> Download .md
+            </button>
+          </>
+        ) : (
+          <EmailUnlockInline context="report" scanUrl={result.url} onUnlocked={unlock} />
+        )
       }
     >
       <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 14, lineHeight: 1.55 }}>

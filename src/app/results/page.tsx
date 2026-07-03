@@ -23,6 +23,7 @@ import {
 import Gauge from "@/components/results/Gauge";
 import Flag, { flagForRegion } from "@/components/results/Flag";
 import { GithubActionDialog, DownloadReportDialog, LegalReportDialog } from "@/components/results/ExportDialogs";
+import { useEmailUnlock, EmailUnlockModal } from "@/components/results/EmailUnlock";
 import MonitorCta from "@/components/MonitorCta";
 import { EAA_STANDARD, PREFILL_KEY, type StatementPrefill } from "@/components/StatementGenerator";
 import { FRAMEWORKS, type FrameworkWithTags } from "@/lib/compliance/frameworks";
@@ -423,6 +424,8 @@ export default function ResultsPage() {
   const [fixLoading, setFixLoading] = useState<Record<string, boolean>>({});
   const [modal, setModal] = useState<"action" | "report" | "legal" | null>(null);
   const [evidenceCount, setEvidenceCount] = useState(0);
+  const { unlocked, unlock } = useEmailUnlock();
+  const [evidenceGateOpen, setEvidenceGateOpen] = useState(false);
   // True when this report is the baked sample (arrived via ?sample), not a real
   // scan. Drives the sample banner and gates real-ledger / counter side effects.
   const [isSample, setIsSample] = useState(false);
@@ -470,6 +473,14 @@ export default function ResultsPage() {
     window.open(url, "_blank", "noopener");
     setTimeout(() => URL.revokeObjectURL(url), 30_000);
   }, [result, isSample]);
+
+  // The evidence file is email-gated (see tier-gating-spec §email-gated layer):
+  // first click asks for an email once, then the record opens directly forever
+  // on this browser. The on-screen diagnosis is never gated.
+  const handleEvidenceClick = useCallback(() => {
+    if (unlocked) void openEvidenceFile();
+    else setEvidenceGateOpen(true);
+  }, [unlocked, openEvidenceFile]);
   const rowsInited = useRef(false);
 
   useEffect(() => {
@@ -815,7 +826,7 @@ export default function ResultsPage() {
               <button type="button" className="btn" onClick={generateStatement}>
                 <FileText size={13} /> EN 301 549 statement
               </button>
-              <button type="button" className="btn" onClick={openEvidenceFile}>
+              <button type="button" className="btn" onClick={handleEvidenceClick}>
                 <FileText size={13} /> Evidence file
               </button>
               <button type="button" className="btn" onClick={() => setModal("action")}>
@@ -1213,6 +1224,16 @@ export default function ResultsPage() {
         onClose={() => setModal(null)}
         result={result}
         compliance={compliance}
+      />
+      <EmailUnlockModal
+        open={evidenceGateOpen}
+        onClose={() => setEvidenceGateOpen(false)}
+        scanUrl={result.url}
+        onUnlocked={(email) => {
+          unlock(email);
+          setEvidenceGateOpen(false);
+          void openEvidenceFile();
+        }}
       />
       <ComplianceDetailModal
         fw={detailFw}
