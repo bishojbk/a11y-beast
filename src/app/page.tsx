@@ -551,15 +551,11 @@ function FrameworkInfoModal({ fw, onClose }: { fw: FrameworkWithTags | null; onC
 function Who() {
   return (
     <section className="rc-who">
-      <motion.div className="rc-wrap rc-who-grid" variants={stagger} initial="hidden" whileInView="visible" viewport={inView}>
-        <motion.div variants={fadeUp} className="rc-portrait" aria-hidden="true">
-          <div className="av">B</div>
-          <span className="ph">your photo here</span>
-        </motion.div>
+      <motion.div className="rc-wrap" variants={stagger} initial="hidden" whileInView="visible" viewport={inView}>
         <motion.div variants={fadeUp}>
           <span className="rc-label" style={{ display: "block", marginBottom: 16 }}>Who&rsquo;s behind the audits</span>
           <blockquote>&ldquo;I built this because I was tired of tools that hand you a green checkmark and a lawsuit. You should know what you actually fixed — and be able to prove it.&rdquo;</blockquote>
-          <p className="by"><b>[Your name]</b> — founder<span className="cred">WAS-certified · ex-agency accessibility lead · 200+ audits</span></p>
+          <p className="by"><b>EJR</b> — founder</p>
         </motion.div>
       </motion.div>
     </section>
