@@ -40,7 +40,7 @@ export default function NotFound() {
                 </h2>
                 <p>
                   The target returned{" "}
-                  <span className="mono">ERR_CONNECTION_REFUSED</span> after three retries. Check the URL, or wait if
+                  <span className="mono">ERR_CONNECTION_REFUSED</span>{" "}after three retries. Check the URL, or wait if
                   it&rsquo;s rate-limiting us.
                 </p>
                 <div
