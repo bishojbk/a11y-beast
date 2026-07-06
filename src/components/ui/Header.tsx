@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Sun, Moon, Menu, X, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogoIcon } from "./Logo";
+import { ACCOUNTS_ENABLED } from "@/lib/features";
 
 // The inline theme-init script in layout.tsx sets <html data-theme="dark">
 // only when the saved preference is dark; otherwise the default :root (light
@@ -82,6 +83,7 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
   const [user, setUser] = useState<undefined | null | { email: string }>(undefined);
 
   useEffect(() => {
+    if (!ACCOUNTS_ENABLED) return; // accounts hidden pre-launch — skip the probe
     let cancelled = false;
     const load = () =>
       fetch("/api/v1/auth/me")
@@ -146,7 +148,7 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
             </nav>
           )}
 
-          {showNav && user !== undefined && (
+          {ACCOUNTS_ENABLED && showNav && user !== undefined && (
             <Link
               href={user ? "/account" : "/signin"}
               className="hidden md:inline-flex px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-faint hover:text-foreground"
@@ -233,7 +235,7 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
                 <div className="h-px bg-edge my-2 mx-4" />
 
                 {/* Account */}
-                {user !== undefined && (
+                {ACCOUNTS_ENABLED && user !== undefined && (
                   <Link
                     href={user ? "/account" : "/signin"}
                     onClick={() => setMobileOpen(false)}

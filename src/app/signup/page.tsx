@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import PageContainer from "@/components/ui/PageContainer";
 import AuthForm from "@/components/AuthForm";
+import { ACCOUNTS_ENABLED } from "@/lib/features";
 
 export const metadata: Metadata = {
   title: "Create account",
@@ -10,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default function SignupPage() {
+  if (!ACCOUNTS_ENABLED) notFound();
   return (
     <PageContainer>
       <div className="doc-eyebrow">Account · create</div>

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import PageContainer from "@/components/ui/PageContainer";
+import { ACCOUNTS_ENABLED } from "@/lib/features";
 import SignOutButton from "@/components/SignOutButton";
 import ManageBillingButton from "@/components/ManageBillingButton";
 import BrandingForm from "@/components/BrandingForm";
@@ -26,6 +27,7 @@ export default async function AccountPage({
 }: {
   searchParams: Promise<{ upgraded?: string }>;
 }) {
+  if (!ACCOUNTS_ENABLED) notFound();
   const user = await getSessionUser();
   if (!user) redirect("/signin?next=/account");
   const { upgraded } = await searchParams;
